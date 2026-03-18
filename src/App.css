@@ -381,16 +381,19 @@
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 8px 12px;
+  justify-content: center;
+  min-width: 86px;
+  padding: 7px 14px 6px;
   border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 800;
+  line-height: 1;
+  font-size: 0.78rem;
+  font-weight: 600;
   letter-spacing: 0.04em;
 }
 
 .status-badge--open {
-  background: rgba(108, 203, 32, 0.18);
-  color: #2f5a0a;
+  background: rgba(108, 203, 32, 0.28);
+  color: #244a06;
 }
 
 .status-badge--waitlist {
@@ -404,8 +407,8 @@
 }
 
 .status-badge--unknown {
-  background: rgba(154, 238, 222, 0.34);
-  color: #1b6960;
+  background: rgba(153, 205, 255, 0.42);
+  color: #24597f;
 }
 
 .toggle {

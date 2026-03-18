@@ -5,7 +5,7 @@ const STATUS_CLASS_MAP = {
 }
 
 function StatusBadge({ status }) {
-  const normalizedStatus = status || 'CHECKING'
+  const normalizedStatus = status || 'N/A'
   const className = STATUS_CLASS_MAP[normalizedStatus] || 'status-badge--unknown'
 
   return <span className={`status-badge ${className}`}>{normalizedStatus}</span>
