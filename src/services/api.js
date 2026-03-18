@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://madenroll.duckdns.org/'
 const TASK_API_URL = '/api/tasks'
 const TOKEN_KEY = 'uwcm_jwt_token'
 const USER_EMAIL_KEY = 'uwcm_user_email'
