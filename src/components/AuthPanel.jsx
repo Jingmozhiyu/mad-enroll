@@ -44,7 +44,7 @@ function AuthPanel({
       <div className="action-row">
         <button
           type="button"
-          className="btn btn--primary"
+          className="btn btn--auth-primary"
           onClick={onLogin}
           disabled={busyAction !== null}
         >
@@ -52,7 +52,7 @@ function AuthPanel({
         </button>
         <button
           type="button"
-          className="btn btn--secondary"
+          className="btn btn--auth-secondary"
           onClick={onRegister}
           disabled={busyAction !== null}
         >
