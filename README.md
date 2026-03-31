@@ -1,20 +1,47 @@
 # MadEnroll
 
-### [mad-enroll.vercel.app](https://mad-enroll.vercel.app)
+Next.js + React + TypeScript + Tailwind CSS frontend for MadEnroll.
 
-## React + Vite
+## Routes
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+- `/` welcome page
+- `/monitor` main monitor page with auth, task list, and course search overlay
+- `/about` project overview
+- `/admin` separate admin dashboard with the same color palette
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Keep the existing mint / teal visual direction
+- Login and register from the monitor homepage
+- If not logged in, the monitor page shows only the auth form
+- If logged in, `/api/tasks` data renders directly on the monitor homepage
+- Search courses through `/api/tasks/search`, render compact section cards, and add via `POST /api/tasks?sectionId=...`
+- Admin dashboard for `/api/admin/subscriptions` without automatic redirect
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+## Build Checks
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm run lint
+npm run build
+```
+
+## Environment
+
+Optional:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://madenroll.duckdns.org/
+```
+
+If not provided, the frontend falls back to the URL above by default.
+
+## API Reference
+
+Backend contract is documented in `api-reference.md`.
