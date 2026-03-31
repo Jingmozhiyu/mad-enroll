@@ -6,9 +6,7 @@ export default function AboutPage() {
         MadEnroll
       </h1>
       <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--color-ink-soft)] md:text-lg">
-        A Next.js frontend for course monitoring with a cleaner search flow, a simpler
-        main dashboard, and a separate admin page that is only reachable when visited
-        directly with the right permissions.
+        Developed by Yinwen Gong.
       </p>
     </section>
   )
