@@ -24,3 +24,7 @@ out
 *.njsproj
 *.sln
 *.sw?
+
+.env.example
+.env.local
+README-zh_cn.md

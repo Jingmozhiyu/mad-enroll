@@ -1,41 +1,30 @@
 import axios from 'axios'
-import { clearStoredSession, getStoredToken } from '@/lib/storage'
 import type {
+  AlertDeadLetter,
+  AlertDeliveryLog,
   AdminSubscription,
   AdminUserSubscriptions,
-  ApiEnvelope,
   AuthPayload,
+  ClientSession,
+  MailDailyStat,
   Task,
-  UserSession,
+  TestEmailPayload,
 } from '@/lib/types'
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://madenroll.duckdns.org/'
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '',
   timeout: 20000,
+  withCredentials: true,
 })
-
-api.interceptors.request.use((config) => {
-  const token = getStoredToken()
-
-  if (token) {
-    config.headers = config.headers ?? {}
-    config.headers.Authorization = `Bearer ${token}`
-  }
-
-  return config
-})
-
-function unwrap<T>(response: { data: ApiEnvelope<T> }) {
-  return response.data.data
-}
 
 export function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError(error)) {
     const responseMessage =
-      typeof error.response?.data?.msg === 'string' ? error.response.data.msg : null
+      typeof error.response?.data?.msg === 'string'
+        ? error.response.data.msg
+        : typeof error.response?.data?.message === 'string'
+          ? error.response.data.message
+          : null
 
     return responseMessage || error.message || fallbackMessage
   }
@@ -51,56 +40,58 @@ export function isUnauthorizedError(error: unknown) {
   return axios.isAxiosError(error) && error.response?.status === 401
 }
 
-export function resetSession() {
-  clearStoredSession()
+export async function fetchSession() {
+  const response = await api.get<ClientSession | null>('/api/session')
+  return response.data
 }
 
 export async function registerUser(payload: AuthPayload) {
-  await api.post<ApiEnvelope<null>>('/auth/register', payload)
+  await api.post('/api/session/register', payload)
 }
 
 export async function loginUser(payload: AuthPayload) {
-  const response = await api.post<ApiEnvelope<UserSession>>('/auth/login', payload)
-  return unwrap(response)
+  const response = await api.post<ClientSession>('/api/session/login', payload)
+  return response.data
+}
+
+export async function logoutUser() {
+  await api.post('/api/session/logout')
 }
 
 export async function fetchTasks() {
-  const response = await api.get<ApiEnvelope<Task[]>>('/api/tasks')
-  return unwrap(response)
+  const response = await api.get<Task[]>('/api/tasks')
+  return response.data
 }
 
 export async function searchCourse(courseName: string) {
-  const response = await api.get<ApiEnvelope<Task[]>>('/api/tasks/search', {
+  const response = await api.get<Task[]>('/api/tasks/search', {
     params: { courseName },
   })
 
-  return unwrap(response)
+  return response.data
 }
 
 export async function addTask(sectionId: string) {
-  const response = await api.post<ApiEnvelope<Task>>('/api/tasks', null, {
+  const response = await api.post<Task>('/api/tasks', null, {
     params: { sectionId },
   })
 
-  return unwrap(response)
+  return response.data
 }
 
 export async function deleteTask(sectionId: string) {
-  await api.delete<ApiEnvelope<null>>('/api/tasks', {
+  await api.delete('/api/tasks', {
     params: { sectionId },
   })
 }
 
 export async function fetchAdminSubscriptions() {
-  const response = await api.get<ApiEnvelope<AdminUserSubscriptions[]>>(
-    '/api/admin/subscriptions',
-  )
-
-  return unwrap(response)
+  const response = await api.get<AdminUserSubscriptions[]>('/api/admin/subscriptions')
+  return response.data
 }
 
 export async function patchAdminSubscription(subscriptionId: string, enabled: boolean) {
-  const response = await api.patch<ApiEnvelope<AdminSubscription>>(
+  const response = await api.patch<AdminSubscription>(
     `/api/admin/subscriptions/${subscriptionId}`,
     null,
     {
@@ -108,5 +99,24 @@ export async function patchAdminSubscription(subscriptionId: string, enabled: bo
     },
   )
 
-  return unwrap(response)
+  return response.data
+}
+
+export async function fetchAdminDeadLetters() {
+  const response = await api.get<AlertDeadLetter[]>('/api/admin/dead-letters')
+  return response.data
+}
+
+export async function fetchAdminMailDeliveries() {
+  const response = await api.get<AlertDeliveryLog[]>('/api/admin/mail-deliveries')
+  return response.data
+}
+
+export async function fetchAdminMailStats() {
+  const response = await api.get<MailDailyStat[]>('/api/admin/mail-stats')
+  return response.data
+}
+
+export async function sendAdminTestEmail(payload: TestEmailPayload) {
+  await api.post('/api/admin/test-email', payload)
 }

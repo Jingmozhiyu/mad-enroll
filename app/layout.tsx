@@ -4,6 +4,7 @@ import { GeistSans } from 'geist/font/sans'
 import '@/app/globals.css'
 import { Providers } from '@/components/providers'
 import { SiteShell } from '@/components/site-shell'
+import { getServerSession } from '@/lib/server-session'
 
 export const metadata: Metadata = {
   title: 'MadEnroll',
@@ -13,15 +14,17 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode
 }>) {
+  const { session } = await getServerSession()
+
   return (
     <html lang="en">
       <body className={GeistSans.className}>
-        <Providers>
+        <Providers initialSession={session} initialSessionResolved>
           <SiteShell>{children}</SiteShell>
         </Providers>
       </body>

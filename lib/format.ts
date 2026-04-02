@@ -18,14 +18,10 @@ function formatClock(milliseconds?: number) {
     return 'TBA'
   }
 
-  const totalMinutes = Math.floor(milliseconds / 60000)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  const normalizedHours = hours % 24
-  const period = normalizedHours >= 12 ? 'PM' : 'AM'
-  const hour12 = normalizedHours % 12 || 12
-
-  return `${hour12}:${String(minutes).padStart(2, '0')} ${period}`
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(milliseconds))
 }
 
 export function getMeetingSummary(meetingInfo: string) {
@@ -47,10 +43,6 @@ export function getMeetingSummary(meetingInfo: string) {
 
 export function sortTasks(tasks: Task[]) {
   return [...tasks].sort((left, right) => {
-    if (left.enabled !== right.enabled) {
-      return left.enabled ? -1 : 1
-    }
-
     if (left.courseDisplayName !== right.courseDisplayName) {
       return left.courseDisplayName.localeCompare(right.courseDisplayName)
     }
@@ -59,20 +51,47 @@ export function sortTasks(tasks: Task[]) {
   })
 }
 
+export function formatDateTime(value?: string) {
+  if (!value) {
+    return 'Unknown time'
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(date)
+}
+
 export function getSeatsSummary(task: Pick<Task, 'openSeats' | 'capacity' | 'waitlistSeats' | 'waitlistCapacity'>) {
   const seatParts: string[] = []
 
   if (typeof task.openSeats === 'number' || typeof task.capacity === 'number') {
     seatParts.push(
-      `Open ${task.openSeats ?? '?'} / ${task.capacity ?? '?'}`,
+      `Open Seats: ${task.openSeats ?? '?'} / ${task.capacity ?? '?'}`,
     )
   }
 
   if (typeof task.waitlistSeats === 'number' || typeof task.waitlistCapacity === 'number') {
     seatParts.push(
-      `Waitlist ${task.waitlistSeats ?? '?'} / ${task.waitlistCapacity ?? '?'}`,
+      `Waitlist Seats: ${task.waitlistSeats ?? '?'} / ${task.waitlistCapacity ?? '?'}`,
     )
   }
 
   return seatParts.length > 0 ? seatParts.join(' | ') : 'Seat data unavailable'
+}
+
+export function getOpenSeatsSummary(task: Pick<Task, 'openSeats' | 'capacity'>) {
+  return `Open Seats: ${task.openSeats ?? '?'} / ${task.capacity ?? '?'}`
+}
+
+export function getWaitlistSeatsSummary(task: Pick<Task, 'waitlistSeats' | 'waitlistCapacity'>) {
+  return `Waitlist Seats: ${task.waitlistSeats ?? '?'} / ${task.waitlistCapacity ?? '?'}`
 }

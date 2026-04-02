@@ -1,15 +1,18 @@
 import Link from 'next/link'
+import { BrandMark } from '@/components/brand-mark'
+import { WelcomeCarousel } from '@/components/welcome-carousel'
 
 export default function WelcomePage() {
   return (
-    <section className="glass-card grid gap-8 px-6 py-8 md:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)] md:px-10 md:py-10">
-      <div className="flex flex-col justify-center gap-6">
+    <section className="grid min-h-[540px] gap-10 overflow-hidden px-2 py-6 md:grid-cols-[minmax(260px,1fr)_minmax(0,2fr)] md:items-center md:px-4 md:py-10">
+      <div className="flex flex-col justify-center gap-8">
         <div className="space-y-4">
-          <h1 className="text-5xl font-semibold tracking-tight text-[var(--color-ink)] md:text-7xl">
-            MadEnroll
+          <h1 className="max-w-[8ch] text-5xl font-semibold leading-[1.08] tracking-tight text-[var(--color-ink)] md:text-6xl">
+            <BrandMark />
           </h1>
-          <p className="max-w-xl text-base leading-7 text-[var(--color-ink-soft)] md:text-lg">
-            Search sections, add subscriptions, and monitor your tasks in one place.
+          <p className="max-w-xl text-base leading-8 text-[var(--color-ink-soft)] md:text-xl">
+            A cleaner course monitor for searching sections, adding subscriptions, and
+            staying ready when seats open up.
           </p>
         </div>
 
@@ -17,17 +20,13 @@ export default function WelcomePage() {
           <Link className="button-primary" href="/monitor">
             Open Monitor
           </Link>
+          <Link className="button-info" href="/search">
+            Open Chart
+          </Link>
         </div>
       </div>
 
-      <div className="relative min-h-[320px] overflow-hidden rounded-[28px] border border-[rgba(154,238,222,0.22)] bg-[linear-gradient(160deg,rgba(154,238,222,0.95),rgba(51,204,187,0.58))]">
-        <div className="absolute left-7 top-7 h-32 w-32 rounded-full border border-white/35 bg-white/20 blur-[2px]" />
-        <div className="absolute left-24 top-20 h-52 w-52 rounded-full border border-white/25 bg-white/12" />
-        <div className="absolute right-8 top-12 h-40 w-40 rounded-full border border-[rgba(255,255,255,0.32)] bg-[rgba(21,152,137,0.18)]" />
-        <div className="absolute right-16 top-28 h-56 w-56 rounded-full border border-[rgba(255,255,255,0.24)] bg-[rgba(255,255,255,0.08)]" />
-        <div className="absolute bottom-[-2rem] left-1/2 h-60 w-60 -translate-x-1/2 rounded-full border border-white/20 bg-[rgba(255,255,255,0.18)]" />
-        <div className="absolute bottom-10 left-10 h-24 w-24 rounded-full border border-white/30 bg-white/18" />
-      </div>
+      <WelcomeCarousel />
     </section>
   )
 }

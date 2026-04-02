@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { StatusBadge } from '@/components/status-badge'
 import { getMeetingSummary, getSeatsSummary } from '@/lib/format'
 import type { Task } from '@/lib/types'
@@ -29,6 +30,21 @@ export function SearchOverlay({
   onAdd,
   addingSectionId,
 }: SearchOverlayProps) {
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    function handleKeydown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeydown)
+    return () => window.removeEventListener('keydown', handleKeydown)
+  }, [onClose, open])
+
   if (!open) {
     return null
   }
@@ -90,7 +106,7 @@ export function SearchOverlay({
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {results.map((section) => {
-                const isExisting = Boolean(section.id && section.enabled)
+                const isExisting = Boolean(section.id) && section.enabled !== false
                 const isAdding = addingSectionId === section.sectionId
 
                 return (
@@ -120,7 +136,7 @@ export function SearchOverlay({
                         {isExisting ? 'Already added' : 'Ready to add'}
                       </span>
                       <button
-                        className={isExisting ? 'button-ghost min-w-[110px]' : 'button-primary min-w-[110px]'}
+                        className={isExisting ? 'button-ghost min-w-[110px]' : 'button-info min-w-[110px]'}
                         disabled={isExisting || isAdding}
                         onClick={() => onAdd(section.sectionId)}
                         type="button"

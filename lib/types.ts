@@ -9,14 +9,18 @@ export type AuthPayload = {
   password: string
 }
 
-export type UserSession = {
+export type ClientSession = {
   userId: string
   email: string
+}
+
+export type UserSession = ClientSession & {
   token: string
 }
 
 export type Task = {
   id: string | null
+  enabled?: boolean
   sectionId: string
   courseId: string
   subjectCode: string
@@ -24,7 +28,6 @@ export type Task = {
   courseDisplayName: string
   meetingInfo: string
   status: string
-  enabled: boolean
   openSeats?: number
   capacity?: number
   waitlistSeats?: number
@@ -52,6 +55,51 @@ export type AdminUserSubscriptions = {
   email: string
   role: string
   subscriptions: AdminSubscription[]
+}
+
+export type AlertDeadLetter = {
+  id?: string
+  eventId?: string
+  alertType?: string
+  recipientEmail?: string
+  sectionId?: string
+  courseDisplayName?: string
+  sourceQueue?: string
+  failedAt?: string
+  deadLetterReason?: string
+  [key: string]: unknown
+}
+
+export type AlertDeliveryLog = {
+  id: string
+  eventId: string
+  alertType: string
+  recipientEmail: string
+  sectionId: string
+  courseDisplayName: string
+  sourceQueue: string
+  manualTest: boolean
+  sentAt: string
+}
+
+export type MailDailyStat = {
+  id: string
+  statsDate: string
+  sentTotal: number
+  sentOpen: number
+  sentWaitlist: number
+  sentManualTest: number
+  deadTotal: number
+  deadOpen: number
+  deadWaitlist: number
+  deadManualTest: number
+}
+
+export type TestEmailPayload = {
+  recipientEmail?: string
+  alertType?: string
+  sectionId?: string
+  courseDisplayName?: string
 }
 
 export type MeetingSlot = {

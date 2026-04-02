@@ -7,35 +7,61 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { loginUser, registerUser } from '@/lib/api'
-import { clearStoredSession, getStoredSession, setStoredSession } from '@/lib/storage'
-import type { AuthPayload, UserSession } from '@/lib/types'
+import { fetchSession, loginUser, logoutUser, registerUser } from '@/lib/api'
+import type { AuthPayload, ClientSession } from '@/lib/types'
 
 type AuthContextValue = {
   ready: boolean
-  session: UserSession | null
+  session: ClientSession | null
   isLoggedIn: boolean
-  login: (payload: AuthPayload) => Promise<UserSession>
+  login: (payload: AuthPayload) => Promise<ClientSession>
   register: (payload: AuthPayload) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function Providers({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false)
-  const [session, setSession] = useState<UserSession | null>(null)
+export function Providers({
+  children,
+  initialSession = null,
+  initialSessionResolved = false,
+}: {
+  children: ReactNode
+  initialSession?: ClientSession | null
+  initialSessionResolved?: boolean
+}) {
+  const [ready, setReady] = useState(initialSessionResolved)
+  const [session, setSession] = useState<ClientSession | null>(initialSession)
 
   useEffect(() => {
-    // Hydration is the point where browser storage becomes available.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSession(getStoredSession())
-    setReady(true)
-  }, [])
+    if (initialSessionResolved) {
+      return
+    }
+
+    let cancelled = false
+
+    async function hydrateSession() {
+      try {
+        const nextSession = await fetchSession()
+        if (!cancelled) {
+          setSession(nextSession)
+        }
+      } finally {
+        if (!cancelled) {
+          setReady(true)
+        }
+      }
+    }
+
+    void hydrateSession()
+
+    return () => {
+      cancelled = true
+    }
+  }, [initialSessionResolved])
 
   async function handleLogin(payload: AuthPayload) {
     const nextSession = await loginUser(payload)
-    setStoredSession(nextSession)
     setSession(nextSession)
     return nextSession
   }
@@ -44,8 +70,8 @@ export function Providers({ children }: { children: ReactNode }) {
     await registerUser(payload)
   }
 
-  function handleLogout() {
-    clearStoredSession()
+  async function handleLogout() {
+    await logoutUser()
     setSession(null)
   }
 
@@ -54,7 +80,7 @@ export function Providers({ children }: { children: ReactNode }) {
       value={{
         ready,
         session,
-        isLoggedIn: Boolean(session?.token),
+        isLoggedIn: Boolean(session),
         login: handleLogin,
         register: handleRegister,
         logout: handleLogout,
