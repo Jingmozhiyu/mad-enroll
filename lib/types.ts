@@ -88,10 +88,12 @@ export type MailDailyStat = {
   sentTotal: number
   sentOpen: number
   sentWaitlist: number
+  sentWelcome: number
   sentManualTest: number
   deadTotal: number
   deadOpen: number
   deadWaitlist: number
+  deadWelcome: number
   deadManualTest: number
 }
 
@@ -106,4 +108,18 @@ export type MeetingSlot = {
   meetingDays?: string
   meetingTimeStart?: number
   meetingTimeEnd?: number
+}
+
+export type SchedulerStatus = {
+  observedAt: string
+  heartbeatIntervalMs: number
+  fetchIntervalMs: number
+  activeCourseCount: number
+  dueCourseCount: number
+  queueSize: number
+  queuedCourseIds: string[]
+  lastHeartbeatAt?: string
+  lastFetchStartedAt?: string
+  lastFetchFinishedAt?: string
+  lastFetchedCourseId?: string
 }

@@ -8,6 +8,7 @@ import type {
   ApiEnvelope,
   AuthPayload,
   MailDailyStat,
+  SchedulerStatus,
   Task,
   TestEmailPayload,
   UserSession,
@@ -114,6 +115,10 @@ export async function backendFetchAdminMailDeliveries(token: string) {
 
 export async function backendFetchAdminMailStats(token: string) {
   return backendRequest<MailDailyStat[]>('/api/admin/mail-stats', { method: 'GET' }, token)
+}
+
+export async function backendFetchAdminSchedulerStatus(token: string) {
+  return backendRequest<SchedulerStatus>('/api/admin/scheduler-status', { method: 'GET' }, token)
 }
 
 export async function backendSendAdminTestEmail(token: string, payload: TestEmailPayload) {

@@ -9,6 +9,7 @@ import {
   fetchAdminDeadLetters,
   fetchAdminMailDeliveries,
   fetchAdminMailStats,
+  fetchAdminSchedulerStatus,
   fetchAdminSubscriptions,
   getErrorMessage,
   isUnauthorizedError,
@@ -25,6 +26,7 @@ import type {
   AlertDeadLetter,
   AlertDeliveryLog,
   MailDailyStat,
+  SchedulerStatus,
   TestEmailPayload,
 } from '@/lib/types'
 
@@ -58,6 +60,7 @@ export function AdminDashboardPage() {
   const [deadLetters, setDeadLetters] = useState<AlertDeadLetter[]>([])
   const [mailDeliveries, setMailDeliveries] = useState<AlertDeliveryLog[]>([])
   const [mailStats, setMailStats] = useState<MailDailyStat[]>([])
+  const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus | null>(null)
   const [statusMessage, setStatusMessage] = useState(
     'Login on the monitor page to access admin data.',
   )
@@ -74,24 +77,33 @@ export function AdminDashboardPage() {
         setDeadLetters([])
         setMailDeliveries([])
         setMailStats([])
+        setSchedulerStatus(null)
         setStatusMessage('Login on the monitor page to access admin data.')
         return
       }
 
       try {
         setLoading(true)
-        const [nextSubscriptions, nextDeadLetters, nextDeliveries, nextMailStats] =
+        const [
+          nextSubscriptions,
+          nextDeadLetters,
+          nextDeliveries,
+          nextMailStats,
+          nextSchedulerStatus,
+        ] =
           await Promise.all([
             fetchAdminSubscriptions(),
             fetchAdminDeadLetters(),
             fetchAdminMailDeliveries(),
             fetchAdminMailStats(),
+            fetchAdminSchedulerStatus(),
           ])
 
         setSubscriptions(nextSubscriptions)
         setDeadLetters(nextDeadLetters)
         setMailDeliveries(nextDeliveries)
         setMailStats(nextMailStats)
+        setSchedulerStatus(nextSchedulerStatus)
         setStatusMessage(
           message ??
             `Loaded ${nextSubscriptions.length} user record${
@@ -103,6 +115,7 @@ export function AdminDashboardPage() {
         setDeadLetters([])
         setMailDeliveries([])
         setMailStats([])
+        setSchedulerStatus(null)
         if (isUnauthorizedError(error)) {
           setStatusMessage('Admin access is required for this route.')
         } else {
@@ -266,6 +279,17 @@ export function AdminDashboardPage() {
                 {latestStat ? `${latestStat.deadTotal} recorded on ${latestStat.statsDate}` : 'No dead-letter stats yet'}
               </p>
             </div>
+            <div className="glass-card px-5 py-5">
+              <p className="eyebrow">Scheduler</p>
+              <p className="mt-3 text-4xl font-semibold text-[var(--color-ink)]">
+                {schedulerStatus?.queueSize ?? 0}
+              </p>
+              <p className="mt-2 text-sm text-[var(--color-ink-soft)]">
+                {schedulerStatus
+                  ? `${schedulerStatus.dueCourseCount} due · ${schedulerStatus.activeCourseCount} active`
+                  : 'No scheduler snapshot yet'}
+              </p>
+            </div>
           </section>
 
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
@@ -415,6 +439,7 @@ export function AdminDashboardPage() {
                     >
                       <option value="OPEN">OPEN</option>
                       <option value="WAITLIST">WAITLIST</option>
+                      <option value="WELCOME">WELCOME</option>
                     </select>
                   </label>
 
@@ -491,15 +516,66 @@ export function AdminDashboardPage() {
                             <span className="pill">Sent {stat.sentTotal}</span>
                           </div>
                           <p className="mt-3 leading-7">
-                            OPEN {stat.sentOpen} · WAITLIST {stat.sentWaitlist} · Manual{' '}
-                            {stat.sentManualTest}
+                            OPEN {stat.sentOpen} · WAITLIST {stat.sentWaitlist} · WELCOME{' '}
+                            {stat.sentWelcome} · Manual {stat.sentManualTest}
                           </p>
                           <p className="leading-7">
                             Dead total {stat.deadTotal} · OPEN {stat.deadOpen} · WAITLIST{' '}
-                            {stat.deadWaitlist}
+                            {stat.deadWaitlist} · WELCOME {stat.deadWelcome}
                           </p>
                         </div>
                       ))
+                  )}
+                </div>
+              </section>
+
+              <section className="glass-card px-5 py-5 md:px-6">
+                <p className="eyebrow">Scheduler Status</p>
+                <h2 className="mt-2 text-2xl font-semibold text-[var(--color-ink)]">
+                  Operational snapshot
+                </h2>
+
+                <div className="mt-5 grid gap-3">
+                  {!schedulerStatus ? (
+                    <EmptyState
+                      description="No scheduler snapshot is available yet."
+                      title="No scheduler data"
+                    />
+                  ) : (
+                    <div className="rounded-[22px] border border-[rgba(154,238,222,0.18)] bg-white/70 px-4 py-4 text-sm text-[var(--color-ink-soft)]">
+                      <p>
+                        <span className="font-semibold text-[var(--color-ink)]">Observed:</span>{' '}
+                        {formatDateTime(schedulerStatus.observedAt)}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-[var(--color-ink)]">Heartbeat:</span>{' '}
+                        {schedulerStatus.heartbeatIntervalMs} ms
+                      </p>
+                      <p>
+                        <span className="font-semibold text-[var(--color-ink)]">Fetch interval:</span>{' '}
+                        {schedulerStatus.fetchIntervalMs} ms
+                      </p>
+                      <p>
+                        <span className="font-semibold text-[var(--color-ink)]">Queue:</span>{' '}
+                        {schedulerStatus.queueSize} queued · {schedulerStatus.dueCourseCount} due
+                      </p>
+                      <p>
+                        <span className="font-semibold text-[var(--color-ink)]">Last fetched course:</span>{' '}
+                        {schedulerStatus.lastFetchedCourseId ?? 'N/A'}
+                      </p>
+                      {schedulerStatus.lastFetchFinishedAt ? (
+                        <p>
+                          <span className="font-semibold text-[var(--color-ink)]">Last fetch finished:</span>{' '}
+                          {formatDateTime(schedulerStatus.lastFetchFinishedAt)}
+                        </p>
+                      ) : null}
+                      {schedulerStatus.queuedCourseIds.length > 0 ? (
+                        <p className="leading-7">
+                          <span className="font-semibold text-[var(--color-ink)]">Queued course IDs:</span>{' '}
+                          {schedulerStatus.queuedCourseIds.join(', ')}
+                        </p>
+                      ) : null}
+                    </div>
                   )}
                 </div>
               </section>

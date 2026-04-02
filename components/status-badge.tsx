@@ -6,6 +6,7 @@ const statusClassMap: Record<string, string> = {
   OPEN: 'status-open',
   WAITLIST: 'status-waitlist',
   WAITLISTED: 'status-waitlist',
+  WELCOME: 'status-welcome',
   CLOSED: 'status-closed',
 }
 

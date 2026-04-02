@@ -463,6 +463,16 @@ button {
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+.status-welcome {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, rgba(153, 205, 255, 0.72), rgba(154, 238, 222, 0.72));
+  color: #24597f;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
 .status-unknown {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),

@@ -7,6 +7,7 @@ import type {
   AuthPayload,
   ClientSession,
   MailDailyStat,
+  SchedulerStatus,
   Task,
   TestEmailPayload,
 } from '@/lib/types'
@@ -114,6 +115,11 @@ export async function fetchAdminMailDeliveries() {
 
 export async function fetchAdminMailStats() {
   const response = await api.get<MailDailyStat[]>('/api/admin/mail-stats')
+  return response.data
+}
+
+export async function fetchAdminSchedulerStatus() {
+  const response = await api.get<SchedulerStatus>('/api/admin/scheduler-status')
   return response.data
 }
 
