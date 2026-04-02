@@ -1,6 +1,13 @@
 'use client'
 
-import { startTransition, useCallback, useEffect, useState, type KeyboardEvent } from 'react'
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react'
 import { EmptyState } from '@/components/empty-state'
 import { SearchOverlay } from '@/components/search-overlay'
 import { StatusBadge } from '@/components/status-badge'
@@ -32,6 +39,10 @@ function getActiveTasks(tasks: Task[]) {
 export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps) {
   const { ready, session, isLoggedIn, login, register, logout } = useAuth()
   const activeInitialTasks = getActiveTasks(initialTasks)
+  const searchTriggerRef = useRef<HTMLInputElement | null>(null)
+  const hasInitializedSearchFocus = useRef(false)
+  const previousLoggedIn = useRef(isLoggedIn)
+  const previousSearchOpen = useRef(false)
   const [authForm, setAuthForm] = useState(initialAuthForm)
   const [tasks, setTasks] = useState<Task[]>(activeInitialTasks)
   const [statusMessage, setStatusMessage] = useState(
@@ -84,6 +95,12 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
     [isLoggedIn, logout],
   )
 
+  const focusSearchTrigger = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      searchTriggerRef.current?.focus()
+    })
+  }, [])
+
   useEffect(() => {
     if (!ready) {
       return
@@ -101,6 +118,26 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
       void loadTasks()
     }
   }, [initialTasks.length, isLoggedIn, loadTasks, ready])
+
+  useEffect(() => {
+    if (!ready || !isLoggedIn || isSearchOpen) {
+      previousLoggedIn.current = isLoggedIn
+      previousSearchOpen.current = isSearchOpen
+      return
+    }
+
+    const shouldFocusInitially = !hasInitializedSearchFocus.current
+    const justLoggedIn = !previousLoggedIn.current && isLoggedIn
+    const justClosedSearch = previousSearchOpen.current && !isSearchOpen
+
+    if (shouldFocusInitially || justLoggedIn || justClosedSearch) {
+      focusSearchTrigger()
+      hasInitializedSearchFocus.current = true
+    }
+
+    previousLoggedIn.current = isLoggedIn
+    previousSearchOpen.current = isSearchOpen
+  }, [focusSearchTrigger, isLoggedIn, isSearchOpen, ready])
 
   function updateAuthField(name: 'email' | 'password', value: string) {
     setAuthForm((current) => ({
@@ -253,6 +290,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
             {ready && isLoggedIn ? (
               <>
                 <input
+                  ref={searchTriggerRef}
                   className="search-trigger-shell min-w-[320px] max-w-[420px]"
                   onClick={() => setIsSearchOpen(true)}
                   onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
