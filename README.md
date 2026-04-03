@@ -1,6 +1,14 @@
 # MadEnroll
 
-MadEnroll is a course monitoring and analytics web application built with `Next.js`, `React`, `TypeScript`, and `Tailwind CSS`.
+### [madenroll.com](https://madenroll.com)
+
+## Intro
+
+MadEnroll is an open-source web application dedicated to course enrollment for the CS 571 Web Project. The energetic color palette is inspired by MORE MORE JUMP!.
+
+Not getting a spot on the waitlist for a required class, or hearing rumors about a tough instructor, can stress students out for months. MadEnroll helps take that stress away by sending real-time email alerts for open seats and showing visual grade distributions.
+
+It's built with modern tech like `Next.js`, `React`, `TypeScript`, and `Tailwind CSS`.
 
 It combines two main workflows in a single frontend:
 
