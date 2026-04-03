@@ -23,7 +23,9 @@
 
 html {
   scroll-behavior: smooth;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
+  background:
+    linear-gradient(180deg, #fffdf8 0%, #f6fffa 46%, #f7fbff 100%);
 }
 
 body {
