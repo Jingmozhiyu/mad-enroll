@@ -175,6 +175,78 @@ function CompactPanel({
   )
 }
 
+function MiniPagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}) {
+  if (totalPages <= 1) {
+    return null
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[var(--color-ink-soft)]">
+      <button
+        className="bg-transparent p-0 transition hover:text-[var(--color-ink)] disabled:opacity-40"
+        disabled={currentPage === 1}
+        onClick={() => onPageChange(currentPage - 1)}
+        type="button"
+      >
+        ←
+      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+          <button
+            key={page}
+            className={[
+              'bg-transparent p-0 transition hover:text-[var(--color-ink)]',
+              page === currentPage ? 'font-semibold text-[var(--color-ink)] underline underline-offset-4' : '',
+            ].join(' ')}
+            onClick={() => onPageChange(page)}
+            type="button"
+          >
+            {page}
+          </button>
+        ))}
+      </div>
+      <button
+        className="bg-transparent p-0 transition hover:text-[var(--color-ink)] disabled:opacity-40"
+        disabled={currentPage === totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+        type="button"
+      >
+        →
+      </button>
+      <label className="flex items-center gap-2">
+        <span>Jump</span>
+        <input
+          className="h-8 w-14 rounded-[8px] border border-[rgba(23,49,60,0.12)] bg-white px-2 text-[var(--color-ink)]"
+          inputMode="numeric"
+          max={totalPages}
+          min={1}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') {
+              return
+            }
+
+            const nextPage = Number((event.currentTarget as HTMLInputElement).value)
+            if (Number.isInteger(nextPage) && nextPage >= 1 && nextPage <= totalPages) {
+              onPageChange(nextPage)
+              ;(event.currentTarget as HTMLInputElement).value = ''
+            }
+          }}
+          placeholder={`${currentPage}`}
+          type="text"
+        />
+      </label>
+    </div>
+  )
+}
+
 export function AdminDashboardPage() {
   const { ready, isLoggedIn, session, logout } = useAuth()
   const [subscriptions, setSubscriptions] = useState<AdminUserSubscriptions[]>([])
@@ -190,6 +262,9 @@ export function AdminDashboardPage() {
   const [showQueuedCourseIds, setShowQueuedCourseIds] = useState(false)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [testingEmail, setTestingEmail] = useState(false)
+  const [emailHistoryPage, setEmailHistoryPage] = useState(1)
+  const [mailStatsPage, setMailStatsPage] = useState(1)
+  const [deadLettersPage, setDeadLettersPage] = useState(1)
   const [testEmailForm, setTestEmailForm] =
     useState<Required<TestEmailPayload>>(initialTestEmailForm)
 
@@ -255,6 +330,9 @@ export function AdminDashboardPage() {
         setMailStats(nextMailStats)
         setSchedulerStatus(nextSchedulerStatus)
         setShowQueuedCourseIds(false)
+        setEmailHistoryPage(1)
+        setMailStatsPage(1)
+        setDeadLettersPage(1)
         setStatusMessage(
           message ??
             `Loaded ${nextSubscriptions.length} users, ${nextDeliveries.length} deliveries, and ${nextDeadLetters.length} dead letters.`,
@@ -360,6 +438,22 @@ export function AdminDashboardPage() {
     () => [...mailStats].sort((left, right) => right.statsDate.localeCompare(left.statsDate)),
     [mailStats],
   )
+  const pageSize = 3
+  const emailHistoryTotalPages = Math.max(1, Math.ceil(mailDeliveries.length / pageSize))
+  const mailStatsTotalPages = Math.max(1, Math.ceil(sortedMailStats.length / pageSize))
+  const deadLettersTotalPages = Math.max(1, Math.ceil(deadLetters.length / pageSize))
+  const visibleMailDeliveries = mailDeliveries.slice(
+    (emailHistoryPage - 1) * pageSize,
+    emailHistoryPage * pageSize,
+  )
+  const visibleMailStats = sortedMailStats.slice(
+    (mailStatsPage - 1) * pageSize,
+    mailStatsPage * pageSize,
+  )
+  const visibleDeadLetters = deadLetters.slice(
+    (deadLettersPage - 1) * pageSize,
+    deadLettersPage * pageSize,
+  )
 
   return (
     <div className="grid gap-5">
@@ -443,7 +537,7 @@ export function AdminDashboardPage() {
                     </span>
                     <span>Due {schedulerStatus.dueCourseCount}</span>
                     <span>
-                      LFF {schedulerStatus.lastFetchedCourseId ?? 'N/A'} (
+                      LF {schedulerStatus.lastFetchedCourseId ?? 'N/A'} (
                       {formatSnapshotTime(schedulerStatus.lastFetchFinishedAt)})
                     </span>
                   </div>
@@ -534,12 +628,12 @@ export function AdminDashboardPage() {
               </div>
             </CompactPanel>
 
-            <CompactPanel title="Queued Email">
+            <CompactPanel title="Email History">
               <div className="grid gap-2 text-sm text-[var(--color-ink-soft)]">
                 {mailDeliveries.length === 0 ? (
                   <p>No deliveries yet.</p>
                 ) : (
-                  mailDeliveries.slice(0, 5).map((delivery) => (
+                  visibleMailDeliveries.map((delivery) => (
                     <div
                       key={delivery.id}
                       className="grid gap-1 border-b border-[rgba(23,49,60,0.08)] pb-2 last:border-b-0 last:pb-0"
@@ -553,6 +647,11 @@ export function AdminDashboardPage() {
                   ))
                 )}
               </div>
+              <MiniPagination
+                currentPage={emailHistoryPage}
+                onPageChange={setEmailHistoryPage}
+                totalPages={emailHistoryTotalPages}
+              />
             </CompactPanel>
 
             <CompactPanel title="Daily Stat">
@@ -560,7 +659,7 @@ export function AdminDashboardPage() {
                 {sortedMailStats.length === 0 ? (
                   <p>No daily stats yet.</p>
                 ) : (
-                  sortedMailStats.slice(0, 5).map((stat) => (
+                  visibleMailStats.map((stat) => (
                     <div
                       key={stat.id}
                       className="grid gap-1 border-b border-[rgba(23,49,60,0.08)] pb-2 last:border-b-0 last:pb-0"
@@ -572,6 +671,11 @@ export function AdminDashboardPage() {
                   ))
                 )}
               </div>
+              <MiniPagination
+                currentPage={mailStatsPage}
+                onPageChange={setMailStatsPage}
+                totalPages={mailStatsTotalPages}
+              />
             </CompactPanel>
 
             <CompactPanel title="Failed Alert Events">
@@ -579,7 +683,7 @@ export function AdminDashboardPage() {
                 {deadLetters.length === 0 ? (
                   <p>No failed alert events yet.</p>
                 ) : (
-                  deadLetters.slice(0, 5).map((entry, index) => {
+                  visibleDeadLetters.map((entry, index) => {
                     const summary = getDeadLetterSummary(entry)
 
                     return (
@@ -595,6 +699,11 @@ export function AdminDashboardPage() {
                   })
                 )}
               </div>
+              <MiniPagination
+                currentPage={deadLettersPage}
+                onPageChange={setDeadLettersPage}
+                totalPages={deadLettersTotalPages}
+              />
             </CompactPanel>
           </section>
 

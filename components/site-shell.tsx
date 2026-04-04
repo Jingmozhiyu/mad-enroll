@@ -19,7 +19,17 @@ const navItems = [
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, session } = useAuth()
+  const isAdminUser = session?.email === 'ygong68@wisc.edu'
+  const resolvedNavItems = isAdminUser
+    ? [
+        navItems[0],
+        navItems[1],
+        navItems[2],
+        { href: '/admin', label: 'Admin' },
+        navItems[3],
+      ]
+    : navItems
 
   const shouldTrackNavigation = useCallback(
     (href: string) => {
@@ -60,7 +70,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </div>
 
             <nav className="flex flex-wrap gap-2">
-              {navItems.map((item) => {
+              {resolvedNavItems.map((item) => {
                 const isActive =
                   item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
 
