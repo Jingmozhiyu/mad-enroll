@@ -1,8 +1,10 @@
 'use client'
 
 import { startTransition, useState, useTransition } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { EmptyState } from '@/components/empty-state'
+import { useProgressRouter } from '@/components/navigation-progress'
+import { SearchResultsSkeleton } from '@/components/page-skeletons'
 import { CourseQueryInput } from '@/components/course-query-input'
 import { CourseResultCard } from '@/components/course-result-card'
 import {
@@ -14,7 +16,10 @@ import {
   fetchInstructorOptions,
   fetchSubjectOptions,
 } from '@/lib/madgrades/client-api'
-import type { MadgradesCourse, MadgradesPaginatedResponse } from '@/lib/madgrades/types'
+import type {
+  MadgradesCourse,
+  MadgradesPaginatedResponse,
+} from '@/lib/madgrades/types'
 
 function buildSearchParams(
   query: string,
@@ -22,8 +27,6 @@ function buildSearchParams(
   instructors: SearchEntityOption[],
   sort: string,
   page: number,
-  compareWith?: string | null,
-  replacing?: string | null,
 ) {
   const params = new URLSearchParams()
   const trimmedQuery = query.trim()
@@ -42,12 +45,6 @@ function buildSearchParams(
   if (page > 1) {
     params.set('page', String(page))
   }
-  if (compareWith) {
-    params.set('compareWith', compareWith)
-  }
-  if (replacing) {
-    params.set('replacing', replacing)
-  }
 
   return params.toString()
 }
@@ -59,8 +56,6 @@ type MadgradesSearchPageProps = {
   initialSort: string
   initialResults: MadgradesPaginatedResponse<MadgradesCourse> | null
   error: string | null
-  compareWith?: string | null
-  replacing?: string | null
 }
 
 export function MadgradesSearchPage({
@@ -70,10 +65,8 @@ export function MadgradesSearchPage({
   initialSort,
   initialResults,
   error,
-  compareWith,
-  replacing,
 }: MadgradesSearchPageProps) {
-  const router = useRouter()
+  const router = useProgressRouter()
   const pathname = usePathname()
   const [isPending, startRouteTransition] = useTransition()
   const [query, setQuery] = useState(initialQuery)
@@ -90,8 +83,6 @@ export function MadgradesSearchPage({
       selectedInstructors,
       sort,
       nextPage,
-      compareWith,
-      replacing,
     )
 
     startRouteTransition(() => {
@@ -100,118 +91,86 @@ export function MadgradesSearchPage({
   }
 
   return (
-    <section className="px-2 py-6 md:px-4 md:py-8">
+    <section className="page-fade-enter px-2 py-6 md:px-4 md:py-8">
       <div className="grid gap-8 xl:grid-cols-[minmax(280px,0.33fr)_minmax(0,0.67fr)]">
         <div className="h-fit">
           <div className="grid gap-4">
-          {compareWith ? (
-            <div className="rounded-[24px] border border-[rgba(153,205,255,0.35)] bg-[rgba(153,205,255,0.14)] px-4 py-4 text-sm text-[var(--color-ink)]">
-              Comparison mode is active. Choose another course to build a side-by-side
-              comparison page.
-              <div className="mt-3">
-                <button
-                  className="button-ghost"
-                  onClick={() => {
-                    const nextQuery = buildSearchParams(
-                      query,
-                      selectedSubjects,
-                      selectedInstructors,
-                      sort,
-                      1,
-                    )
-                    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
-                  }}
-                  type="button"
-                >
-                  Leave Comparison Mode
-                </button>
-              </div>
-            </div>
-          ) : null}
+            <label className="grid gap-2">
+              <span className="text-sm font-bold text-[var(--color-ink-soft)]">Search</span>
+              <CourseQueryInput
+                inputClassName="input-shell search-input-accent h-12 w-full px-4"
+                onSelectSuggestion={(suggestion) => router.push(`/courses/${suggestion.uuid}`)}
+                onSubmit={(nextValue) => updateUrl(1, nextValue)}
+                onValueChange={setQuery}
+                placeholder="Math 222, CS400, Algorithms..."
+                value={query}
+              />
+            </label>
 
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-[var(--color-ink-soft)]">Search</span>
-            <CourseQueryInput
-              inputClassName="search-trigger-shell h-12 w-full"
-              onSelectSuggestion={(suggestion) => router.push(`/courses/${suggestion.uuid}`)}
-              onSubmit={(nextValue) => updateUrl(1, nextValue)}
-              onValueChange={setQuery}
-              placeholder="Math 222, CS400, Algorithms..."
-              value={query}
-            />
-          </label>
-
-          <EntityMultiSelect
-            title="Subjects"
-            placeholder="Start typing a subject..."
-            onChange={setSelectedSubjects}
-            searcher={async (value) => {
-              const response = await fetchSubjectOptions(value)
-              return response.map((subject) => ({
-                key: subject.code,
-                label: subject.name,
-                sublabel: subject.abbreviation || subject.code,
-              }))
-            }}
-            selected={selectedSubjects}
-          />
-
-          <EntityMultiSelect
-            title="Instructors"
-            placeholder="Start typing an instructor..."
-            onChange={setSelectedInstructors}
-            searcher={async (value) => {
-              const response = await fetchInstructorOptions(value)
-              return response.map((instructor) => ({
-                key: String(instructor.id),
-                label: instructor.name,
-              }))
-            }}
-            selected={selectedInstructors}
-          />
-
-          <label className="grid gap-2">
-            <span className="text-sm font-bold text-[var(--color-ink-soft)]">Sort</span>
-            <select
-              className="input-shell"
-              onChange={(event) => setSort(event.target.value)}
-              value={sort}
-            >
-              <option value="relevance">Best match</option>
-              <option value="number">Number ascending</option>
-              <option value="number_desc">Number descending</option>
-              <option value="name">Name</option>
-            </select>
-          </label>
-
-          <div className="flex flex-wrap justify-end gap-3 pt-1">
-            <button
-              className="button-ghost"
-              onClick={() => {
-                setQuery('')
-                setSelectedSubjects([])
-                setSelectedInstructors([])
-                setSort('relevance')
-                startTransition(() => {
-                  const params = new URLSearchParams()
-                  if (compareWith) {
-                    params.set('compareWith', compareWith)
-                  }
-                  if (replacing) {
-                    params.set('replacing', replacing)
-                  }
-                  router.push(params.toString() ? `${pathname}?${params.toString()}` : pathname)
-                })
+            <EntityMultiSelect
+              title="Subjects"
+              placeholder="Start typing a subject..."
+              onChange={setSelectedSubjects}
+              searcher={async (value) => {
+                const response = await fetchSubjectOptions(value)
+                return response.map((subject) => ({
+                  key: subject.code,
+                  label: subject.name,
+                  sublabel: subject.abbreviation || subject.code,
+                }))
               }}
-              type="button"
-            >
-              Clear
-            </button>
-            <button className="button-primary" onClick={() => updateUrl(1)} type="button">
-              Search
-            </button>
+              selected={selectedSubjects}
+            />
+
+            <EntityMultiSelect
+              title="Instructors"
+              placeholder="Start typing an instructor..."
+              onChange={setSelectedInstructors}
+              searcher={async (value) => {
+                const response = await fetchInstructorOptions(value)
+                return response.map((instructor) => ({
+                  key: String(instructor.id),
+                  label: instructor.name,
+                }))
+              }}
+              selected={selectedInstructors}
+            />
+
+            <label className="grid gap-2">
+              <span className="text-sm font-bold text-[var(--color-ink-soft)]">Sort</span>
+              <select
+                className="input-shell"
+                onChange={(event) => setSort(event.target.value)}
+                value={sort}
+              >
+                <option value="relevance">Best match</option>
+                <option value="number">Number ascending</option>
+                <option value="number_desc">Number descending</option>
+                <option value="name">Name</option>
+              </select>
+            </label>
+
+            <div className="flex flex-wrap justify-end gap-3 pt-1">
+              <button
+                className="button-ghost"
+                onClick={() => {
+                  setQuery('')
+                  setSelectedSubjects([])
+                  setSelectedInstructors([])
+                  setSort('relevance')
+                  startTransition(() => {
+                    router.push(pathname)
+                  })
+                }}
+                type="button"
+              >
+                Clear
+              </button>
+              <button className="button-primary" onClick={() => updateUrl(1)} type="button">
+                Search
+              </button>
+            </div>
           </div>
-        </div>
         </div>
 
         <div className="grid content-start gap-4">
@@ -227,21 +186,12 @@ export function MadgradesSearchPage({
           </div>
 
           {isPending ? (
-            <section className="grid gap-3">
-              <div className="h-28 rounded-[28px] bg-white/70" />
-              <div className="h-28 rounded-[28px] bg-white/68" />
-              <div className="h-28 rounded-[28px] bg-white/66" />
-            </section>
+            <SearchResultsSkeleton />
           ) : initialResults && initialResults.results.length > 0 ? (
             <>
               <section className="grid gap-3">
                 {initialResults.results.map((course) => (
-                  <CourseResultCard
-                    key={course.uuid}
-                    compareWith={compareWith}
-                    course={course}
-                    replacing={replacing}
-                  />
+                  <CourseResultCard key={course.uuid} course={course} />
                 ))}
               </section>
 

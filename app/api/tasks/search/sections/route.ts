@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import { backendSearchCourses } from '@/lib/server-backend-api'
+import { backendSearchSections } from '@/lib/server-backend-api'
 import {
   COURSE_SEARCH_FAILURE_MESSAGE,
   COURSE_SEARCH_NOT_FOUND_MESSAGE,
-  getCourseSearchValidationMessage,
   normalizeCourseSearchErrorMessage,
-  normalizeCourseSearchQuery,
 } from '@/lib/course-search'
 import { resolveTaskSearchTermId } from '@/lib/server-task-search-terms'
 import { getServerSession } from '@/lib/server-session'
@@ -16,7 +14,7 @@ function toErrorResponse(error: unknown, fallbackMessage: string) {
     error !== null &&
     'status' in error &&
     typeof (error as { status?: unknown }).status === 'number'
-      ? ((error as { status: number }).status)
+      ? (error as { status: number }).status
       : 500
 
   const message = normalizeCourseSearchErrorMessage(error, fallbackMessage)
@@ -38,16 +36,19 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const courseName = normalizeCourseSearchQuery(searchParams.get('courseName') ?? '')
     const termId =
       searchParams.get('termId') ?? resolveTaskSearchTermId(searchParams.get('termKey'))
-    const validationMessage = getCourseSearchValidationMessage(courseName)
+    const subjectId = searchParams.get('subjectId') ?? ''
+    const courseId = searchParams.get('courseId') ?? ''
 
-    if (validationMessage) {
-      return NextResponse.json({ message: validationMessage }, { status: 400 })
+    if (!subjectId || !courseId) {
+      return NextResponse.json(
+        { message: 'Subject and course are required.' },
+        { status: 400 },
+      )
     }
 
-    const results = await backendSearchCourses(token, courseName, termId, 1)
+    const results = await backendSearchSections(token, termId, subjectId, courseId)
     return NextResponse.json(results)
   } catch (error) {
     return toErrorResponse(error, COURSE_SEARCH_FAILURE_MESSAGE)

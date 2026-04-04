@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EmptyState } from '@/components/empty-state'
+import { ProgressLink } from '@/components/navigation-progress'
 import { StatusBadge } from '@/components/status-badge'
 import { useAuth } from '@/components/providers'
 import {
@@ -240,9 +240,9 @@ export function AdminDashboardPage() {
             title="Login required"
           />
           <div className="mt-5 flex justify-center">
-            <Link className="button-primary min-w-[160px]" href="/monitor">
+            <ProgressLink className="button-primary min-w-[160px]" href="/monitor">
               Go to Monitor
-            </Link>
+            </ProgressLink>
           </div>
         </section>
       ) : (
@@ -328,69 +328,73 @@ export function AdminDashboardPage() {
                       </div>
 
                       <div className="mt-4 grid gap-3">
-                        {row.subscriptions.map((subscription) => (
-                          <div
-                            key={subscription.subscriptionId}
-                            className="rounded-[22px] border border-[rgba(154,238,222,0.18)] bg-white/70 px-4 py-4"
-                          >
-                            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                              <div>
-                                <h4 className="text-base font-semibold text-[var(--color-ink)]">
-                                  {subscription.courseDisplayName}
-                                </h4>
-                                <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-                                  Section {subscription.sectionId}
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="pill">
-                                  {subscription.enabled ? 'Enabled' : 'Disabled'}
-                                </span>
-                                <StatusBadge status={subscription.status} />
-                              </div>
-                            </div>
+                        {row.subscriptions.map((subscription) => {
+                          const meetingSummary = getMeetingSummary(subscription.meetingInfo)
 
-                            <div className="mt-3 space-y-2 text-sm leading-7 text-[var(--color-ink-soft)]">
-                              <p>{getMeetingSummary(subscription.meetingInfo)}</p>
-                              <p>{getSeatsSummary(subscription)}</p>
-                            </div>
+                          return (
+                            <div
+                              key={subscription.subscriptionId}
+                              className="rounded-[22px] border border-[rgba(154,238,222,0.18)] bg-white/70 px-4 py-4"
+                            >
+                              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                <div>
+                                  <h4 className="text-base font-semibold text-[var(--color-ink)]">
+                                    {subscription.courseDisplayName}
+                                  </h4>
+                                  <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                                    Section {subscription.sectionId}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="pill">
+                                    {subscription.enabled ? 'Enabled' : 'Disabled'}
+                                  </span>
+                                  <StatusBadge status={subscription.status} />
+                                </div>
+                              </div>
 
-                            <div className="mt-4 flex flex-wrap justify-end gap-3">
-                              <button
-                                className="button-secondary min-w-[120px]"
-                                disabled={
-                                  togglingId === subscription.subscriptionId ||
-                                  subscription.enabled
-                                }
-                                onClick={() =>
-                                  handleToggle(subscription.subscriptionId, true)
-                                }
-                                type="button"
-                              >
-                                {togglingId === subscription.subscriptionId &&
-                                !subscription.enabled
-                                  ? 'Saving...'
-                                  : 'Enable'}
-                              </button>
-                              <button
-                                className="button-danger min-w-[120px]"
-                                disabled={
-                                  togglingId === subscription.subscriptionId ||
+                              <div className="mt-3 space-y-2 text-sm leading-7 text-[var(--color-ink-soft)]">
+                                {meetingSummary ? <p>{meetingSummary}</p> : null}
+                                <p>{getSeatsSummary(subscription)}</p>
+                              </div>
+
+                              <div className="mt-4 flex flex-wrap justify-end gap-3">
+                                <button
+                                  className="button-secondary min-w-[120px]"
+                                  disabled={
+                                    togglingId === subscription.subscriptionId ||
+                                    subscription.enabled
+                                  }
+                                  onClick={() =>
+                                    handleToggle(subscription.subscriptionId, true)
+                                  }
+                                  type="button"
+                                >
+                                  {togglingId === subscription.subscriptionId &&
                                   !subscription.enabled
-                                }
-                                onClick={() =>
-                                  handleToggle(subscription.subscriptionId, false)
-                                }
-                                type="button"
-                              >
-                                {togglingId === subscription.subscriptionId &&
-                                subscription.enabled
-                                  ? 'Saving...'
-                                  : 'Disable'}
-                              </button>
+                                    ? 'Saving...'
+                                    : 'Enable'}
+                                </button>
+                                <button
+                                  className="button-danger min-w-[120px]"
+                                  disabled={
+                                    togglingId === subscription.subscriptionId ||
+                                    !subscription.enabled
+                                  }
+                                  onClick={() =>
+                                    handleToggle(subscription.subscriptionId, false)
+                                  }
+                                  type="button"
+                                >
+                                  {togglingId === subscription.subscriptionId &&
+                                  subscription.enabled
+                                    ? 'Saving...'
+                                    : 'Disable'}
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </article>
                   ))

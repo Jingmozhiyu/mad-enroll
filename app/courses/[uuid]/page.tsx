@@ -8,11 +8,10 @@ function getSingleParam(value: string | string[] | undefined) {
 
 function parseSelection(
   params: Record<string, string | string[] | undefined>,
-  prefix = '',
 ): CourseCompareState {
   return {
-    instructorId: Number(getSingleParam(params[`${prefix}instructorId`]) || '0'),
-    termCode: Number(getSingleParam(params[`${prefix}termCode`]) || '0'),
+    instructorId: Number(getSingleParam(params.instructorId) || '0'),
+    termCode: Number(getSingleParam(params.termCode) || '0'),
   }
 }
 
@@ -25,19 +24,15 @@ export default async function CoursePage({
 }) {
   const { uuid } = await params
   const nextSearchParams = await searchParams
-  const compareWith = getSingleParam(nextSearchParams.compareWith) || null
-  const initialSelection1 = parseSelection(nextSearchParams)
-  const initialSelection2 = parseSelection(nextSearchParams, 'course2')
+  const initialSelection = parseSelection(nextSearchParams)
 
   if (!hasMadgradesToken()) {
     return (
       <MadgradesCoursePage
-        compareWith={compareWith}
         course={null}
         error="Madgrades API token is missing."
         grades={null}
-        initialSelection1={initialSelection1}
-        initialSelection2={initialSelection2}
+        initialSelection={initialSelection}
         uuid={uuid}
       />
     )
@@ -45,39 +40,25 @@ export default async function CoursePage({
 
   let course = null
   let grades = null
-  let compareCourse = null
-  let compareGrades = null
   let error: string | null = null
 
   try {
-    const [nextCourse, nextGrades, compareData] = await Promise.all([
+    const [nextCourse, nextGrades] = await Promise.all([
       fetchMadgradesCourse(uuid),
       fetchMadgradesCourseGrades(uuid),
-      compareWith
-        ? Promise.all([
-            fetchMadgradesCourse(compareWith),
-            fetchMadgradesCourseGrades(compareWith),
-          ])
-        : Promise.resolve([null, null] as const),
     ])
     course = nextCourse
     grades = nextGrades
-    compareCourse = compareData[0]
-    compareGrades = compareData[1]
   } catch (nextError) {
     error = nextError instanceof Error ? nextError.message : 'Failed to load course.'
   }
 
   return (
     <MadgradesCoursePage
-      compareCourse={compareCourse}
-      compareGrades={compareGrades}
-      compareWith={compareWith}
       course={course}
       error={error}
       grades={grades}
-      initialSelection1={initialSelection1}
-      initialSelection2={initialSelection2}
+      initialSelection={initialSelection}
       uuid={uuid}
     />
   )

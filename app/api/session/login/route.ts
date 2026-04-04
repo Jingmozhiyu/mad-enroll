@@ -14,20 +14,41 @@ function buildCookieOptions() {
   }
 }
 
+function toErrorResponse(error: unknown, fallbackMessage: string) {
+  const status =
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof (error as { status?: unknown }).status === 'number'
+      ? (error as { status: number }).status
+      : 500
+
+  const message =
+    error instanceof Error && error.message.trim()
+      ? error.message
+      : fallbackMessage
+
+  return NextResponse.json({ message }, { status })
+}
+
 export async function POST(request: Request) {
-  const payload = (await request.json()) as AuthPayload
-  const nextSession = await backendLogin(payload)
-  const store = await cookies()
-  const cookieOptions = buildCookieOptions()
+  try {
+    const payload = (await request.json()) as AuthPayload
+    const nextSession = await backendLogin(payload)
+    const store = await cookies()
+    const cookieOptions = buildCookieOptions()
 
-  store.set(AUTH_TOKEN_COOKIE, nextSession.token, cookieOptions)
-  store.set(AUTH_EMAIL_COOKIE, nextSession.email, cookieOptions)
-  store.set(AUTH_USER_ID_COOKIE, nextSession.userId, cookieOptions)
+    store.set(AUTH_TOKEN_COOKIE, nextSession.token, cookieOptions)
+    store.set(AUTH_EMAIL_COOKIE, nextSession.email, cookieOptions)
+    store.set(AUTH_USER_ID_COOKIE, nextSession.userId, cookieOptions)
 
-  const publicSession: ClientSession = {
-    email: nextSession.email,
-    userId: nextSession.userId,
+    const publicSession: ClientSession = {
+      email: nextSession.email,
+      userId: nextSession.userId,
+    }
+
+    return NextResponse.json(publicSession)
+  } catch (error) {
+    return toErrorResponse(error, 'Login failed.')
   }
-
-  return NextResponse.json(publicSession)
 }

@@ -1,35 +1,70 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { Pagination } from '@/components/pagination'
 import { StatusBadge } from '@/components/status-badge'
-import { getMeetingSummary, getSeatsSummary } from '@/lib/format'
-import type { Task } from '@/lib/types'
+import {
+  getMeetingDetailLines,
+  getOpenSeatsSummary,
+  getWaitlistSeatsSummary,
+} from '@/lib/format'
+import type { TaskSearchTermKey } from '@/lib/task-search-terms'
+import type { SearchCourseHit, Task } from '@/lib/types'
 
 type SearchOverlayProps = {
   open: boolean
+  searchStage: 'courses' | 'sections'
   searchValue: string
-  onSearchValueChange: (value: string) => void
-  onClose: () => void
-  onSubmit: () => void
-  results: Task[]
-  isSearching: boolean
+  selectedTermKey: TaskSearchTermKey
+  termOptions: ReadonlyArray<{ key: TaskSearchTermKey; label: string }>
   searchMessage: string
-  onAdd: (sectionId: string) => void
-  addingSectionId: string | null
+  courseResults: SearchCourseHit[]
+  coursePage: number
+  courseTotalPages: number
+  selectedCourse: SearchCourseHit | null
+  sectionResults: Task[]
+  isSearchingCourses: boolean
+  isLoadingSections: boolean
+  isTransitioning: boolean
+  addingDocId: string | null
+  onSearchValueChange: (value: string) => void
+  onTermChange: (termKey: TaskSearchTermKey) => void
+  onSubmit: () => void
+  onClose: () => void
+  onCoursePageChange: (page: number) => void
+  onOpenSections: (course: SearchCourseHit) => void
+  onBackToCourses: () => void
+  onAdd: (docId: string) => void
 }
 
 export function SearchOverlay({
   open,
+  searchStage,
   searchValue,
-  onSearchValueChange,
-  onClose,
-  onSubmit,
-  results,
-  isSearching,
+  selectedTermKey,
+  termOptions,
   searchMessage,
+  courseResults,
+  coursePage,
+  courseTotalPages,
+  selectedCourse,
+  sectionResults,
+  isSearchingCourses,
+  isLoadingSections,
+  isTransitioning,
+  addingDocId,
+  onSearchValueChange,
+  onTermChange,
+  onSubmit,
+  onClose,
+  onCoursePageChange,
+  onOpenSections,
+  onBackToCourses,
   onAdd,
-  addingSectionId,
 }: SearchOverlayProps) {
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+
   useEffect(() => {
     if (!open) {
       return
@@ -45,18 +80,35 @@ export function SearchOverlay({
     return () => window.removeEventListener('keydown', handleKeydown)
   }, [onClose, open])
 
-  if (!open) {
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus()
+    })
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
+
+  if (!open || typeof document === 'undefined') {
     return null
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(23,49,60,0.18)] px-4 py-6 backdrop-blur-sm md:py-10">
       <div className="glass-card relative max-h-[90vh] w-full max-w-5xl overflow-hidden">
         <div className="flex items-start justify-between gap-4 border-b border-[rgba(154,238,222,0.2)] px-6 py-5 md:px-8">
           <div>
             <p className="eyebrow">Search Course</p>
             <h2 className="mt-2 text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
-              Search sections before adding them to your monitor list.
+              Search courses, inspect sections, then add to monitor.
             </h2>
           </div>
           <button className="button-ghost min-w-[96px]" onClick={onClose} type="button">
@@ -77,80 +129,192 @@ export function SearchOverlay({
                 Course name
               </span>
               <input
+                ref={searchInputRef}
                 className="input-shell"
                 onChange={(event) => onSearchValueChange(event.target.value)}
-                placeholder="COMP SCI 240"
+                placeholder="COMP SCI 571"
                 value={searchValue}
               />
             </label>
-            <div className="flex items-end">
+            <div className="flex flex-col items-stretch justify-end">
               <button
                 className="button-primary w-full min-w-[140px]"
-                disabled={isSearching}
+                disabled={isSearchingCourses || isLoadingSections}
                 type="submit"
               >
-                {isSearching ? 'Searching...' : 'Search'}
+                {isSearchingCourses ? 'Searching...' : 'Search'}
               </button>
             </div>
           </form>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-[var(--color-ink-soft)]">{searchMessage}</p>
-            <span className="pill">{results.length} sections</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-ink-soft)]">
+                <span className="font-medium">Term</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {termOptions.map((term, index) => {
+                    const isActive = term.key === selectedTermKey
+
+                    return (
+                      <div key={term.key} className="flex items-center gap-2">
+                        {index > 0 ? (
+                          <span aria-hidden="true" className="text-[rgba(52,95,131,0.3)]">
+                            /
+                          </span>
+                        ) : null}
+                        <button
+                          className={[
+                            'rounded-none bg-transparent px-0 py-0 transition focus-visible:outline-none',
+                            isActive
+                              ? 'font-semibold text-[var(--color-deep-teal)] underline underline-offset-4'
+                              : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]',
+                          ].join(' ')}
+                          onClick={() => onTermChange(term.key)}
+                          type="button"
+                        >
+                          {term.label}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <span className="pill">
+                {searchStage === 'courses'
+                  ? `${courseResults.length} course${courseResults.length === 1 ? '' : 's'}`
+                  : `${sectionResults.length} section${sectionResults.length === 1 ? '' : 's'}`}
+              </span>
+            </div>
           </div>
 
-          {results.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-[rgba(154,238,222,0.4)] bg-white/55 px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
-              Search for a course and matching sections will appear here.
+          {searchStage === 'sections' && selectedCourse ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[rgba(154,238,222,0.2)] bg-white/65 px-4 py-4">
+              <div>
+                <p className="text-lg font-semibold text-[var(--color-ink)]">
+                  {selectedCourse.courseDesignation}
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{selectedCourse.title}</p>
+              </div>
+              <button className="button-ghost min-w-[132px]" onClick={onBackToCourses} type="button">
+                Back to Courses
+              </button>
             </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {results.map((section) => {
-                const isExisting = Boolean(section.id) && section.enabled !== false
-                const isAdding = addingSectionId === section.sectionId
+          ) : null}
 
-                return (
-                  <article
-                    key={`${section.sectionId}-${section.id ?? 'new'}`}
-                    className="rounded-[26px] border border-[rgba(154,238,222,0.22)] bg-white/75 px-4 py-4 shadow-[0_18px_40px_rgba(50,90,81,0.08)]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-base font-semibold text-[var(--color-ink)]">
-                          {section.courseDisplayName}
-                        </h3>
-                        <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-                          Section {section.sectionId}
-                        </p>
-                      </div>
-                      <StatusBadge status={section.status} />
-                    </div>
-
-                    <div className="mt-4 space-y-2 text-sm leading-6 text-[var(--color-ink-soft)]">
-                      <p>{getMeetingSummary(section.meetingInfo)}</p>
-                      <p>{getSeatsSummary(section)}</p>
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-deep-teal)]">
-                        {isExisting ? 'Already added' : 'Ready to add'}
-                      </span>
-                      <button
-                        className={isExisting ? 'button-ghost min-w-[110px]' : 'button-info min-w-[110px]'}
-                        disabled={isExisting || isAdding}
-                        onClick={() => onAdd(section.sectionId)}
-                        type="button"
+          <div
+            className={[
+              'min-h-[360px] transition-all duration-200 ease-out',
+              isTransitioning ? 'translate-y-3 opacity-0' : 'translate-y-0 opacity-100',
+            ].join(' ')}
+          >
+            {searchStage === 'courses' ? (
+              courseResults.length === 0 ? (
+                <div className="rounded-[28px] border border-dashed border-[rgba(154,238,222,0.4)] bg-white/55 px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
+                  Search for a course to browse matching UW course entries here.
+                </div>
+              ) : (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {courseResults.map((course) => (
+                      <article
+                        key={`${course.subjectId}-${course.courseId}-${course.courseDesignation}`}
+                        className="rounded-[18px] border border-[rgba(154,238,222,0.22)] bg-white/75 px-4 py-3.5 shadow-[0_18px_40px_rgba(50,90,81,0.08)]"
                       >
-                        {isExisting ? 'Added' : isAdding ? 'Adding...' : 'Add'}
-                      </button>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          )}
+                        <div className="grid gap-1.5">
+                          <div className="flex items-start justify-between gap-3">
+                            <h3 className="min-w-0 flex-1 text-lg font-semibold leading-6 text-[var(--color-ink)]">
+                              {course.courseDesignation}
+                            </h3>
+                            <button
+                              className="shrink-0 rounded-none bg-transparent px-0 py-0 text-sm font-semibold text-[var(--color-deep-teal)] underline-offset-4 transition hover:text-[var(--color-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(136,221,68,0.45)]"
+                              disabled={isLoadingSections}
+                              onClick={() => onOpenSections(course)}
+                              type="button"
+                            >
+                              {isLoadingSections ? 'Loading...' : 'See Sections'}
+                            </button>
+                          </div>
+                          <p className="text-sm leading-6 text-[var(--color-ink-soft)]">{course.title}</p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+
+                  <div className="px-2 py-5">
+                    <Pagination
+                      currentPage={coursePage}
+                      onPageChange={onCoursePageChange}
+                      totalPages={courseTotalPages}
+                    />
+                  </div>
+                </>
+              )
+            ) : sectionResults.length === 0 ? (
+              <div className="rounded-[28px] border border-dashed border-[rgba(154,238,222,0.4)] bg-white/55 px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
+                No section details are available for this course right now.
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {sectionResults.map((section) => {
+                  const isExisting = Boolean(section.id) && section.enabled !== false
+                  const isAdding = addingDocId === section.docId
+                  const meetingDetails = getMeetingDetailLines(section.meetingInfo)
+
+                  return (
+                    <article
+                      key={section.docId}
+                      className="rounded-[26px] border border-[rgba(154,238,222,0.22)] bg-white/75 px-4 py-4 shadow-[0_18px_40px_rgba(50,90,81,0.08)]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-base font-semibold text-[var(--color-ink)]">
+                            {section.courseDisplayName}
+                          </h3>
+                          <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+                            Section {section.sectionId}
+                          </p>
+                        </div>
+                        <StatusBadge status={section.status} />
+                      </div>
+
+                      <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--color-ink-soft)]">
+                        {meetingDetails.length > 0 ? (
+                          <div className="space-y-2">
+                            {meetingDetails.map((meeting, index) => (
+                              <div key={`${section.docId}-meeting-${index}`} className="space-y-0.5">
+                                <p>{meeting.schedule}</p>
+                                {meeting.location ? <p>{meeting.location}</p> : null}
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        <p>{getOpenSeatsSummary(section)}</p>
+                        <p>{getWaitlistSeatsSummary(section)}</p>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-deep-teal)]">
+                          {isExisting ? 'Already added' : 'Ready to add'}
+                        </span>
+                        <button
+                          className={isExisting ? 'button-ghost min-w-[110px]' : 'button-info min-w-[110px]'}
+                          disabled={isExisting || isAdding}
+                          onClick={() => onAdd(section.docId)}
+                          type="button"
+                        >
+                          {isExisting ? 'Added' : isAdding ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { normalizeCourseSearchErrorMessage } from '@/lib/course-search'
 import type {
   AlertDeadLetter,
   AlertDeliveryLog,
@@ -6,8 +7,10 @@ import type {
   AdminUserSubscriptions,
   AuthPayload,
   ClientSession,
+  FeedbackPayload,
   MailDailyStat,
   SchedulerStatus,
+  SearchCourseHit,
   Task,
   TestEmailPayload,
 } from '@/lib/types'
@@ -20,18 +23,31 @@ const api = axios.create({
 
 export function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError(error)) {
+    const responseData = error.response?.data
     const responseMessage =
-      typeof error.response?.data?.msg === 'string'
-        ? error.response.data.msg
-        : typeof error.response?.data?.message === 'string'
-          ? error.response.data.message
-          : null
+      typeof responseData === 'string'
+        ? responseData.trim()
+        : typeof responseData?.msg === 'string'
+          ? responseData.msg
+          : typeof responseData?.message === 'string'
+            ? responseData.message
+            : typeof responseData?.error === 'string'
+              ? responseData.error
+              : null
 
-    return responseMessage || error.message || fallbackMessage
+    if (responseMessage) {
+      return normalizeCourseSearchErrorMessage(responseMessage, fallbackMessage)
+    }
+
+    if ((error.response?.status ?? 0) >= 500) {
+      return fallbackMessage
+    }
+
+    return normalizeCourseSearchErrorMessage(error.message, fallbackMessage)
   }
 
   if (error instanceof Error) {
-    return error.message
+    return normalizeCourseSearchErrorMessage(error, fallbackMessage)
   }
 
   return fallbackMessage
@@ -64,26 +80,38 @@ export async function fetchTasks() {
   return response.data
 }
 
-export async function searchCourse(courseName: string) {
-  const response = await api.get<Task[]>('/api/tasks/search', {
-    params: { courseName },
+export async function searchCourses(courseName: string, termKey: string, page: number) {
+  const response = await api.get<SearchCourseHit[]>('/api/tasks/search/courses', {
+    params: { courseName, page, termKey },
   })
 
   return response.data
 }
 
-export async function addTask(sectionId: string) {
+export async function searchSections(termKey: string, subjectId: string, courseId: string) {
+  const response = await api.get<Task[]>('/api/tasks/search/sections', {
+    params: { courseId, subjectId, termKey },
+  })
+
+  return response.data
+}
+
+export async function addTask(docId: string) {
   const response = await api.post<Task>('/api/tasks', null, {
-    params: { sectionId },
+    params: { docId },
   })
 
   return response.data
 }
 
-export async function deleteTask(sectionId: string) {
+export async function deleteTask(docId: string) {
   await api.delete('/api/tasks', {
-    params: { sectionId },
+    params: { docId },
   })
+}
+
+export async function submitFeedback(payload: FeedbackPayload) {
+  await api.post('/api/feedback', payload)
 }
 
 export async function fetchAdminSubscriptions() {

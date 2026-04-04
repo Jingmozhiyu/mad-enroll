@@ -1,37 +1,16 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useMemo } from 'react'
+import { useProgressRouter } from '@/components/navigation-progress'
 import type { MadgradesCourse } from '@/lib/madgrades/types'
 import { getCourseDisplayLine } from '@/lib/madgrades/utils'
 
 type CourseResultCardProps = {
   course: MadgradesCourse
-  compareWith?: string | null
-  replacing?: string | null
 }
 
-export function CourseResultCard({
-  course,
-  compareWith,
-  replacing,
-}: CourseResultCardProps) {
-  const router = useRouter()
-  const href = useMemo(() => {
-    if (compareWith) {
-      if (replacing === '1') {
-        return `/courses/${course.uuid}?compareWith=${compareWith}`
-      }
-
-      if (replacing === '2') {
-        return `/courses/${compareWith}?compareWith=${course.uuid}`
-      }
-
-      return `/courses/${compareWith}?compareWith=${course.uuid}`
-    }
-
-    return `/courses/${course.uuid}`
-  }, [compareWith, course.uuid, replacing])
+export function CourseResultCard({ course }: CourseResultCardProps) {
+  const router = useProgressRouter()
+  const href = `/courses/${course.uuid}`
 
   function handleOpen() {
     router.push(href)
@@ -52,12 +31,8 @@ export function CourseResultCard({
         </div>
 
         <div className="flex items-center justify-between gap-4 md:min-w-[180px] md:flex-col md:items-end">
-          <span className="text-sm text-[var(--color-ink-soft)]">
-            {compareWith ? 'Use this course in compare view' : 'Open course analytics'}
-          </span>
-          <span className="font-semibold text-[var(--color-deep-teal)]">
-            {compareWith ? 'Compare' : 'Open'}
-          </span>
+          <span className="text-sm text-[var(--color-ink-soft)]">Open course analytics</span>
+          <span className="font-semibold text-[var(--color-deep-teal)]">Open</span>
         </div>
       </div>
     </button>

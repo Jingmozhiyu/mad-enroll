@@ -76,6 +76,7 @@ Response `data`: `TaskRespDto[]`
 [
   {
     "id": "subscription-uuid",
+    "docId": "1272-A1-266-240-002-330",
     "sectionId": "66400",
     "courseId": "011630",
     "subjectCode": "266",
@@ -85,24 +86,58 @@ Response `data`: `TaskRespDto[]`
     "capacity": 24,
     "waitlistSeats": 3,
     "waitlistCapacity": 3,
-    "meetingInfo": "[{\"meetingDays\":\"TR\",\"meetingTimeStart\":73800000,\"meetingTimeEnd\":78300000}]",
+    "onlineOnly": false,
+    "meetingInfo": "[{\"meetingDays\":\"TR\",\"meetingTimeStart\":73800000,\"meetingTimeEnd\":78300000,\"buildingName\":\"Bascom Hall\",\"room\":\"272\"}]",
     "status": "OPEN",
     "enabled": true
   }
 ]
 ```
 
-### `GET /api/tasks/search?courseName=COMP SCI 240`
+### `GET /api/tasks/search/courses?courseName=640&termId=1272&page=1`
 
 Meaning:
-- Search course
-- Sync backend data
-- Return sections to frontend
-- Does not create subscription
+- Search course-level hits only
+- Does not crawl section details yet
+- Supports fuzzy queries and paging through UW search results
 - Works for any subject supported by the UW search API, not only `COMP SCI`
 
 Query params:
 - `courseName`: string
+- `termId`: 4-digit UW term id
+- `page`: 1-based result page, defaults to `1`
+
+Response `data`: `SearchCourseRespDto[]`
+
+Example response:
+
+```json
+[
+  {
+    "courseDesignation": "COMP SCI 640",
+    "title": "Introduction to Computer Networks",
+    "subjectId": "266",
+    "courseId": "026032"
+  }
+]
+```
+
+Notes:
+- `subjectId` and `courseId` from one search hit should be passed into the section search endpoint below
+- `termId` is not repeated in the payload; the frontend should continue using the same `termId` it searched with
+
+### `GET /api/tasks/search/sections?termId=1272&subjectId=266&courseId=026032`
+
+Meaning:
+- Crawl one concrete course selected from the course-search results
+- Sync backend course/section rows
+- Return section rows to frontend
+- Does not create subscription
+
+Query params:
+- `termId`: 4-digit UW term id
+- `subjectId`: subject code returned by `search/courses`
+- `courseId`: course id returned by `search/courses`
 
 Response `data`: `TaskRespDto[]`
 
@@ -116,6 +151,7 @@ Example response:
 [
   {
     "id": null,
+    "docId": "1272-A1-266-571-001-123",
     "sectionId": "69079",
     "courseId": "026032",
     "subjectCode": "266",
@@ -125,20 +161,21 @@ Example response:
     "capacity": 24,
     "waitlistSeats": 0,
     "waitlistCapacity": 0,
-    "meetingInfo": "[{\"meetingDays\":\"TR\",\"meetingTimeStart\":55800000,\"meetingTimeEnd\":60300000}]",
+    "onlineOnly": false,
+    "meetingInfo": "[{\"meetingDays\":\"TR\",\"meetingTimeStart\":55800000,\"meetingTimeEnd\":60300000,\"buildingName\":\"Van Vleck Hall\",\"room\":\"B203\"}]",
     "status": "OPEN",
     "enabled": false
   }
 ]
 ```
 
-### `POST /api/tasks?sectionId=66400`
+### `POST /api/tasks?docId=1272-A1-266-240-002-330`
 
 Meaning:
-- Create one subscription for the current user by section id
+- Create one subscription for the current user by unique section doc id
 
 Query params:
-- `sectionId`: 5-digit section id
+- `docId`: unique section doc id
 
 Body:
 - None
@@ -148,14 +185,14 @@ Response `data`: `TaskRespDto`
 Notes:
 - Returns the same `TaskRespDto` shape as `GET /api/tasks`, including seat fields
 
-### `DELETE /api/tasks?sectionId=66400`
+### `DELETE /api/tasks?docId=1272-A1-266-240-002-330`
 
 Meaning:
 - Soft delete
 - Actually sets current user's subscription `enabled=false`
 
 Query params:
-- `sectionId`: 5-digit section id
+- `docId`: unique section doc id
 
 Body:
 - None
@@ -191,6 +228,7 @@ Response `data`: `AdminUserSubsRespDto[]`
       {
         "subscriptionId": "subscription-uuid",
         "enabled": true,
+        "docId": "1272-A1-266-240-002-330",
         "courseId": "011630",
         "subjectCode": "266",
         "catalogNumber": "240",
@@ -201,7 +239,8 @@ Response `data`: `AdminUserSubsRespDto[]`
         "capacity": 24,
         "waitlistSeats": 3,
         "waitlistCapacity": 3,
-        "meetingInfo": "[{\"meetingDays\":\"M\",\"meetingTimeStart\":81300000,\"meetingTimeEnd\":84300000}]"
+        "onlineOnly": false,
+        "meetingInfo": "[{\"meetingDays\":\"M\",\"meetingTimeStart\":81300000,\"meetingTimeEnd\":84300000,\"buildingName\":\"Van Vleck Hall\",\"room\":\"B203\"}]"
       }
     ]
   }

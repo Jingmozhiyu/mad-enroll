@@ -24,21 +24,65 @@ function formatClock(milliseconds?: number) {
   }).format(new Date(milliseconds))
 }
 
-export function getMeetingSummary(meetingInfo: string) {
-  const meetings = parseMeetingInfo(meetingInfo)
-
-  if (meetings.length === 0) {
-    return 'Schedule unavailable'
+function normalizeMeetingDays(meetingDays?: string | null) {
+  if (typeof meetingDays !== 'string') {
+    return null
   }
 
-  return meetings
-    .map((meeting) => {
-      const days = meeting.meetingDays?.trim() || 'TBA'
-      const start = formatClock(meeting.meetingTimeStart)
-      const end = formatClock(meeting.meetingTimeEnd)
-      return `${days} ${start} - ${end}`
-    })
-    .join(' / ')
+  const trimmed = meetingDays.trim()
+  if (!trimmed || trimmed.toLowerCase() === 'null') {
+    return null
+  }
+
+  return trimmed
+}
+
+function formatMeetingLocation(room?: string | null, buildingName?: string | null) {
+  const nextRoom = typeof room === 'string' ? room.trim() : ''
+  const building = typeof buildingName === 'string' ? buildingName.trim() : ''
+
+  if (nextRoom && building) {
+    return `${nextRoom} ${building}`
+  }
+
+  return nextRoom || building || null
+}
+
+function formatMeetingSchedule(meeting: MeetingSlot) {
+  const days = normalizeMeetingDays(meeting.meetingDays)
+  const start = formatClock(meeting.meetingTimeStart)
+  const end = formatClock(meeting.meetingTimeEnd)
+
+  return `${days ?? 'TBA'} ${start} - ${end}`
+}
+
+function getParsedMeetings(meetingInfo: string) {
+  return parseMeetingInfo(meetingInfo).filter((meeting) => Boolean(meeting))
+}
+
+export function getMeetingSummary(meetingInfo: string) {
+  const meetings = getParsedMeetings(meetingInfo)
+
+  if (meetings.length === 0) {
+    return null
+  }
+
+  return meetings.map(formatMeetingSchedule).join(' / ')
+}
+
+export function getMeetingLocationSummary(meetingInfo: string) {
+  const locations = getParsedMeetings(meetingInfo)
+    .map((meeting) => formatMeetingLocation(meeting.room, meeting.buildingName))
+    .filter((location): location is string => Boolean(location))
+
+  return locations.length > 0 ? locations.join(' / ') : null
+}
+
+export function getMeetingDetailLines(meetingInfo: string) {
+  return getParsedMeetings(meetingInfo).map((meeting) => ({
+    schedule: formatMeetingSchedule(meeting),
+    location: formatMeetingLocation(meeting.room, meeting.buildingName),
+  }))
 }
 
 export function sortTasks(tasks: Task[]) {

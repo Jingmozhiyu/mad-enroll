@@ -23,8 +23,6 @@ export default async function SearchPage({
   const sort = getSingleParam(params.sort) || 'relevance'
   const order = getSingleParam(params.order) === 'DESC' ? 'DESC' : 'ASC'
   const page = Number(getSingleParam(params.page) || '1') || 1
-  const compareWith = getSingleParam(params.compareWith) || null
-  const replacing = getSingleParam(params.replacing) || null
 
   let results: MadgradesPaginatedResponse<MadgradesCourse> | null = null
   let error: string | null = null
@@ -46,6 +44,7 @@ export default async function SearchPage({
             : 'relevance',
         order,
         page: page > 0 ? page : 1,
+        perPage: 5,
       })
     } catch (nextError) {
       error = nextError instanceof Error ? nextError.message : 'Search failed.'
@@ -85,22 +84,18 @@ export default async function SearchPage({
   return (
     <MadgradesSearchPage
       key={JSON.stringify({
-        compareWith,
         instructorParams,
         page,
         query,
-        replacing,
         sort,
         subjectParams,
       })}
-      compareWith={compareWith}
       error={error}
       initialInstructors={initialInstructors}
       initialQuery={query}
       initialResults={results}
       initialSort={sort === 'number' && order === 'DESC' ? 'number_desc' : sort}
       initialSubjects={initialSubjects}
-      replacing={replacing}
     />
   )
 }

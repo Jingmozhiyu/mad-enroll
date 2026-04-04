@@ -31,8 +31,17 @@ const defaultBrandLetters = [
 export function BrandMark({
   className,
   variant = 'default',
+  children,
   ...props
 }: BrandMarkProps) {
+  if (children) {
+    return (
+      <span aria-label="MadEnroll brandmark" className={className} {...props}>
+        {children}
+      </span>
+    )
+  }
+
   const letters = variant === 'colorful' ? colorfulBrandLetters : defaultBrandLetters
 
   return (

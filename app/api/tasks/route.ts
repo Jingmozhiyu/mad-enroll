@@ -42,8 +42,8 @@ export async function POST(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const sectionId = searchParams.get('sectionId') ?? ''
-    const task = await backendAddTask(token, sectionId)
+    const docId = searchParams.get('docId') ?? ''
+    const task = await backendAddTask(token, docId)
     return NextResponse.json(task)
   } catch (error) {
     return toErrorResponse(error, 'Failed to add task.')
@@ -58,8 +58,8 @@ export async function DELETE(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const sectionId = searchParams.get('sectionId') ?? ''
-    await backendDeleteTask(token, sectionId)
+    const docId = searchParams.get('docId') ?? ''
+    await backendDeleteTask(token, docId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return toErrorResponse(error, 'Failed to delete task.')

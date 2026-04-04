@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useProgressRouter } from '@/components/navigation-progress'
 import { fetchCourseSuggestions } from '@/lib/madgrades/client-api'
 import type { MadgradesCourseSuggestion } from '@/lib/madgrades/types'
 
@@ -22,7 +22,7 @@ export function CourseQueryInput({
   placeholder,
   inputClassName,
 }: CourseQueryInputProps) {
-  const router = useRouter()
+  const router = useProgressRouter()
   const [suggestions, setSuggestions] = useState<MadgradesCourseSuggestion[]>([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -43,7 +43,7 @@ export function CourseQueryInput({
         const results = await fetchCourseSuggestions(value.trim())
         setSuggestions(results)
         setOpen(true)
-        setActiveIndex(results.length > 0 ? 0 : -1)
+        setActiveIndex(-1)
       } catch {
         setSuggestions([])
         setActiveIndex(-1)
