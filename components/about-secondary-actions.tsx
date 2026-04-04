@@ -31,19 +31,23 @@ const developerLogEntry = {
 
 const faqItems: FaqItem[] = [
   {
-    question: 'Placeholder FAQ question one',
+    question: 'In which situation will I receive email for open/waitlist seats?',
     answer:
-      'Write the answer for FAQ item one here. This text lives directly in the TSX file so you can update it without editing the UI structure.',
+      "Email is sent when a section's status changes from: closed to open / closed to waitlist / waitlist to open. \n" +
+        "Since one email may not guarantee successful enrollment, a new email will be sent again when new seats are available as scenarios above. " +
+        "Please manually remove the subscription after getting into the class.",
   },
   {
-    question: 'Placeholder FAQ question two',
+    question: 'How will my personal information be stored and used?',
     answer:
-      'Write the answer for FAQ item two here. You can replace this with onboarding notes, app behavior details, or common troubleshooting guidance.',
+      'The grade distribution searching page does not require an account. The registration only requires email address to send alerts. Password is encrypted.',
   },
   {
-    question: 'Placeholder FAQ question three',
+    question: 'I will receive an email from Office of the Registrar if I get off the waitlist. Why do I need an "extra" email service?',
     answer:
-      'Write the answer for FAQ item three here. Keep or remove items as needed depending on how many entries you want to show.',
+      'For most of popular courses, the waitlist seats are fulfilled immediately. e.g. BIOCHEM 104. ' +
+        'If a student is not even in the waitlist, it will be much harder to getting into the course, whether by emailing the instructor or waiting for an official opening.' +
+        'Besides, some courses will add new open seats as it appears closed. e.g. Basic Math courses like MATH 340 during SOAR, usually add 1-2 seats for each section at 8 a.m.'
   },
 ]
 
@@ -161,7 +165,9 @@ function AccordionItem({
 
       {isOpen ? (
         <div className="border-t border-[rgba(154,238,222,0.14)] px-5 py-5">
-          <p className="text-sm leading-7 text-[var(--color-ink-soft)]">{item.answer}</p>
+            <p className="whitespace-pre-line text-sm leading-7 text-[var(--color-ink-soft)]">
+                {item.answer}
+            </p>
         </div>
       ) : null}
     </div>
@@ -180,9 +186,9 @@ function ThankYouToast({ visible }: { visible: boolean }) {
         visible ? 'translate-y-0 opacity-100' : '-translate-y-3 opacity-0',
       ].join(' ')}
     >
-      <div className="glass-card flex w-full max-w-md items-center gap-4 px-5 py-4">
-        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-[18px] bg-white/70">
-          <Image alt="Thank you" fill sizes="56px" src="/favicon.svg" />
+      <div className="flex w-full max-w-lg items-center gap-5 rounded-[8px] border border-[rgba(23,49,60,0.08)] bg-white px-5 py-4 shadow-[0_14px_36px_rgba(23,49,60,0.12)]">
+        <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white">
+          <Image alt="Thank you" height={112} src="/img.png" width={112} />
         </div>
         <div>
           <p className="text-lg font-semibold text-[var(--color-ink)]">Thank you for the note.</p>

@@ -78,8 +78,8 @@ export function WelcomeHero() {
             ].join(' ')}
           >
             <BrandMark>
-              <span style={{ color: '#33ccbb' }}>Secure</span> Your Seat.{' '}
-              <span style={{ color: '#33ccbb' }}>Ace</span> Your Class!
+              Secure your <span style={{ color: '#33ccbb' }}>Seat.</span>{' '}
+              Ace your <span style={{ color: '#33ccbb' }}>Class.</span>
             </BrandMark>
           </h1>
           <p
