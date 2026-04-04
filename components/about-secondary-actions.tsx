@@ -45,8 +45,8 @@ const faqItems: FaqItem[] = [
   {
     question: 'I will receive an email from Office of the Registrar if I get off the waitlist. Why do I need an "extra" email service?',
     answer:
-      'For most of popular courses, the waitlist seats are fulfilled immediately. e.g. BIOCHEM 104. ' +
-        'If a student is not even in the waitlist, it will be much harder to getting into the course, whether by emailing the instructor or waiting for an official opening.' +
+      'For most of popular courses, the waitlist seats fill up almost instantly. e.g. BIOCHEM 104. ' +
+        'If a student is not even in the waitlist, it will be much harder to get into the course, whether by emailing the instructor or waiting for an official opening.' +
         'Besides, some courses will add new open seats as it appears closed. e.g. Basic Math courses like MATH 340 during SOAR, usually add 1-2 seats for each section at 8 a.m.'
   },
 ]
