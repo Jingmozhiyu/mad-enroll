@@ -86,68 +86,31 @@ export function AboutHero() {
           <div className="about-story-shell">
             <div className="grid gap-6 md:gap-6">
               <p className="about-copy">
+                <span className="text-lg font-semibold text-[var(--color-ink)]">What it does</span>
+                <br />
                 <span className="about-placeholder">
-                  MadEnroll is an{' '}
-                  <a
-                    className="about-inline-link"
-                    href="https://github.com/Jingmozhiyu/mad-enroll"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    open-source
-                  </a>{' '}
-                  Web App dedicated to <strong>course enrollment</strong> for the{' '}
-                  <a
-                    className="about-inline-link"
-                    href="https://www.cs571.org/"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    CS 571
-                  </a>{' '}
-                  Web Project. The energetic color palette is inspired by{' '}
-                  <a
-                    className="about-inline-link-mmj italic"
-                    href="https://projectsekai.fandom.com/wiki/MORE_MORE_JUMP!"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <span style={{ color: '#6ccb20' }}>MORE MORE JUMP!</span>
-                  </a>
-                  .
+                  MadEnroll is a UW-Madison enrollment tool that tracks course and
+                  section availability and sends email alerts when seats open up.
                 </span>
               </p>
 
               <p className="about-copy">
+                <span className="text-lg font-semibold text-[var(--color-ink)]">When it helps</span>
+                <br />
                 <span className="about-placeholder">
-                  Not getting a spot on the waitlist for a required class,
-                  or hearing rumors about a tough instructor, can stress
-                  students including me out for months. MadEnroll helps take that stress away.
+                  It is most useful when availability changes quickly, during
+                  enrollment, SOAR, and the first week of semester, especially if you are
+                  watching a specific section instead of just any open seat in a
+                  course.
                 </span>
               </p>
 
               <p className="about-copy">
+                <span className="text-lg font-semibold text-[var(--color-ink)]">Also included</span>
+                <br />
                 <span className="about-placeholder">
-                  It&apos;s built with serverless tech <strong>Next.js</strong>. Powered by a{' '}
-                  <a
-                    className="about-inline-link"
-                    href="https://github.com/Jingmozhiyu/uw-track"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    custom Java backend
-                  </a>{' '}
-                  and the{' '}
-                  <a
-                    className="about-inline-link"
-                    href="https://api.madgrades.com/"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Madgrades API
-                  </a>
-                  , MadEnroll aims to offer a <strong>better UI</strong> and
-                  <strong> faster performance</strong> than other UW course app out there.
+                  MadEnroll also includes grade distributions as a secondary tool, so
+                  you can compare course options while deciding what to monitor.
                 </span>
               </p>
 
@@ -155,9 +118,30 @@ export function AboutHero() {
 
               <p className="about-copy">
                 <span className="about-placeholder">
-                  <strong>Special Thanks to:</strong>
-                  <br />
-                  Professor{' '}
+                  Built and maintained by{' '}
+                  <a
+                    className="about-inline-link"
+                    href="https://pages.cs.wisc.edu/~ygong68/"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    Yinwen Gong
+                  </a> for{' '}
+                    <a
+                    className="about-inline-link"
+                    href="https://cs571.org"
+                    rel="noreferrer"
+                    target="_blank"
+                >
+                    CS 571
+                  </a>{' '}
+                  Project.
+                </span>
+              </p>
+
+              <p className="about-copy">
+                <span className="about-placeholder">
+                  Special thanks to Professor{' '}
                   <a
                     className="about-inline-link"
                     href="https://coletnelson.us/"
@@ -165,41 +149,27 @@ export function AboutHero() {
                     target="_blank"
                   >
                     Cole Nelson
-                  </a>
-                  , for motivating my interest in web development;
-                  <br />
+                  </a>{' '}
+                  for encouraging this project, and to{' '}
                   <a
                     className="about-inline-link"
                     href="https://madgrades.com/"
                     rel="noreferrer"
                     target="_blank"
                   >
-                    Madgrades.com
-                  </a>
-                  , for the open-source API and the React-based{' '}
+                    Madgrades
+                  </a>{' '}
+                  for providing the{' '}
                   <a
                     className="about-inline-link"
-                    href="https://github.com/Madgrades/madgrades.com"
+                    href="https://api.madgrades.com/"
                     rel="noreferrer"
                     target="_blank"
                   >
-                    project prototype
-                  </a>
-                  .
+                    API
+                  </a>{' '}
+                  that powers the grade distribution feature.
                 </span>
-              </p>
-
-              <p className="about-meta">
-                Created by{' '}
-                <a
-                  className="about-inline-link"
-                  href="https://pages.cs.wisc.edu/~ygong68/"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Yinwen Gong
-                </a>
-                .
               </p>
             </div>
           </div>

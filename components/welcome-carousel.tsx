@@ -7,19 +7,19 @@ const AUTO_ROTATE_DELAY_MS = 3000
 
 const slides = [
   {
-    src: '/monitor-panel.jpeg',
-    alt: 'Monitor dashboard screenshot',
-    label: 'Monitor dashboard',
-  },
-  {
-        src: '/charts.jpeg',
-        alt: 'Course analytics charts screenshot',
-        label: 'Course analytics',
-  },
-  {
     src: '/search-panel.jpeg',
-    alt: 'Course search screenshot',
-    label: 'Course search',
+    alt: 'Browse sections screenshot',
+    label: 'Browse sections',
+  },
+  {
+    src: '/monitor-panel.jpeg',
+    alt: 'Track alerts screenshot',
+    label: 'Track alerts',
+  },
+  {
+    src: '/charts.jpeg',
+    alt: 'Browse grades screenshot',
+    label: 'Browse grades',
   },
 ] as const
 
@@ -70,7 +70,7 @@ export function WelcomeCarousel() {
   }
 
   return (
-    <div className="glass-card relative aspect-video overflow-hidden">
+    <div className="glass-card relative aspect-[3/2] overflow-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(23,49,60,0.08))]" />
 
       {slides.map((slide, index) => (

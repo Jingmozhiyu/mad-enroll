@@ -10,9 +10,9 @@ import {
 import { useAuth } from '@/components/providers'
 
 const navItems = [
-  { href: '/', label: 'Welcome' },
-  { href: '/monitor', label: 'Monitor' },
-  { href: '/search', label: 'Search' },
+  { href: '/', label: 'Home' },
+  { href: '/monitor', label: 'Seat Alerts' },
+  { href: '/search', label: 'Browse Courses' },
   { href: '/about', label: 'About' },
 ]
 

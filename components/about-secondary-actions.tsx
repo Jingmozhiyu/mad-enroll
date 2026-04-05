@@ -21,33 +21,34 @@ const initialFeedbackForm: FeedbackFormState = {
 }
 
 const developerLogEntry = {
-  title: 'About Notification',
-  date: 'April 3, 2026',
+  title: 'Product Update',
+  date: 'April 5, 2026',
   body: [
-    'MadEnroll is released today!!',
-    'This is my first personal project. Please tell me everything that I can improve on it.',
+    'MadEnroll now centers the product around seat alerts for specific UW-Madison courses and sections.',
+    'Course browsing and grade distributions still exist, but they now support that main alert workflow instead of competing with it.',
   ],
 }
 
 const faqItems: FaqItem[] = [
   {
-    question: 'In which situation will I receive email for open/waitlist seats?',
+    question: 'When will I receive an email alert?',
     answer:
-      "Email is sent when a section's status changes from: closed to open / closed to waitlist / waitlist to open. \n" +
-        "Since one email may not guarantee successful enrollment, a new email will be sent again when new seats are available as scenarios above. " +
-        "Please manually remove the subscription after getting into the class.",
+      'You will receive an email when a section becomes more available, for example, when it changes from closed to waitlist, closed to open, or waitlist to open.\n\nBecause seats can disappear quickly, one alert does not guarantee successful enrollment. If the section becomes available again later, another alert may be sent.',
   },
   {
-    question: 'How will my personal information be stored and used?',
+    question: 'When is MadEnroll most useful?',
     answer:
-      'The grade distribution searching page does not require an account. The registration only requires email address to send alerts. Password is encrypted.',
+      'MadEnroll is most useful when a course or section has no waitlist, when departments release seats in batches during SOAR, or when seats reappear during the add/drop period.',
   },
   {
-    question: 'I will receive an email from Office of the Registrar if I get off the waitlist. Why do I need an "extra" email service?',
+    question: 'Does MadEnroll replace the official waitlist?',
     answer:
-      'For most of popular courses, the waitlist seats fill up almost instantly. e.g. BIOCHEM 104. ' +
-        'If a student is not even in the waitlist, it will be much harder to get into the course, whether by emailing the instructor or waiting for an official opening. ' +
-        'Besides, some courses will add new open seats as it appears closed. e.g. Basic Math courses like MATH 340 during SOAR, usually add 1-2 seats for each section at 8 a.m.'
+      'No. MadEnroll is not a replacement for the official waitlist. It is a separate alert tool for cases where waitlists are limited, unavailable, or not enough for the specific section you want.',
+  },
+  {
+    question: 'What information do I need to create an account?',
+    answer:
+      'To use seat alerts, you only need an email address and a password. You can browse grade distributions without creating an account.\n\nYour email is used only for alert-related messages, and your password is stored as a secure hash.',
   },
 ]
 

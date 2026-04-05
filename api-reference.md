@@ -270,6 +270,26 @@ Meaning:
 
 Response `data`: `AlertDeadLetterRespDto[]`
 
+Example response:
+
+```json
+[
+  {
+    "id": "dead-letter-uuid",
+    "eventId": "event-uuid",
+    "alertType": "WAITLIST",
+    "recipientEmail": "user@example.com",
+    "sectionId": "66400",
+    "courseDisplayName": "COMP SCI 240",
+    "termId": "1272",
+    "reason": "rejected",
+    "sourceQueue": "uwtrack.alert.queue",
+    "createdAt": "2026-04-01T14:35:00",
+    "payloadJson": "{}"
+  }
+]
+```
+
 ### `GET /api/admin/mail-deliveries`
 
 Meaning:
@@ -287,6 +307,7 @@ Response `data`: `AlertDeliveryLogRespDto[]`
     "recipientEmail": "user@example.com",
     "sectionId": "66400",
     "courseDisplayName": "COMP SCI 240",
+    "termId": "1272",
     "sourceQueue": "uwtrack.alert.queue",
     "manualTest": false,
     "sentAt": "2026-03-31T14:30:00"
@@ -361,7 +382,8 @@ Request body:
   "recipientEmail": "admin@example.com",
   "alertType": "OPEN",
   "sectionId": "99999",
-  "courseDisplayName": "TEST COURSE"
+  "courseDisplayName": "TEST COURSE",
+  "termId": "1272"
 }
 ```
 
@@ -370,6 +392,7 @@ Notes:
 - `alertType` defaults to `OPEN`
 - `sectionId` defaults to `99999`
 - `courseDisplayName` defaults to `TEST COURSE`
+- `termId` is required and must be a 4-digit UW term id
 
 Response:
 

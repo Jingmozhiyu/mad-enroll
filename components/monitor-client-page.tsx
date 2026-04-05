@@ -89,7 +89,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
   const [statusMessage, setStatusMessage] = useState(
     activeInitialTasks.length > 0
       ? `Loaded ${activeInitialTasks.length} monitored section${activeInitialTasks.length > 1 ? 's' : ''}.`
-      : 'Please login to view your monitored courses.',
+      : 'Sign in to view and manage your seat alerts.',
   )
   const [searchMessage, setSearchMessage] = useState(INITIAL_SEARCH_MESSAGE)
   const [searchValue, setSearchValue] = useState('')
@@ -173,7 +173,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
     setStatusMessage(
       message ??
         (sortedTasks.length === 0
-          ? 'No active subscriptions yet. Open search to add your first course.'
+          ? 'No alerts yet. Search for a course or section to start tracking seat openings.'
           : `Loaded ${sortedTasks.length} monitored section${sortedTasks.length > 1 ? 's' : ''}.`),
     )
   }
@@ -182,7 +182,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
     async (message?: string) => {
       if (!isLoggedIn) {
         setTasks([])
-        setStatusMessage('Please login to view your monitored courses.')
+        setStatusMessage('Sign in to view and manage your seat alerts.')
         return
       }
 
@@ -219,7 +219,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
       setTasks([])
       resetSearchFlow()
       setIsSearchOpen(false)
-      setStatusMessage('Please login to view your monitored courses.')
+      setStatusMessage('Sign in to view and manage your seat alerts.')
       return
     }
 
@@ -299,7 +299,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
     setTasks([])
     resetSearchFlow()
     setIsSearchOpen(false)
-    setStatusMessage('Please login to view your monitored courses.')
+    setStatusMessage('Sign in to view and manage your seat alerts.')
   }
 
   async function runCourseSearch(targetPage = 1, force = false) {
@@ -507,11 +507,11 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
           <div className="flex flex-col gap-3">
             <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
-              My Subscriptions
+              Seat Alerts
             </h1>
             {ready && isLoggedIn ? (
               <p className="text-sm font-medium tracking-[0.04em] text-[var(--color-ink-soft)] md:text-base">
-                Add courses to receive email notifications.
+                Track courses and sections by email.
               </p>
             ) : (
               <p className="text-sm leading-7 text-[var(--color-ink-soft)]">{statusMessage}</p>
@@ -603,7 +603,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
             <div className="mt-6 h-px w-full bg-[rgba(154,238,222,0.3)]" />
             <div className="pt-4 text-center">
               <span className="text-base font-bold text-[var(--color-ink-soft)] md:text-xl">
-                Monitoring {tasks.length} Section{tasks.length === 1 ? '' : 's'}
+                Tracking {tasks.length} Section{tasks.length === 1 ? '' : 's'}
               </span>
             </div>
           </>
@@ -615,8 +615,8 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
           {tasks.length === 0 ? (
             <div className="glass-card px-6 py-8">
               <EmptyState
-                description="You do not have any monitored courses yet. Open the search overlay above, look up a course, and add one to begin monitoring."
-                title="No monitored courses"
+                description="No alerts yet. Search for a course or section to start tracking seat openings."
+                title="No alerts yet"
               />
             </div>
           ) : (
@@ -646,24 +646,24 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
 
                     <div style={{lineHeight:"1.8"}} className="mt-5 grid content-start gap-1 rounded-[24px] border border-[rgba(154,238,222,0.2)] bg-white/70 px-4 py-4  text-sm leading-7 text-[var(--color-ink-soft)]">
                       <p>
-                        <span className="font-semibold text-[var(--color-open)]">Open Seats:</span>{' '}
+                        <span className="font-semibold text-[var(--color-open)]">Open Seats Available:</span>{' '}
                         {task.openSeats ?? '?'} / {task.capacity ?? '?'}
                       </p>
                       <p>
                         <span className="font-semibold text-[var(--color-waitlist)]">
-                          Waitlist Seats:
+                          Waitlist Seats Available:
                         </span>{' '}
                         {task.waitlistSeats ?? '?'} / {task.waitlistCapacity ?? '?'}
                       </p>
                       {meetingSummary ? (
                         <p>
-                          <span className="font-semibold text-[var(--color-schedule)]">Schedule:</span>{' '}
+                          <span className="font-semibold text-[var(--color-schedule)]">Schedule</span>{' '}
                           {meetingSummary}
                         </p>
                       ) : null}
                       {meetingLocationSummary ? (
                         <p>
-                          <span className="font-semibold text-[var(--color-location)]">Location:</span>{' '}
+                          <span className="font-semibold text-[var(--color-location)]">Location</span>{' '}
                           {meetingLocationSummary}
                         </p>
                       ) : null}
@@ -676,7 +676,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
                         onClick={() => void handleDelete(task.docId, task.sectionId)}
                         type="button"
                       >
-                        {deletingDocId === task.docId ? 'Removing...' : 'Remove'}
+                        {deletingDocId === task.docId ? 'Removing...' : 'Remove Alert'}
                       </button>
                     </div>
                   </article>

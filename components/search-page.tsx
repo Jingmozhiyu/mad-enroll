@@ -102,7 +102,7 @@ export function MadgradesSearchPage({
                 onSelectSuggestion={(suggestion) => router.push(`/courses/${suggestion.uuid}`)}
                 onSubmit={(nextValue) => updateUrl(1, nextValue)}
                 onValueChange={setQuery}
-                placeholder="Math 222, CS400, Algorithms..."
+                placeholder="ECON 101, Math 234, Algorithms..."
                 value={query}
               />
             </label>
