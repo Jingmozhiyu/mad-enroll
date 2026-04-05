@@ -112,6 +112,7 @@ export type TestEmailPayload = {
   alertType?: string
   sectionId?: string
   courseDisplayName?: string
+  termId?: string
 }
 
 export type FeedbackPayload = {

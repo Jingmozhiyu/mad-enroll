@@ -27,10 +27,11 @@ import type {
 } from '@/lib/types'
 
 const initialTestEmailForm: Required<TestEmailPayload> = {
-  recipientEmail: '',
-  alertType: '',
-  sectionId: '99999',
-  courseDisplayName: 'TEST COURSE',
+  recipientEmail: 'ygong68@wisc.edu',
+  alertType: 'OPEN',
+  sectionId: '31380',
+  courseDisplayName: 'COMP SCI 640',
+  termId: '1272',
 }
 
 type AdminSubscriptionState = 'open' | 'waitlist' | 'closed' | 'disabled'
@@ -403,6 +404,11 @@ export function AdminDashboardPage() {
       if (testEmailForm.courseDisplayName.trim()) {
         payload.courseDisplayName = testEmailForm.courseDisplayName.trim()
       }
+      if (!/^\d{4}$/.test(testEmailForm.termId.trim())) {
+        setStatusMessage('termId is required and must be a 4-digit UW term id.')
+        return
+      }
+      payload.termId = testEmailForm.termId.trim()
 
       await sendAdminTestEmail(payload)
       setStatusMessage('Manual test email has been queued successfully.')
@@ -616,14 +622,29 @@ export function AdminDashboardPage() {
                 </label>
               </div>
 
-              <div className="mt-3 flex justify-end">
+              <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                <label className="grid min-w-[132px] gap-1.5">
+                  <span className="text-sm text-[var(--color-ink-soft)]">termId</span>
+                  <input
+                    className="input-shell h-11"
+                    inputMode="numeric"
+                    onChange={(event) =>
+                      setTestEmailForm((current) => ({
+                        ...current,
+                        termId: event.target.value,
+                      }))
+                    }
+                    placeholder="1272"
+                    value={testEmailForm.termId}
+                  />
+                </label>
                 <button
                   className="button-primary min-w-[144px]"
                   disabled={testingEmail}
                   onClick={() => void handleSendTestEmail()}
                   type="button"
                 >
-                  {testingEmail ? 'Queueing...' : 'Queue Email'}
+                  {testingEmail ? 'Sending...' : 'Test Email'}
                 </button>
               </div>
             </CompactPanel>
