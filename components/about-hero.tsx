@@ -99,7 +99,7 @@ export function AboutHero() {
                 <br />
                 <span className="about-placeholder">
                   It is most useful when availability changes quickly, during
-                  enrollment, SOAR, and the first week of semester, especially if you are
+                  enrollment, SOAR, and the first week classes, especially if you are
                   watching a specific section instead of just any open seat in a
                   course.
                 </span>
@@ -126,7 +126,7 @@ export function AboutHero() {
                     target="_blank"
                   >
                     Yinwen Gong
-                  </a> for{' '}
+                  </a> as a project for{' '}
                     <a
                     className="about-inline-link"
                     href="https://cs571.org"

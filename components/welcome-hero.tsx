@@ -109,7 +109,7 @@ export function WelcomeHero() {
                 ),
               ].join(' ')}
             >
-              Get email alerts when a course or section becomes available. Especially useful for switching to a <span style={{color:"#33ccbb"}}>preferred section,</span> catching <span style={{color:"#33ccbb"}}>seat drops during SOAR</span> and the <span style={{color:"#33ccbb"}}>add/drop
+              Get email alerts when a course or section becomes available. Especially useful for switching to a <span style={{color:"#33ccbb"}}>preferred section</span>, catching <span style={{color:"#33ccbb"}}>seat drops during SOAR</span> and the <span style={{color:"#33ccbb"}}>add/drop
                 period.</span>
             </p>
           </div>
@@ -209,7 +209,7 @@ export function WelcomeHero() {
           <span className="font-semibold text-[var(--color-ink)]">
             Also included: grade distributions.
           </span>{' '}
-          Grade distributions are available as a secondary tool while you browse
+          Charts are available as a secondary tool while you browse
           courses.
         </p>
       </div>
