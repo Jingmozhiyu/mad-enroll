@@ -110,7 +110,7 @@ export function formatDateTime(value?: string) {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    timeZoneName: 'short',
+    timeZone: 'America/Chicago',
   }).format(date)
 }
 
