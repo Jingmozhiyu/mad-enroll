@@ -2,94 +2,115 @@
 
 ### [madenroll.com](https://madenroll.com)
 
-## Intro
+MadEnroll is a UW-Madison enrollment tool that helps students track course and section availability and receive email alerts when seats open up.
 
-MadEnroll is an open-source web application dedicated to course enrollment for the CS 571 Web Project. The energetic color palette is inspired by MORE MORE JUMP!.
+It is most useful when availability changes quickly, especially during enrollment, SOAR, and the add/drop period. The product is centered on seat alerts for specific sections, with grade distributions available as a secondary browsing tool.
 
-Not getting a spot on the waitlist for a required class, or hearing rumors about a tough instructor, can stress students out for months. MadEnroll helps take that stress away by sending real-time email alerts for open seats and showing visual grade distributions.
+## What The App Does
 
-It's built with modern tech like `Next.js`, `React`, `TypeScript`, and `Tailwind CSS`.
+MadEnroll currently has four main product areas:
 
-It combines two main workflows in a single frontend:
+- `Home`: explains the seat-alert workflow and links users into the main tools
+- `Seat Alerts`: lets signed-in users search for a course, inspect sections, and add or remove email alerts
+- `Browse Courses`: lets users search courses, filter by subject and instructor, and open grade-distribution views
+- `About`: explains what the product does, when it helps, and includes FAQ and feedback entry points
 
-- `Monitor`: authenticate users, manage tracked course sections, and subscribe to seat updates
-- `Search / Courses`: search the course catalog, filter results, and explore course analytics with charts
+There is also an internal `Admin` dashboard for operational visibility around subscriptions, deliveries, scheduler activity, and failed alerts.
 
-The project also includes an internal `Admin` dashboard for subscription and mail-related operations.
+## Core User Flows
 
-## Overview
+### Seat Alerts
 
-MadEnroll is designed as a polished frontend for course tracking and academic data exploration.
+The monitoring workflow is built around sections rather than generic seat counts:
 
-Users can:
+1. Search for a course
+2. Open the matching course result
+3. Inspect its sections
+4. Add an email alert for the specific section you want
 
-- register, sign in, and sign out
-- search course sections and add them to a monitoring list
-- remove subscriptions from the monitor dashboard
-- view section status, seat counts, and schedules
-- search courses from Madgrades-backed data
-- filter by subject and instructor
-- open detailed course analytics pages
-- compare courses with grade distribution and GPA charts
+Once tracked, the monitor page shows:
+
+- current section status
+- open-seat and waitlist-seat availability
+- schedule
+- location
+- alert removal controls
+
+### Browse Courses And Grades
+
+The search experience is backed by Madgrades data and supports:
+
+- free-text course search
+- subject filtering
+- instructor filtering
+- sorting and pagination
+- detailed course pages with grade distribution and GPA charts
+
+This part of the app is intended to support course comparison while deciding what to monitor.
 
 ## Tech Stack
 
-- `Next.js 16` with App Router
+- `Next.js 16` with the App Router
 - `React 19`
 - `TypeScript`
 - `Tailwind CSS 4`
 - `Axios`
 - `Recharts`
-- `Geist Sans`
+- `Geist`
 
-## Architecture
+## Architecture Notes
 
-- Uses `Next.js Route Handlers` as a lightweight backend-for-frontend layer
-- Stores authentication state in `httpOnly` cookies
-- Supports server-rendered initial data plus client-side interactive updates
-- Proxies requests to a custom backend API and the Madgrades API
-- Organizes shared logic into clear `app`, `components`, and `lib` layers
+This repository is the frontend and backend-for-frontend layer for MadEnroll.
+
+- `app/api/*` route handlers proxy requests to the main backend API and the Madgrades API
+- authentication state is stored with `httpOnly` cookies
+- server-side route handlers normalize backend errors before they reach the UI
+- the monitor flow uses a dedicated course-search then section-search sequence before creating alerts
+- the app includes route-level loading states, skeleton UIs, and a scoped top progress bar for authenticated navigation into alert pages
 
 ## Main Routes
 
-- `/` Welcome page
-- `/monitor` Course subscription dashboard
-- `/search` Course search page
-- `/courses/[uuid]` Course analytics page
-- `/admin` Internal admin dashboard
+- `/` homepage
+- `/monitor` seat-alert dashboard
+- `/search` course and grade browsing
+- `/courses/[uuid]` detailed course analytics
+- `/about` product explanation, FAQ, and feedback
+- `/admin` internal admin dashboard
 
 ## Project Structure
 
 ```text
 app/
-  layout.tsx
-  page.tsx
+  about/
+  admin/
+  courses/[uuid]/
   monitor/
   search/
-  courses/[uuid]/
-  admin/
   api/
 
 components/
+  welcome-hero.tsx
+  welcome-carousel.tsx
   monitor-client-page.tsx
   search-overlay.tsx
   search-page.tsx
   course-page.tsx
-  grade-distribution-chart.tsx
-  gpa-chart.tsx
   admin-dashboard-page.tsx
-  welcome-carousel.tsx
+  about-hero.tsx
+  about-secondary-actions.tsx
 
 lib/
   api.ts
   server-backend-api.ts
   server-session.ts
-  types.ts
   format.ts
+  course-search.ts
+  task-search-terms.ts
   madgrades/
 
 public/
   monitor-panel.jpeg
+  search-panel.jpeg
   charts.jpeg
   favicon.svg
 ```
@@ -114,16 +135,39 @@ Run lint checks:
 npm run lint
 ```
 
+Create a production build locally:
+
+```bash
+npm run build
+```
+
 ## Environment Variables
+
+The frontend expects the following environment variables:
 
 ```bash
 API_BASE_URL=https://madenroll.duckdns.org/
 MADGRADES_API=https://api.madgrades.com/
-MADGRADES_API_TOKEN=your_token_here
+MADGRADES_API_TOKEN=replace_with_your_server_token
+FALL_2026=1272
+SUMMER_2026=1266
 ```
 
-## Notes
+`FALL_2026` and `SUMMER_2026` are used by the seat-alert search flow to resolve the backend term id for course and section searches.
 
-- Backend API details are documented in `api-reference.md`
-- Subscription deletion is implemented as a soft delete on the backend
-- Madgrades API access is handled on the server side
+## Backend Dependencies
+
+This app depends on two upstream services:
+
+- the MadEnroll backend API for auth, subscriptions, admin data, and feedback
+- the Madgrades API for subjects, instructors, suggestions, and course analytics
+
+API behavior used by this frontend is documented in `api-reference.md`.
+
+## Color Palette
+
+Inspired by [MORE MORE JUMP!](https://projectsekai.fandom.com/wiki/MORE_MORE_JUMP!) in Project Sekai: Colorful Stage.
+
+## Author
+
+Developed by Yinwen Gong.
