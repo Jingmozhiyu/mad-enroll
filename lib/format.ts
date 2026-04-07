@@ -100,7 +100,8 @@ export function formatDateTime(value?: string) {
     return 'Unknown time'
   }
 
-  const date = new Date(value)
+  const normalizedValue = /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`
+  const date = new Date(normalizedValue)
   if (Number.isNaN(date.getTime())) {
     return value
   }
@@ -110,7 +111,6 @@ export function formatDateTime(value?: string) {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    timeZone: 'America/Chicago',
   }).format(date)
 }
 
