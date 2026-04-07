@@ -646,24 +646,24 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
 
                     <div style={{lineHeight:"1.8"}} className="mt-5 grid content-start gap-1 rounded-[24px] border border-[rgba(154,238,222,0.2)] bg-white/70 px-4 py-4  text-sm leading-7 text-[var(--color-ink-soft)]">
                       <p>
-                        <span className="font-semibold text-[var(--color-open)]">Open Seats Available:</span>{' '}
+                        <span className="font-semibold text-[var(--color-open)]">Open Seats:</span>{' '}
                         {task.openSeats ?? '?'} / {task.capacity ?? '?'}
                       </p>
                       <p>
                         <span className="font-semibold text-[var(--color-waitlist)]">
-                          Waitlist Seats Available:
+                          Waitlist Seats:
                         </span>{' '}
                         {task.waitlistSeats ?? '?'} / {task.waitlistCapacity ?? '?'}
                       </p>
                       {meetingSummary ? (
                         <p>
-                          <span className="font-semibold text-[var(--color-schedule)]">Schedule</span>{' '}
+                          <span className="font-semibold text-[var(--color-schedule)]">Schedule:</span>{' '}
                           {meetingSummary}
                         </p>
                       ) : null}
                       {meetingLocationSummary ? (
                         <p>
-                          <span className="font-semibold text-[var(--color-location)]">Location</span>{' '}
+                          <span className="font-semibold text-[var(--color-location)]">Location:</span>{' '}
                           {meetingLocationSummary}
                         </p>
                       ) : null}
