@@ -436,6 +436,23 @@ export function getSelectableTerms(
     .sort((left, right) => left - right)
 }
 
+export function getSelectableInstructors(
+  grades: MadgradesCourseGrades | null,
+  termCode: number,
+) {
+  if (!grades) {
+    return []
+  }
+
+  if (termCode > 0) {
+    return grades.instructors.filter((instructor) =>
+      instructor.terms.some((term) => term.termCode === termCode),
+    )
+  }
+
+  return grades.instructors
+}
+
 export function getSelectionDistribution(
   grades: MadgradesCourseGrades | null,
   selection: CourseCompareState,

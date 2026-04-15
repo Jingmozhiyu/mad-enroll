@@ -4,6 +4,7 @@ import type { CourseCompareState, MadgradesCourseGrades } from '@/lib/madgrades/
 import {
   calculateGpa,
   formatGpa,
+  getSelectableInstructors,
   getSelectableTerms,
   toTermName,
 } from '@/lib/madgrades/utils'
@@ -20,6 +21,7 @@ export function CourseSelectionControls({
   onChange,
 }: CourseSelectionControlsProps) {
   const availableTerms = getSelectableTerms(grades, selection.instructorId)
+  const availableInstructors = getSelectableInstructors(grades, selection.termCode)
 
   return (
     <div className="grid gap-4">
@@ -39,11 +41,19 @@ export function CourseSelectionControls({
           value={selection.instructorId}
         >
           <option value={0}>All instructors</option>
-          {(grades?.instructors ?? []).map((instructor) => (
-            <option key={instructor.id} value={instructor.id}>
-              {instructor.name} · {formatGpa(calculateGpa(instructor.cumulative))}
-            </option>
-          ))}
+          {availableInstructors.map((instructor) => {
+            const highlightedTerm =
+              selection.termCode > 0
+                ? instructor.terms.find((term) => term.termCode === selection.termCode)
+                : null
+
+            return (
+              <option key={instructor.id} value={instructor.id}>
+                {instructor.name} ·{' '}
+                {formatGpa(calculateGpa(highlightedTerm ?? instructor.cumulative))}
+              </option>
+            )
+          })}
         </select>
       </label>
 
@@ -51,12 +61,20 @@ export function CourseSelectionControls({
         <span className="text-sm font-bold text-[var(--color-ink-soft)]">Semester</span>
         <select
           className="input-shell"
-          onChange={(event) =>
+          onChange={(event) => {
+            const nextTermCode = Number(event.target.value)
+            const nextInstructors = getSelectableInstructors(grades, nextTermCode)
+            const nextInstructorId = nextInstructors.some(
+              (instructor) => instructor.id === selection.instructorId,
+            )
+              ? selection.instructorId
+              : 0
+
             onChange({
-              instructorId: selection.instructorId,
-              termCode: Number(event.target.value),
+              instructorId: nextInstructorId,
+              termCode: nextTermCode,
             })
-          }
+          }}
           value={selection.termCode}
         >
           <option value={0}>

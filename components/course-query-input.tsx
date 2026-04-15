@@ -150,7 +150,7 @@ export function CourseQueryInput({
       />
 
       {open && value.trim().length >= 2 ? (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-[18px] border border-[rgba(154,238,222,0.3)] bg-white shadow-[0_20px_50px_rgba(50,90,81,0.12)]">
+        <div className="surface-dropdown absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-[18px]">
           {loading ? (
             <div className="px-4 py-3 text-sm text-[var(--color-ink-soft)]">Searching...</div>
           ) : visibleSuggestions.length === 0 ? (
@@ -164,8 +164,8 @@ export function CourseQueryInput({
                 <button
                   key={`${suggestion.uuid}-${suggestion.name}`}
                   className={[
-                    'flex w-full items-start justify-between gap-3 border-b border-[rgba(154,238,222,0.14)] px-4 py-3 text-left last:border-b-0',
-                    active ? 'bg-[rgba(154,238,222,0.18)]' : 'hover:bg-[rgba(154,238,222,0.12)]',
+                    'interactive-row flex w-full items-start justify-between gap-3 border-b border-[var(--surface-border)] px-4 py-3 text-left last:border-b-0',
+                    active ? 'interactive-row-active' : '',
                   ].join(' ')}
                   onClick={() => selectSuggestion(suggestion)}
                   onFocus={() => router.prefetch(`/courses/${suggestion.uuid}`)}

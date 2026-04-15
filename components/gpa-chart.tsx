@@ -34,8 +34,8 @@ export function GpaChart({
                              secondary = [],
                              primaryLabel,
                              secondaryLabel,
-                             primaryColor = '#9aeede',
-                             secondaryColor = '#ffcdac',
+                             primaryColor = 'var(--color-shizuku)',
+                             secondaryColor = 'var(--color-monori)',
                              domainSource,
                              highlightTermCode,
                              highlightSeries = 'primary',
@@ -108,12 +108,12 @@ export function GpaChart({
             <div className={`${heightClassName} min-w-0 w-full`}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart data={data} margin={{top: 10, right: 20, bottom: 2, left: 0}}>
-                        <CartesianGrid stroke="rgba(154,238,222,0.22)" vertical={false}/>
+                        <CartesianGrid stroke="var(--chart-grid)" vertical={false}/>
                         <XAxis
                             dataKey="termName"
-                            tick={{fill: '#4f6c76', fontSize: 12}}
+                            tick={{fill: 'var(--chart-axis)', fontSize: 12}}
                             tickLine={false}
-                            axisLine={{stroke: 'rgba(154,238,222,0.22)'}}
+                            axisLine={{stroke: 'var(--chart-grid)'}}
                             angle={-32}
                             textAnchor="end"
                             height={60}
@@ -121,7 +121,7 @@ export function GpaChart({
                         <YAxis
                             domain={[yMin, yMax]}
                             ticks={ticks}
-                            tick={{fill: '#4f6c76', fontSize: 12}}
+                            tick={{fill: 'var(--chart-axis)', fontSize: 12}}
                             tickLine={false}
                             axisLine={false}
                         />
@@ -137,11 +137,11 @@ export function GpaChart({
                             }}
                             contentStyle={{
                                 borderRadius: 16,
-                                border: '1px solid rgba(154,238,222,0.25)',
-                                background: 'rgba(255,255,255,0.94)',
+                                border: '1px solid var(--tooltip-border)',
+                                background: 'var(--tooltip-background)',
                             }}
                         />
-                        {showLegend ? <Legend wrapperStyle={{paddingTop: 14}}/> : null}
+                        {showLegend ? <Legend wrapperStyle={{paddingTop: 14, color: 'var(--color-ink-soft)'}}/> : null}
                         <Line
                             type="monotone"
                             dataKey="primary"
@@ -171,7 +171,7 @@ export function GpaChart({
                                 name="Selected semester"
                                 stroke="transparent"
                                 strokeWidth={0}
-                                dot={{r: 6, fill: highlightColor, stroke: '#ffffff', strokeWidth: 2}}
+                                dot={{r: 6, fill: highlightColor, stroke: 'var(--chart-highlight-stroke)', strokeWidth: 2}}
                                 activeDot={{r: 7}}
                                 connectNulls={false}
                             />

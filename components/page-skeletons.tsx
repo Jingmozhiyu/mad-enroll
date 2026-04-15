@@ -121,7 +121,7 @@ export function MonitorPageSkeleton() {
           </div>
 
           <div className="justify-self-stretch lg:justify-self-end">
-            <div className="rounded-[24px] border border-[rgba(154,238,222,0.22)] bg-white/65 p-4 shadow-[0_18px_40px_rgba(50,90,81,0.05)]">
+            <div className="surface-panel-muted rounded-[24px] p-4">
               <SkeletonBlock className="h-5 w-40 rounded-[12px]" />
               <SkeletonBlock className="mt-3 h-4 w-[4.5rem] rounded-[10px]" />
             </div>
@@ -149,7 +149,7 @@ export function MonitorPageSkeleton() {
               <SkeletonBlock className="h-8 w-24 rounded-full" />
             </div>
 
-            <div className="mt-5 grid gap-3 rounded-[24px] border border-[rgba(154,238,222,0.2)] bg-white/70 px-4 py-4">
+            <div className="surface-inner mt-5 grid gap-3 rounded-[24px] px-4 py-4">
               <SkeletonBlock className="h-5 w-full rounded-[12px]" />
               <SkeletonBlock className="h-5 w-11/12 rounded-[12px]" />
               <SkeletonBlock className="h-5 w-4/5 rounded-[12px]" />

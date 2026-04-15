@@ -44,6 +44,7 @@ const initialAuthForm = {
 
 type MonitorClientPageProps = {
   initialTasks?: Task[]
+  initialStatusMessage?: string
 }
 
 type SearchStage = 'courses' | 'sections'
@@ -53,6 +54,7 @@ const COURSE_RESULTS_PER_UI_PAGE = 10
 const UI_PAGES_PER_BACKEND_PAGE =
   COURSE_RESULTS_PER_BACKEND_PAGE / COURSE_RESULTS_PER_UI_PAGE
 const INITIAL_SEARCH_MESSAGE = 'Search for a course to view sections.'
+const DEFAULT_SIGN_IN_STATUS_MESSAGE = 'Sign in to view and manage your seat alerts.'
 
 function getActiveTasks(tasks: Task[]) {
   return sortTasks(tasks.filter((task) => task.enabled !== false))
@@ -62,7 +64,7 @@ function SearchIcon() {
   return (
     <svg
       aria-hidden="true"
-      className="h-5 w-5 text-[rgba(52,95,131,0.76)]"
+      className="h-5 w-5 text-[var(--search-trigger-text)]"
       fill="none"
       viewBox="0 0 20 20"
     >
@@ -77,19 +79,47 @@ function SearchIcon() {
   )
 }
 
-export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps) {
+function GoogleMarkIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 18 18">
+      <path
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.58 2.68-3.9 2.68-6.62Z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.46-.8 5.95-2.18l-2.92-2.26c-.81.54-1.84.86-3.03.86-2.33 0-4.3-1.57-5-3.68H1.98V13c1.48 2.94 4.53 5 7.02 5Z"
+        fill="#34A853"
+      />
+      <path
+        d="M4 10.74A5.4 5.4 0 0 1 3.72 9c0-.6.1-1.19.28-1.74V4.92H1.98A9 9 0 0 0 1 9c0 1.45.35 2.82.98 4l2.02-2.26Z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.58c1.32 0 2.5.45 3.42 1.33l2.56-2.56C13.45.92 11.42 0 9 0 5.5 0 2.45 2.06.98 4.92L4 7.26c.7-2.11 2.67-3.68 5-3.68Z"
+        fill="#EA4335"
+      />
+    </svg>
+  )
+}
+
+export function MonitorClientPage({
+  initialTasks = [],
+  initialStatusMessage,
+}: MonitorClientPageProps) {
   const { ready, session, isLoggedIn, login, register, logout } = useAuth()
   const activeInitialTasks = getActiveTasks(initialTasks)
   const searchTriggerRef = useRef<HTMLButtonElement | null>(null)
   const hasInitializedSearchFocus = useRef(false)
+  const hasConsumedInitialStatusMessage = useRef(!initialStatusMessage)
   const previousLoggedIn = useRef(isLoggedIn)
   const previousSearchOpen = useRef(false)
   const [authForm, setAuthForm] = useState(initialAuthForm)
   const [tasks, setTasks] = useState<Task[]>(activeInitialTasks)
   const [statusMessage, setStatusMessage] = useState(
-    activeInitialTasks.length > 0
+    initialStatusMessage ??
+      (activeInitialTasks.length > 0
       ? `Loaded ${activeInitialTasks.length} monitored section${activeInitialTasks.length > 1 ? 's' : ''}.`
-      : 'Sign in to view and manage your seat alerts.',
+      : DEFAULT_SIGN_IN_STATUS_MESSAGE),
   )
   const [searchMessage, setSearchMessage] = useState(INITIAL_SEARCH_MESSAGE)
   const [searchValue, setSearchValue] = useState('')
@@ -182,7 +212,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
     async (message?: string) => {
       if (!isLoggedIn) {
         setTasks([])
-        setStatusMessage('Sign in to view and manage your seat alerts.')
+        setStatusMessage(DEFAULT_SIGN_IN_STATUS_MESSAGE)
         return
       }
 
@@ -219,7 +249,11 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
       setTasks([])
       resetSearchFlow()
       setIsSearchOpen(false)
-      setStatusMessage('Sign in to view and manage your seat alerts.')
+      if (hasConsumedInitialStatusMessage.current) {
+        setStatusMessage(DEFAULT_SIGN_IN_STATUS_MESSAGE)
+      } else {
+        hasConsumedInitialStatusMessage.current = true
+      }
       return
     }
 
@@ -299,7 +333,12 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
     setTasks([])
     resetSearchFlow()
     setIsSearchOpen(false)
-    setStatusMessage('Sign in to view and manage your seat alerts.')
+    setStatusMessage(DEFAULT_SIGN_IN_STATUS_MESSAGE)
+  }
+
+  function handleGoogleLogin() {
+    setBusyAction('google-login')
+    window.location.assign('/api/session/google')
   }
 
   async function runCourseSearch(targetPage = 1, force = false) {
@@ -504,80 +543,39 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
       />
 
       <section className="px-2 pb-1 md:px-4">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
-          <div className="flex flex-col gap-3">
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
-              Seat Alerts
-            </h1>
-            {ready && isLoggedIn ? (
-              <p className="text-sm font-medium tracking-[0.04em] text-[var(--color-ink-soft)] md:text-base">
-                Track courses and sections by email.
+        {ready && !isLoggedIn ? (
+          <div className="mx-auto grid w-full max-w-[540px] gap-6 pt-4 text-center md:pt-8">
+            <div className="flex flex-col gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
+                Seat Alerts
+              </h1>
+              <p className="text-sm leading-7 text-[var(--color-ink-soft)] md:text-base">
+                {statusMessage}
               </p>
-            ) : (
-              <p className="text-sm leading-7 text-[var(--color-ink-soft)]">{statusMessage}</p>
-            )}
-          </div>
+            </div>
 
-          <div className="flex flex-col items-center justify-start gap-2 lg:-mt-3">
-            {ready && isLoggedIn ? (
-              <button
-                aria-haspopup="dialog"
-                ref={searchTriggerRef}
-                className="search-trigger-shell w-full min-w-[320px] max-w-[420px]"
-                onClick={() => setIsSearchOpen(true)}
-                type="button"
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  <SearchIcon />
-                  <span className="truncate text-[rgba(52,95,131,0.52)]">
-                    Search courses...
-                  </span>
-                </span>
-                <span className="rounded-full border border-[rgba(153,205,255,0.36)] bg-white/55 px-2.5 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[rgba(52,95,131,0.58)]">
-                  Enter
-                </span>
-              </button>
-            ) : null}
-          </div>
+            <div className="surface-panel monitor-auth-card grid gap-4 rounded-[28px] p-5 md:p-6">
+              <div className="monitor-auth-stack">
+                <input
+                  autoComplete="email"
+                  className="input-shell monitor-auth-input h-12"
+                  onChange={(event) => updateAuthField('email', event.target.value)}
+                  placeholder="Email"
+                  type="email"
+                  value={authForm.email}
+                />
+                <input
+                  autoComplete="current-password"
+                  className="input-shell monitor-auth-input h-12"
+                  onChange={(event) => updateAuthField('password', event.target.value)}
+                  placeholder="Password"
+                  type="password"
+                  value={authForm.password}
+                />
 
-          <div className="lg:min-w-[340px]">
-            {!ready ? (
-              <p className="text-sm leading-7 text-[var(--color-ink-soft)] lg:text-right">
-                Loading session...
-              </p>
-            ) : isLoggedIn ? (
-              <div className="flex flex-col items-end gap-0.5 text-right">
-                <span className="monitor-email-label">{session?.email}</span>
-                <button
-                  className="logout-text-link"
-                  onClick={() => void handleLogout()}
-                  type="button"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="grid gap-4 rounded-[24px] border border-[rgba(154,238,222,0.22)] bg-white/75 p-4 shadow-[0_18px_40px_rgba(50,90,81,0.08)]">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <input
-                    className="input-shell"
-                    onChange={(event) => updateAuthField('email', event.target.value)}
-                    placeholder="Email"
-                    type="email"
-                    value={authForm.email}
-                  />
-                  <input
-                    className="input-shell"
-                    onChange={(event) => updateAuthField('password', event.target.value)}
-                    placeholder="Password"
-                    type="password"
-                    value={authForm.password}
-                  />
-                </div>
-
-                <div className="flex flex-wrap justify-end gap-3">
+                <div className="monitor-auth-actions">
                   <button
-                    className="button-secondary h-11 min-w-[128px]"
+                    className="button-secondary h-11 w-full"
                     disabled={busyAction !== null}
                     onClick={handleRegister}
                     type="button"
@@ -585,7 +583,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
                     {busyAction === 'register' ? 'Registering...' : 'Register'}
                   </button>
                   <button
-                    className="button-primary h-11 min-w-[128px]"
+                    className="button-primary h-11 w-full"
                     disabled={busyAction !== null}
                     onClick={handleLogin}
                     type="button"
@@ -593,14 +591,92 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
                     {busyAction === 'login' ? 'Logging in...' : 'Login'}
                   </button>
                 </div>
+
+                <div className="auth-divider" role="presentation">
+                  <span>OR</span>
+                </div>
+
+                <button
+                  className="button-google monitor-auth-google h-11 w-full"
+                  disabled={busyAction !== null}
+                  onClick={handleGoogleLogin}
+                  type="button"
+                >
+                  <span className="button-google-mark">
+                    <GoogleMarkIcon />
+                  </span>
+                  <span>
+                    {busyAction === 'google-login' ? 'Redirecting to Google...' : 'Continue with Google'}
+                  </span>
+                </button>
               </div>
-            )}
+
+              <p className="text-center text-sm leading-6 text-[var(--color-ink-soft)]">
+                Google login only requests your verified email address.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
+            <div className="flex flex-col gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
+                Seat Alerts
+              </h1>
+              {ready && isLoggedIn ? (
+                <p className="text-sm font-medium tracking-[0.04em] text-[var(--color-ink-soft)] md:text-base">
+                  Track courses and sections by email.
+                </p>
+              ) : (
+                <p className="text-sm leading-7 text-[var(--color-ink-soft)]">{statusMessage}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col items-center justify-start gap-2 lg:-mt-3">
+              {ready && isLoggedIn ? (
+                <button
+                  aria-haspopup="dialog"
+                  ref={searchTriggerRef}
+                  className="search-trigger-shell w-full min-w-[320px] max-w-[420px]"
+                  onClick={() => setIsSearchOpen(true)}
+                  type="button"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <SearchIcon />
+                    <span className="truncate text-[var(--search-trigger-text-muted)]">
+                      Search courses...
+                    </span>
+                  </span>
+                  <span className="rounded-full border border-[var(--search-trigger-hint-border)] bg-[var(--search-trigger-hint-background)] px-2.5 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[var(--search-trigger-hint-text)]">
+                    Enter
+                  </span>
+                </button>
+              ) : null}
+            </div>
+
+            <div className="lg:min-w-[340px]">
+              {!ready ? (
+                <p className="text-sm leading-7 text-[var(--color-ink-soft)] lg:text-right">
+                  Loading session...
+                </p>
+              ) : isLoggedIn ? (
+                <div className="flex flex-col items-end gap-0.5 text-right">
+                  <span className="monitor-email-label">{session?.email}</span>
+                  <button
+                    className="logout-text-link"
+                    onClick={() => void handleLogout()}
+                    type="button"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
 
         {ready && isLoggedIn ? (
           <>
-            <div className="mt-6 h-px w-full bg-[rgba(154,238,222,0.3)]" />
+            <div className="surface-divider mt-6 h-px w-full" />
             <div className="pt-4 text-center">
               <span className="text-base font-bold text-[var(--color-ink-soft)] md:text-xl">
                 Tracking {tasks.length} Section{tasks.length === 1 ? '' : 's'}
@@ -644,7 +720,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
                       </div>
                     </div>
 
-                    <div style={{lineHeight:"1.8"}} className="mt-5 grid content-start gap-1 rounded-[24px] border border-[rgba(154,238,222,0.2)] bg-white/70 px-4 py-4  text-sm leading-7 text-[var(--color-ink-soft)]">
+                    <div style={{ lineHeight: '1.8' }} className="surface-inner mt-5 grid content-start gap-1 rounded-[24px] px-4 py-4 text-sm leading-7 text-[var(--color-ink-soft)]">
                       <p>
                         <span className="font-semibold text-[var(--color-open)]">Open Seats:</span>{' '}
                         {task.openSeats ?? '?'} / {task.capacity ?? '?'}
@@ -671,7 +747,7 @@ export function MonitorClientPage({ initialTasks = [] }: MonitorClientPageProps)
 
                     <div className="mt-auto flex flex-wrap justify-end gap-3 pt-4">
                       <button
-                        className="min-w-[112px] rounded-[14px] px-3 py-0 text-[rgba(52,95,131,0.88)] transition hover:text-[rgba(36,89,127,0.96)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
+                        className="min-w-[112px] rounded-[14px] px-3 py-0 text-[var(--action-link-subtle)] transition hover:text-[var(--action-link-subtle-hover)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
                         disabled={deletingDocId === task.docId}
                         onClick={() => void handleDelete(task.docId, task.sectionId)}
                         type="button"

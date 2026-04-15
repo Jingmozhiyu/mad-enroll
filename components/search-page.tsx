@@ -179,7 +179,7 @@ export function MadgradesSearchPage({
               {initialResults ? `${initialResults.totalCount} results` : 'Results'}
             </h2>
             {error ? (
-              <div className="mt-4 rounded-[24px] border border-[rgba(255,169,204,0.35)] bg-[rgba(255,169,204,0.16)] px-4 py-4 text-sm text-[var(--color-ink)]">
+              <div className="status-alert-error mt-4 rounded-[24px] px-4 py-4 text-sm text-[var(--color-ink)]">
                 {error}
               </div>
             ) : null}

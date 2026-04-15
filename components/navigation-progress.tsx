@@ -160,7 +160,7 @@ export function RouteProgressProvider({
         className="pointer-events-none fixed inset-x-0 top-0 z-[90] h-[3px]"
       >
         <div
-          className="h-full origin-left bg-[#88DD44] shadow-[0_0_18px_rgba(136,221,68,0.66)] transition-[transform,opacity] duration-200 ease-out"
+          className="progress-indicator h-full origin-left transition-[transform,opacity] duration-200 ease-out"
           style={{
             opacity: visible ? 1 : 0,
             transform: `scaleX(${progress})`,

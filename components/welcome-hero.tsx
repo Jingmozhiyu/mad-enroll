@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ProgressLink } from '@/components/navigation-progress'
-import { WelcomeCarousel } from '@/components/welcome-carousel'
+import { WelcomeCarousel, welcomeSlides } from '@/components/welcome-carousel'
 
 const howItWorksSteps = [
   {
@@ -38,6 +38,7 @@ function revealClass(
 export function WelcomeHero() {
   const sectionRef = useRef<HTMLElement | null>(null)
   const [hasEntered, setHasEntered] = useState(false)
+  const [activeSceneIndex, setActiveSceneIndex] = useState(0)
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -79,15 +80,16 @@ export function WelcomeHero() {
 
   return (
     <section
+      data-scene={activeSceneIndex}
       ref={sectionRef}
-      className="grid min-h-[calc(100vh-7.5rem)] gap-8 px-2 py-4 md:px-4 md:py-8"
+      className="welcome-hero grid min-h-[calc(100vh-7.5rem)] gap-8 px-2 py-4 md:px-4 md:py-8"
     >
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] xl:items-center">
         <div className="flex flex-col gap-6 text-center xl:text-left">
           <div className="space-y-5">
             <h1
               className={[
-                'max-w-[14ch] text-5xl font-semibold leading-[1.06] tracking-tight text-[var(--color-ink)] max-xl:mx-auto md:text-6xl',
+                'welcome-hero-headline max-w-[14ch] text-5xl font-semibold leading-[1.06] tracking-tight max-xl:mx-auto md:text-6xl',
                 revealClass(
                   hasEntered,
                   'translate-y-3 opacity-0 blur-[4px]',
@@ -100,7 +102,7 @@ export function WelcomeHero() {
             </h1>
             <p
               className={[
-                'max-w-2xl text-base leading-8 text-[var(--color-ink-soft)] max-xl:mx-auto md:text-xl',
+                'welcome-hero-body max-w-2xl text-base leading-8 max-xl:mx-auto md:text-xl',
                 revealClass(
                   hasEntered,
                   'translate-y-3 opacity-0 blur-[3px]',
@@ -109,7 +111,7 @@ export function WelcomeHero() {
                 ),
               ].join(' ')}
             >
-              Get email alerts when a course or section becomes available. Especially useful for switching to a <span style={{color:"#33ccbb"}}>preferred section</span>, catching <span style={{color:"#33ccbb"}}>seat drops during SOAR</span> and the <span style={{color:"#33ccbb"}}>add/drop
+              Get email alerts when a course or section becomes available. Especially useful for switching to a <span className="welcome-hero-accent">preferred section</span>, catching <span className="welcome-hero-accent">seat drops during SOAR</span> and the <span className="welcome-hero-accent">add/drop
                 period.</span>
             </p>
           </div>
@@ -155,7 +157,10 @@ export function WelcomeHero() {
           )}
         >
           <div className="mx-auto w-full max-w-2xl xl:ml-auto xl:mr-0">
-            <WelcomeCarousel />
+            <WelcomeCarousel
+              activeIndex={activeSceneIndex}
+              onActiveIndexChange={(index) => setActiveSceneIndex(index % welcomeSlides.length)}
+            />
           </div>
         </div>
       </div>
@@ -176,11 +181,11 @@ export function WelcomeHero() {
           {howItWorksSteps.map((step) => (
             <article
               key={step.number}
-              className="rounded-[24px] bg-[linear-gradient(135deg,rgba(108,203,32,0.24),rgba(51,204,187,0.2))] p-px shadow-[0_6px_18px_rgba(50,90,81,0.04)]"
+              className="feature-card-shell rounded-[24px] p-px"
             >
-              <div className="h-full rounded-[23px] bg-white/92 px-5 py-5 text-left">
+              <div className="feature-card-body h-full rounded-[23px] px-5 py-5 text-left">
                 <div className="flex items-center gap-3">
-                  <p className="text-2xl font-semibold leading-none text-[#33ccbb]">
+                  <p className="text-2xl font-semibold leading-none text-[var(--color-miku)]">
                     {step.number}
                   </p>
                   <h2 className="text-lg font-semibold text-[var(--color-ink)]">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { AboutSecondaryActions } from '@/components/about-secondary-actions'
+import { AboutSecondaryActions, type PanelKey } from '@/components/about-secondary-actions'
 import { BrandMark } from '@/components/brand-mark'
 
 function revealClass(
@@ -20,6 +20,7 @@ function revealClass(
 export function AboutHero() {
   const sectionRef = useRef<HTMLElement | null>(null)
   const [hasEntered, setHasEntered] = useState(false)
+  const [activePanel, setActivePanel] = useState<PanelKey>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -84,37 +85,61 @@ export function AboutHero() {
           ].join(' ')}
         >
           <div className="about-story-shell">
-            <div className="grid gap-6 md:gap-6">
+            <div className="grid gap-6 md:gap-6 mt-2">
               <p className="about-copy">
-                <span className="text-lg font-semibold text-[var(--color-ink)]">What it does</span>
-                <br />
                 <span className="about-placeholder">
-                  MadEnroll is a UW-Madison enrollment tool that tracks course and
-                  section availability and sends email alerts when seats open up.
+                  MadEnroll is an <a className="about-inline-link"
+                                     href="https://github.com/jingmozhiyu/mad-enroll"
+                                     rel="noreferrer"
+                                     target="_blank"><strong>open-source</strong></a> UW-Madison enrollment tool that tracks course status and sends <strong>real-time </strong>email alerts when seats open up.
                 </span>
               </p>
 
-              <p className="about-copy">
-                <span className="text-lg font-semibold text-[var(--color-ink)]">When it helps</span>
-                <br />
-                <span className="about-placeholder">
-                  It is most useful when availability changes quickly, during
-                  enrollment, SOAR, and the first week classes, especially if you are
-                  watching a specific section instead of just any open seat in a
-                  course.
-                </span>
-              </p>
 
               <p className="about-copy">
-                <span className="text-lg font-semibold text-[var(--color-ink)]">Also included</span>
-                <br />
                 <span className="about-placeholder">
-                  MadEnroll also includes grade distributions as a secondary tool, so
+                  It also includes grade distributions as a secondary tool, so
                   you can compare course options while deciding what to monitor.
                 </span>
               </p>
 
+              <p className="about-copy">
+                <span className="about-placeholder">
+                  For more information, check{' '}
+                  <button
+                    className="bg-transparent p-0 text-[var(--color-airi)]"
+                    onClick={() => setActivePanel('faq')}
+                    style={{
+                      textDecoration: 'underline',
+                      textDecorationColor: 'var(--color-airi)',
+                      textDecorationThickness: '1px',
+                      textUnderlineOffset: '0.18em',
+                    }}
+                    type="button"
+                  >
+                    FAQ
+                  </button>{' '}
+                  below.{' '}
+                  <button
+                    className="bg-transparent p-0 text-[var(--color-haruka)]"
+                    onClick={() => setActivePanel('feedback')}
+                    style={{
+                      textDecoration: 'underline',
+                      textDecorationColor: 'var(--color-haruka)',
+                      textDecorationThickness: '1px',
+                      textUnderlineOffset: '0.18em',
+                    }}
+                    type="button"
+                  >
+                    Feedback
+                  </button>{' '}
+                  would be highly appreciated.
+                </span>
+              </p>
+
+
               <div className="about-divider" />
+
 
               <p className="about-copy">
                 <span className="about-placeholder">
@@ -126,7 +151,7 @@ export function AboutHero() {
                     target="_blank"
                   >
                     Yinwen Gong
-                  </a> as a project for{' '}
+                  </a>  for{' '}
                     <a
                     className="about-inline-link"
                     href="https://cs571.org"
@@ -135,13 +160,13 @@ export function AboutHero() {
                 >
                     CS 571
                   </a>{' '}
-                  Project.
+                  Web Project.
                 </span>
               </p>
 
               <p className="about-copy">
                 <span className="about-placeholder">
-                  Special thanks to Professor{' '}
+                  Special thanks to:<br/> Professor{' '}
                   <a
                     className="about-inline-link"
                     href="https://coletnelson.us/"
@@ -149,16 +174,16 @@ export function AboutHero() {
                     target="_blank"
                   >
                     Cole Nelson
-                  </a>{' '}
-                  for encouraging this project, and to{' '}
+                  </a>,{' '}
+                  for special guidance on Web Dev;<span><br/></span>{' '}
                   <a
                     className="about-inline-link"
                     href="https://madgrades.com/"
                     rel="noreferrer"
                     target="_blank"
                   >
-                    Madgrades
-                  </a>{' '}
+                    Madgrades.com
+                  </a>,{' '}
                   for providing the{' '}
                   <a
                     className="about-inline-link"
@@ -168,12 +193,17 @@ export function AboutHero() {
                   >
                     API
                   </a>{' '}
-                  that powers the grade distribution feature.
+                  and Linking Card that powers this project.
                 </span>
               </p>
             </div>
           </div>
+
         </div>
+          <AboutSecondaryActions
+            activePanel={activePanel}
+            onActivePanelChange={setActivePanel}
+          />
 
         <div
           className={revealClass(
@@ -183,7 +213,7 @@ export function AboutHero() {
             'delay-200',
           )}
         >
-          <AboutSecondaryActions />
+
         </div>
       </div>
     </section>

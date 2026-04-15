@@ -5,27 +5,27 @@ type BrandMarkProps = HTMLAttributes<HTMLSpanElement> & {
 }
 
 const colorfulBrandLetters = [
-  { letter: 'M', color: '#33ccbb' },
-  { letter: 'a', color: '#33ccbb' },
-  { letter: 'd', color: '#33ccbb' },
-  { letter: 'E', color: '#9aeede' },
-  { letter: 'n', color: '#6ccb20' },
-  { letter: 'r', color: '#99cdff' },
-  { letter: 'o', color: '#ffcdac' },
-  { letter: 'l', color: '#ffa9cc' },
-  { letter: 'l', color: '#ffa9cc' },
+  { letter: 'M', color: 'var(--color-miku)' },
+  { letter: 'a', color: 'var(--color-miku)' },
+  { letter: 'd', color: 'var(--color-miku)' },
+  { letter: 'E', color: 'var(--color-shizuku)' },
+  { letter: 'n', color: 'var(--color-mmj)' },
+  { letter: 'r', color: 'var(--color-haruka)' },
+  { letter: 'o', color: 'var(--color-monori)' },
+  { letter: 'l', color: 'var(--color-airi)' },
+  { letter: 'l', color: 'var(--color-airi)' },
 ] as const
 
 const defaultBrandLetters = [
   { letter: 'M', color: 'currentColor' },
   { letter: 'a', color: 'currentColor' },
   { letter: 'd', color: 'currentColor' },
-  { letter: 'E', color: '#33ccbb' },
-  { letter: 'n', color: '#33ccbb' },
-  { letter: 'r', color: '#33ccbb' },
-  { letter: 'o', color: '#33ccbb' },
-  { letter: 'l', color: '#33ccbb' },
-  { letter: 'l', color: '#33ccbb' },
+  { letter: 'E', color: 'var(--color-miku)' },
+  { letter: 'n', color: 'var(--color-miku)' },
+  { letter: 'r', color: 'var(--color-miku)' },
+  { letter: 'o', color: 'var(--color-miku)' },
+  { letter: 'l', color: 'var(--color-miku)' },
+  { letter: 'l', color: 'var(--color-miku)' },
 ] as const
 
 export function BrandMark({

@@ -151,7 +151,7 @@ function SummaryMetric({
   detail?: string
 }) {
   return (
-    <div className="rounded-2xl border border-[rgba(23,49,60,0.1)] bg-white/85 px-4 py-4">
+    <div className="surface-panel-strong rounded-2xl px-4 py-4">
       <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
         {label}
       </p>
@@ -169,7 +169,7 @@ function CompactPanel({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-[rgba(23,49,60,0.1)] bg-white/85 px-4 py-4">
+    <section className="surface-panel-strong rounded-2xl px-4 py-4">
       <h2 className="text-base font-semibold text-[var(--color-ink)]">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
@@ -225,7 +225,7 @@ function MiniPagination({
       <label className="flex items-center gap-2">
         <span>Jump</span>
         <input
-          className="h-8 w-14 rounded-[8px] border border-[rgba(23,49,60,0.12)] bg-white px-2 text-[var(--color-ink)]"
+          className="input-shell h-8 w-14 rounded-[8px] px-2 py-0"
           inputMode="numeric"
           max={totalPages}
           min={1}
@@ -464,11 +464,11 @@ export function AdminDashboardPage() {
   return (
     <div className="grid gap-5">
       {!ready ? (
-        <section className="rounded-2xl border border-[rgba(23,49,60,0.1)] bg-white/85 px-5 py-8">
+        <section className="surface-panel-strong rounded-2xl px-5 py-8">
           <p className="text-sm text-[var(--color-ink-soft)]">Loading session...</p>
         </section>
       ) : !isLoggedIn ? (
-        <section className="rounded-2xl border border-[rgba(23,49,60,0.1)] bg-white/85 px-5 py-8">
+        <section className="surface-panel-strong rounded-2xl px-5 py-8">
           <EmptyState
             description="This route does not redirect on its own. Use the monitor page to login, then return here if your account has admin permissions."
             title="Login required"
@@ -481,7 +481,7 @@ export function AdminDashboardPage() {
         </section>
       ) : (
         <>
-          <div className="flex flex-col gap-2 rounded-2xl border border-[rgba(23,49,60,0.1)] bg-white/85 px-4 py-4 md:flex-row md:items-center md:justify-between">
+          <div className="surface-panel-strong flex flex-col gap-2 rounded-2xl px-4 py-4 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-[var(--color-ink-soft)]">{statusMessage}</p>
             <div className="flex items-center gap-4">
               <p className="text-sm text-[var(--color-ink-soft)]">{session?.email}</p>
@@ -515,7 +515,7 @@ export function AdminDashboardPage() {
             />
           </section>
 
-          <section className="rounded-2xl border border-[rgba(23,49,60,0.1)] bg-white/85 px-4 py-4">
+          <section className="surface-panel-strong rounded-2xl px-4 py-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <h2 className="text-base font-semibold text-[var(--color-ink)]">Snapshot</h2>
@@ -536,7 +536,7 @@ export function AdminDashboardPage() {
                         Queue {schedulerStatus.queueSize}
                       </button>
                       {showQueuedCourseIds && schedulerStatus.queuedCourseIds.length > 0 ? (
-                        <div className="absolute left-0 top-[calc(100%+0.4rem)] z-10 min-w-[280px] max-w-[min(75vw,36rem)] rounded-xl border border-[rgba(23,49,60,0.12)] bg-white px-3 py-2 text-xs leading-6 text-[var(--color-ink)] shadow-[0_12px_32px_rgba(23,49,60,0.12)]">
+                        <div className="surface-popover absolute left-0 top-[calc(100%+0.4rem)] z-10 min-w-[280px] max-w-[min(75vw,36rem)] rounded-xl px-3 py-2 text-xs leading-6 text-[var(--color-ink)]">
                           {schedulerStatus.queuedCourseIds.join(', ')}
                         </div>
                       ) : null}
@@ -657,7 +657,7 @@ export function AdminDashboardPage() {
                   visibleMailDeliveries.map((delivery) => (
                     <div
                       key={delivery.id}
-                      className="grid gap-1 border-b border-[rgba(23,49,60,0.08)] pb-2 last:border-b-0 last:pb-0"
+                      className="subtle-panel-divider grid gap-1 border-b pb-2 last:border-b-0 last:pb-0"
                     >
                       <p className="font-medium text-[var(--color-ink)]">
                         {delivery.courseDisplayName} · Section {delivery.sectionId}
@@ -683,7 +683,7 @@ export function AdminDashboardPage() {
                   visibleMailStats.map((stat) => (
                     <div
                       key={stat.id}
-                      className="grid gap-1 border-b border-[rgba(23,49,60,0.08)] pb-2 last:border-b-0 last:pb-0"
+                      className="subtle-panel-divider grid gap-1 border-b pb-2 last:border-b-0 last:pb-0"
                     >
                       <p className="font-medium text-[var(--color-ink)]">{stat.statsDate}</p>
                       <p>Sent {stat.sentTotal}</p>
@@ -710,7 +710,7 @@ export function AdminDashboardPage() {
                     return (
                       <div
                         key={entry.id ?? `${summary.title}-${index}`}
-                        className="grid gap-1 border-b border-[rgba(23,49,60,0.08)] pb-2 last:border-b-0 last:pb-0"
+                        className="subtle-panel-divider grid gap-1 border-b pb-2 last:border-b-0 last:pb-0"
                       >
                         <p className="font-medium text-[var(--color-ink)]">{summary.title}</p>
                         <p>{summary.subtitle}</p>
@@ -728,8 +728,8 @@ export function AdminDashboardPage() {
             </CompactPanel>
           </section>
 
-          <section className="rounded-2xl border border-[rgba(23,49,60,0.1)] bg-white/85 px-4 py-4">
-            <div className="border-b border-[rgba(23,49,60,0.08)] pb-3">
+          <section className="surface-panel-strong rounded-2xl px-4 py-4">
+            <div className="subtle-panel-divider border-b pb-3">
               <h2 className="text-base font-semibold text-[var(--color-ink)]">Users</h2>
             </div>
 
@@ -741,7 +741,7 @@ export function AdminDashboardPage() {
                 />
               </div>
             ) : (
-              <div className="divide-y divide-[rgba(23,49,60,0.08)]">
+              <div className="divide-y divide-[var(--panel-divider)]">
                 {sortedUsers.map((row) => {
                   const counts = getUserSubscriptionCounts(row.subscriptions)
                   const sortedSubscriptions = sortSubscriptionsByState(row.subscriptions)
@@ -762,7 +762,7 @@ export function AdminDashboardPage() {
                         </span>
                       </summary>
 
-                      <div className="mt-3 border-t border-[rgba(23,49,60,0.08)] pt-3">
+                      <div className="subtle-panel-divider mt-3 border-t pt-3">
                         <div className="grid gap-2">
                           {sortedSubscriptions.map((subscription) => {
                             const state = getSubscriptionState(subscription)

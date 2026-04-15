@@ -81,12 +81,12 @@ export function EntityMultiSelect({
         ) : null}
       </div>
 
-      <div className="rounded-[22px] border border-[rgba(154,238,222,0.24)] bg-white/80 p-3">
+      <div className="surface-panel rounded-[22px] p-3">
         <div className="flex flex-wrap gap-2">
           {selected.map((item) => (
             <span
               key={item.key}
-              className="inline-flex items-center gap-2 rounded-full bg-[rgba(154,238,222,0.34)] px-3 py-1.5 text-sm font-medium text-[var(--color-ink)]"
+              className="selected-chip inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-[var(--color-ink)]"
             >
               {item.label}
               <button
@@ -116,7 +116,7 @@ export function EntityMultiSelect({
       </div>
 
       {open && query.trim().length >= 2 ? (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-[22px] border border-[rgba(154,238,222,0.28)] bg-white shadow-[0_24px_60px_rgba(50,90,81,0.14)]">
+        <div className="surface-dropdown absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-[22px]">
           {loading ? (
             <div className="px-4 py-4 text-sm text-[var(--color-ink-soft)]">Searching...</div>
           ) : filteredOptions.length === 0 ? (
@@ -127,7 +127,7 @@ export function EntityMultiSelect({
             filteredOptions.map((option) => (
               <button
                 key={option.key}
-                className="flex w-full items-start justify-between gap-3 border-b border-[rgba(154,238,222,0.18)] px-4 py-3 text-left last:border-b-0 hover:bg-[rgba(154,238,222,0.14)]"
+                className="interactive-row flex w-full items-start justify-between gap-3 border-b border-[var(--surface-border)] px-4 py-3 text-left last:border-b-0"
                 onClick={() => addOption(option)}
                 type="button"
               >

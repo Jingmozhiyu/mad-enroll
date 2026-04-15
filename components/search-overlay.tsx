@@ -102,9 +102,9 @@ export function SearchOverlay({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(23,49,60,0.18)] px-4 py-6 backdrop-blur-sm md:py-10">
+    <div className="overlay-backdrop fixed inset-0 z-50 flex items-start justify-center px-4 py-6 backdrop-blur-sm md:py-10">
       <div className="glass-card relative max-h-[90vh] w-full max-w-5xl overflow-hidden">
-        <div className="flex items-start justify-between gap-4 border-b border-[rgba(154,238,222,0.2)] px-6 py-5 md:px-8">
+        <div className="subtle-panel-divider flex items-start justify-between gap-4 border-b px-6 py-5 md:px-8">
           <div>
             <p className="eyebrow">Search Course</p>
             <h2 className="mt-2 text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
@@ -158,11 +158,7 @@ export function SearchOverlay({
 
                     return (
                       <div key={term.key} className="flex items-center gap-2">
-                        {index > 0 ? (
-                          <span aria-hidden="true" className="text-[rgba(52,95,131,0.3)]">
-                            /
-                          </span>
-                        ) : null}
+                        {index > 0 ? <span aria-hidden="true" className="text-[var(--inline-muted)]">/</span> : null}
                         <button
                           className={[
                             'rounded-none bg-transparent px-0 py-0 transition focus-visible:outline-none',
@@ -189,7 +185,7 @@ export function SearchOverlay({
           </div>
 
           {searchStage === 'sections' && selectedCourse ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[rgba(154,238,222,0.2)] bg-white/65 px-4 py-4">
+            <div className="surface-panel-muted flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-4">
               <div>
                 <p className="text-lg font-semibold text-[var(--color-ink)]">
                   {selectedCourse.courseDesignation}
@@ -210,7 +206,7 @@ export function SearchOverlay({
           >
             {searchStage === 'courses' ? (
               courseResults.length === 0 ? (
-                <div className="rounded-[28px] border border-dashed border-[rgba(154,238,222,0.4)] bg-white/55 px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
+                <div className="surface-panel-dashed rounded-[28px] px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
                   Search for a course to browse matching UW course entries here.
                 </div>
               ) : (
@@ -219,7 +215,7 @@ export function SearchOverlay({
                     {courseResults.map((course) => (
                       <article
                         key={`${course.subjectId}-${course.courseId}-${course.courseDesignation}`}
-                        className="rounded-[18px] border border-[rgba(154,238,222,0.22)] bg-white/75 px-4 py-3.5 shadow-[0_18px_40px_rgba(50,90,81,0.08)]"
+                        className="surface-panel rounded-[18px] px-4 py-3.5"
                       >
                         <div className="grid gap-1.5">
                           <div className="flex items-start justify-between gap-3">
@@ -227,7 +223,7 @@ export function SearchOverlay({
                               {course.courseDesignation}
                             </h3>
                             <button
-                              className="shrink-0 rounded-none bg-transparent px-0 py-0 text-sm font-semibold text-[var(--color-deep-teal)] underline-offset-4 transition hover:text-[var(--color-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(136,221,68,0.45)]"
+                              className="shrink-0 rounded-none bg-transparent px-0 py-0 text-sm font-semibold text-[var(--color-deep-teal)] underline-offset-4 transition hover:text-[var(--color-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--field-focus-ring)]"
                               disabled={isLoadingSections}
                               onClick={() => onOpenSections(course)}
                               type="button"
@@ -251,7 +247,7 @@ export function SearchOverlay({
                 </>
               )
             ) : sectionResults.length === 0 ? (
-              <div className="rounded-[28px] border border-dashed border-[rgba(154,238,222,0.4)] bg-white/55 px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
+              <div className="surface-panel-dashed rounded-[28px] px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
                 No section details are available for this course right now.
               </div>
             ) : (
@@ -264,7 +260,7 @@ export function SearchOverlay({
                   return (
                     <article
                       key={section.docId}
-                      className="rounded-[26px] border border-[rgba(154,238,222,0.22)] bg-white/75 px-4 py-4 shadow-[0_18px_40px_rgba(50,90,81,0.08)]"
+                      className="surface-panel rounded-[26px] px-4 py-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>

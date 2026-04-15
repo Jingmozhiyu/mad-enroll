@@ -119,7 +119,10 @@ export function MadgradesCoursePage({
       params.delete('termCode')
     }
 
-    router.push(params.toString() ? `/courses/${uuid}?${params.toString()}` : `/courses/${uuid}`)
+    router.replace(
+      params.toString() ? `/courses/${uuid}?${params.toString()}` : `/courses/${uuid}`,
+      { scroll: false },
+    )
   }
 
   if (error || !course || !grades) {
@@ -156,7 +159,8 @@ export function MadgradesCoursePage({
               {course.subjects.map((subject) => (
                 <span
                   key={subject.code}
-                  className="rounded-[5px] bg-[rgba(108,203,32,0.3)] px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[-0.02em] text-[var(--color-ink)]"
+                  className="rounded-[5px] px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[-0.02em] text-[var(--color-ink)]"
+                  style={{ background: 'var(--course-tag-background)' }}
                 >
                   {(subject.abbreviation || subject.code) + ' ' + course.number}
                 </span>
@@ -170,7 +174,7 @@ export function MadgradesCoursePage({
         </div>
       </section>
 
-      <div className="h-px w-full bg-[linear-gradient(90deg,rgba(51,204,187,0.14),rgba(51,204,187,0.9),rgba(51,204,187,0.14))]" />
+      <div className="accent-divider h-px w-full" />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(260px,0.33fr)_minmax(0,0.67fr)] xl:items-start">
         <div className="grid gap-5 pt-2">
@@ -185,10 +189,10 @@ export function MadgradesCoursePage({
           <GradeDistributionChart
             heightClassName={COURSE_DISTRIBUTION_CHART_HEIGHT_CLASS}
             primary={overallPrimary}
-            primaryColor="#99cdff"
+            primaryColor="var(--color-haruka)"
             primaryLabel="Overall"
             secondary={isFilteredSingle ? singlePrimary : null}
-            secondaryColor="#ffa9cc"
+            secondaryColor="var(--color-airi)"
             secondaryLabel={isFilteredSingle ? selectionLabel : undefined}
             showLegend={false}
             title=""
@@ -208,14 +212,14 @@ export function MadgradesCoursePage({
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-1 text-sm text-[var(--color-ink-soft)]">
             <div className="inline-flex items-center gap-3">
-              <span className="h-5 w-10 rounded-[8px] bg-[#99cdff]" />
+              <span className="h-5 w-10 rounded-[8px]" style={{ background: 'var(--color-haruka)' }} />
               <span className="font-medium text-[var(--color-ink)]">
                 Cumulative: {cumulativeGpa} GPA
               </span>
             </div>
             {isFilteredSingle ? (
               <div className="inline-flex items-center gap-3">
-                <span className="h-5 w-10 rounded-[8px] bg-[#ffa9cc]" />
+                <span className="h-5 w-10 rounded-[8px]" style={{ background: 'var(--color-airi)' }} />
                 <span className="font-medium text-[var(--color-ink)]">
                   {selectionLabel}: {filteredGpa} GPA
                 </span>
@@ -225,16 +229,16 @@ export function MadgradesCoursePage({
         </div>
       </section>
 
-      <div className="h-px w-full bg-[linear-gradient(90deg,rgba(51,204,187,0.14),rgba(51,204,187,0.9),rgba(51,204,187,0.14))]" />
+      <div className="accent-divider h-px w-full" />
 
       <section className="pt-1">
         <GpaChart
           domainSource={overallSeries}
           primary={overallSeries}
-          primaryColor="#9aeede"
+          primaryColor="var(--color-shizuku)"
           primaryLabel="Overall"
           secondary={instructorSeries}
-          secondaryColor="#ffcdac"
+          secondaryColor="var(--color-monori)"
           secondaryLabel={isInstructorFiltered ? selectionLabel : undefined}
           heightClassName={COURSE_GPA_CHART_HEIGHT_CLASS}
           highlightSeries={isInstructorFiltered ? 'secondary' : 'primary'}
@@ -246,16 +250,28 @@ export function MadgradesCoursePage({
         <div className="mt-0 flex flex-wrap items-center justify-center gap-5 text-sm text-[var(--color-ink-soft)]">
           <div className="inline-flex items-center gap-3">
             <span className="relative block h-4 w-12">
-              <span className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-[#9aeede]" />
-              <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#9aeede]" />
+              <span
+                className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2"
+                style={{ background: 'var(--color-shizuku)' }}
+              />
+              <span
+                className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ background: 'var(--color-shizuku)' }}
+              />
             </span>
             <span className="font-medium text-[var(--color-ink)]">Cumulative</span>
           </div>
           {isInstructorFiltered ? (
             <div className="inline-flex items-center gap-3">
               <span className="relative block h-4 w-12">
-                <span className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2 bg-[#ffcdac]" />
-                <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffcdac]" />
+                <span
+                  className="absolute left-0 right-0 top-1/2 h-[2px] -translate-y-1/2"
+                  style={{ background: 'var(--color-monori)' }}
+                />
+                <span
+                  className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{ background: 'var(--color-monori)' }}
+                />
               </span>
               <span className="font-medium text-[var(--color-ink)]">{selectionLabel}</span>
             </div>

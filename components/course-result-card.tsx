@@ -18,7 +18,7 @@ export function CourseResultCard({ course }: CourseResultCardProps) {
 
   return (
     <button
-      className="glass-card w-full px-5 py-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(50,90,81,0.14)]"
+      className="glass-card hover-elevated w-full px-5 py-5 text-left transition hover:-translate-y-0.5"
       onFocus={() => router.prefetch(href)}
       onMouseEnter={() => router.prefetch(href)}
       onClick={handleOpen}

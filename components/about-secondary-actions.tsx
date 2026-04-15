@@ -1,11 +1,11 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { getErrorMessage, submitFeedback } from '@/lib/api'
 
-type PanelKey = 'developer-log' | 'faq' | 'feedback' | null
+export type PanelKey = 'developer-log' | 'faq' | 'feedback' | null
 
 type FeedbackFormState = {
   message: string
@@ -18,6 +18,14 @@ type FaqItem = {
 
 const initialFeedbackForm: FeedbackFormState = {
   message: '',
+}
+
+function useHasMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
 }
 
 const developerLogEntry = {
@@ -63,6 +71,8 @@ function ModalShell({
   onClose: () => void
   children: ReactNode
 }) {
+  const hasMounted = useHasMounted()
+
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -83,14 +93,14 @@ function ModalShell({
     }
   }, [])
 
-  if (typeof document === 'undefined') {
+  if (!hasMounted) {
     return null
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(23,49,60,0.18)] px-4 py-6 backdrop-blur-sm">
-      <div className="glass-card relative max-h-[88vh] w-full max-w-3xl overflow-hidden">
-        <div className="flex items-start justify-between gap-4 border-b border-[rgba(154,238,222,0.2)] px-6 py-5 md:px-8">
+    <div className="overlay-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm">
+        <div className="glass-card relative max-h-[88vh] w-full max-w-3xl overflow-hidden">
+        <div className="subtle-panel-divider flex items-start justify-between gap-4 border-b px-6 py-5 md:px-8">
           <div>
             <p className="eyebrow">{eyebrow}</p>
             <h2 className="mt-2 text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
@@ -124,7 +134,7 @@ function InlineAction({
 }) {
   return (
     <button
-      className="bg-transparent p-0 text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[rgba(79,108,118,0.38)] underline-offset-[0.24em] transition hover:text-[var(--color-ink)] hover:decoration-[rgba(23,49,60,0.5)] focus:outline-none focus-visible:outline-none"
+      className="bg-transparent p-0 text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--about-inline-decoration)] underline-offset-[0.24em] transition hover:text-[var(--color-ink)] hover:decoration-[var(--about-inline-decoration-hover)] focus:outline-none focus-visible:outline-none"
       onClick={onClick}
       type="button"
     >
@@ -145,7 +155,7 @@ function AccordionItem({
   onToggle: () => void
 }) {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-[rgba(154,238,222,0.2)] bg-white/72">
+    <div className="surface-panel-muted overflow-hidden rounded-[24px]">
       <button
         className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left focus:outline-none focus-visible:outline-none"
         onClick={onToggle}
@@ -165,10 +175,10 @@ function AccordionItem({
       </button>
 
       {isOpen ? (
-        <div className="border-t border-[rgba(154,238,222,0.14)] px-5 py-5">
-            <p className="whitespace-pre-line text-sm leading-7 text-[var(--color-ink-soft)]">
-                {item.answer}
-            </p>
+        <div className="border-t border-[var(--surface-border)] px-5 py-5">
+          <p className="whitespace-pre-line text-md leading-7 text-[var(--color-ink-soft)]">
+            {item.answer}
+          </p>
         </div>
       ) : null}
     </div>
@@ -176,7 +186,9 @@ function AccordionItem({
 }
 
 function ThankYouToast({ visible }: { visible: boolean }) {
-  if (typeof document === 'undefined') {
+  const hasMounted = useHasMounted()
+
+  if (!hasMounted) {
     return null
   }
 
@@ -187,8 +199,8 @@ function ThankYouToast({ visible }: { visible: boolean }) {
         visible ? 'translate-y-0 opacity-100' : '-translate-y-3 opacity-0',
       ].join(' ')}
     >
-      <div className="flex w-full max-w-lg items-center gap-5 rounded-[8px] border border-[rgba(23,49,60,0.08)] bg-white px-5 py-4 shadow-[0_14px_36px_rgba(23,49,60,0.12)]">
-        <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white">
+      <div className="surface-toast flex w-full max-w-lg items-center gap-5 rounded-[8px] px-5 py-4">
+        <div className="surface-panel-muted flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[8px]">
           <Image alt="Thank you" height={112} src="/img.png" width={112} />
         </div>
         <div>
@@ -203,13 +215,28 @@ function ThankYouToast({ visible }: { visible: boolean }) {
   )
 }
 
-export function AboutSecondaryActions() {
-  const [activePanel, setActivePanel] = useState<PanelKey>(null)
+export function AboutSecondaryActions({
+  activePanel: controlledActivePanel,
+  onActivePanelChange,
+}: {
+  activePanel?: PanelKey
+  onActivePanelChange?: (panel: PanelKey) => void
+} = {}) {
+  const [internalActivePanel, setInternalActivePanel] = useState<PanelKey>(null)
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0)
   const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showThankYou, setShowThankYou] = useState(false)
+  const activePanel = controlledActivePanel ?? internalActivePanel
+
+  function setActivePanel(panel: PanelKey) {
+    if (controlledActivePanel === undefined) {
+      setInternalActivePanel(panel)
+    }
+
+    onActivePanelChange?.(panel)
+  }
 
   useEffect(() => {
     if (!showThankYou) {
@@ -252,9 +279,9 @@ export function AboutSecondaryActions() {
     <>
       <div className="flex flex-wrap items-center justify-center gap-0 pt-4 text-center">
         <InlineAction label="📖 Developer Log" onClick={() => setActivePanel('developer-log')} />
-        <span className="px-3 text-[rgba(79,108,118,0.44)]">|</span>
+        <span className="px-3 text-[var(--inline-muted)]">|</span>
         <InlineAction label="❓ FAQ" onClick={() => setActivePanel('faq')} />
-        <span className="px-3 text-[rgba(79,108,118,0.44)]">|</span>
+        <span className="px-3 text-[var(--inline-muted)]">|</span>
         <InlineAction label="💡 Send Feedback" onClick={() => setActivePanel('feedback')} />
       </div>
 
@@ -293,7 +320,7 @@ export function AboutSecondaryActions() {
         <ModalShell eyebrow="Feedback" onClose={closePanel} title="Send a quick note">
           <form className="grid gap-5" onSubmit={handleFeedbackSubmit}>
             {feedbackError ? (
-              <div className="rounded-[20px] border border-[rgba(255,169,204,0.35)] bg-[rgba(255,169,204,0.16)] px-4 py-3 text-sm text-[var(--color-ink)]">
+              <div className="status-alert-error rounded-[20px] px-4 py-3 text-sm text-[var(--color-ink)]">
                 {feedbackError}
               </div>
             ) : null}

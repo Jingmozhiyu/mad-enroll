@@ -85,7 +85,7 @@ function DistributionLabel({
       <tspan
         x={numericX + numericWidth / 2}
         dy="0"
-        fill="#17313c"
+        fill="var(--chart-label-strong)"
         fontSize={percentFontSize}
         fontWeight="700"
       >
@@ -94,7 +94,7 @@ function DistributionLabel({
       <tspan
         x={numericX + numericWidth / 2}
         dy="12"
-        fill="#4f6c76"
+        fill="var(--chart-label-soft)"
         fontSize={countFontSize}
         fontWeight="500"
       >
@@ -110,8 +110,8 @@ export function GradeDistributionChart({
   primaryLabel,
   secondary,
   secondaryLabel,
-  primaryColor = '#99cdff',
-  secondaryColor = '#ffa9cc',
+  primaryColor = 'var(--color-haruka)',
+  secondaryColor = 'var(--color-airi)',
   xAxisLabel,
   showLegend = Boolean(secondary),
   heightClassName = 'h-[255px]',
@@ -158,7 +158,7 @@ export function GradeDistributionChart({
             data={data}
             margin={{ top: 36, right: 20, bottom: 0, left: 0 }}
           >
-            <CartesianGrid stroke="rgba(154,238,222,0.22)" vertical={false} />
+            <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey="grade"
               label={
@@ -167,14 +167,14 @@ export function GradeDistributionChart({
                       value: xAxisLabel,
                       position: 'insideBottom',
                       offset: -8,
-                      fill: '#4f6c76',
+                      fill: 'var(--chart-axis)',
                       fontSize: 12,
                     }
                   : undefined
               }
-              tick={{ fill: '#4f6c76', fontSize: 12 }}
+              tick={{ fill: 'var(--chart-axis)', fontSize: 12 }}
               tickLine={false}
-              axisLine={{ stroke: 'rgba(154,238,222,0.22)' }}
+              axisLine={{ stroke: 'var(--chart-grid)' }}
             />
             <YAxis
               domain={[0, 100]}
@@ -182,12 +182,12 @@ export function GradeDistributionChart({
                 value: 'Students (%)',
                 angle: -90,
                 position: 'insideLeft',
-                fill: '#4f6c76',
+                fill: 'var(--chart-axis)',
                 fontSize: 12,
                 offset: 8,
               }}
               tickFormatter={(value) => `${value}%`}
-              tick={{ fill: '#4f6c76', fontSize: 12 }}
+              tick={{ fill: 'var(--chart-axis)', fontSize: 12 }}
               tickLine={false}
               axisLine={false}
             />
@@ -211,11 +211,11 @@ export function GradeDistributionChart({
               }}
               contentStyle={{
                 borderRadius: 16,
-                border: '1px solid rgba(154,238,222,0.25)',
-                background: 'rgba(255,255,255,0.94)',
+                border: '1px solid var(--tooltip-border)',
+                background: 'var(--tooltip-background)',
               }}
             />
-            {showLegend ? <Legend wrapperStyle={{ paddingTop: 14 }} /> : null}
+            {showLegend ? <Legend wrapperStyle={{ paddingTop: 14, color: 'var(--color-ink-soft)' }} /> : null}
             <Bar
               activeBar={false}
               barSize={primaryBarSize}

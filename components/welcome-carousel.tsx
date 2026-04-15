@@ -1,11 +1,11 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 const AUTO_ROTATE_DELAY_MS = 3000
 
-const slides = [
+export const welcomeSlides = [
   {
     src: '/search-panel.jpeg',
     alt: 'Browse sections screenshot',
@@ -22,6 +22,11 @@ const slides = [
     label: 'Browse grades',
   },
 ] as const
+
+type WelcomeCarouselProps = {
+  activeIndex?: number
+  onActiveIndexChange?: (index: number) => void
+}
 
 function ArrowIcon({ direction }: { direction: 'left' | 'right' }) {
   return (
@@ -46,19 +51,39 @@ function ArrowIcon({ direction }: { direction: 'left' | 'right' }) {
   )
 }
 
-export function WelcomeCarousel() {
-  const [activeIndex, setActiveIndex] = useState(0)
+export function WelcomeCarousel({
+  activeIndex: controlledActiveIndex,
+  onActiveIndexChange,
+}: WelcomeCarouselProps = {}) {
+  const [internalActiveIndex, setInternalActiveIndex] = useState(0)
+  const activeIndex = controlledActiveIndex ?? internalActiveIndex
+
+  const setActiveIndex = useCallback(
+    (nextIndex: number | ((current: number) => number)) => {
+      const resolvedIndex =
+        typeof nextIndex === 'function' ? nextIndex(activeIndex) : nextIndex
+      const normalizedIndex =
+        (resolvedIndex + welcomeSlides.length) % welcomeSlides.length
+
+      if (controlledActiveIndex === undefined) {
+        setInternalActiveIndex(normalizedIndex)
+      }
+
+      onActiveIndexChange?.(normalizedIndex)
+    },
+    [activeIndex, controlledActiveIndex, onActiveIndexChange],
+  )
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setActiveIndex((current) => (current + 1) % slides.length)
+      setActiveIndex((current) => current + 1)
     }, AUTO_ROTATE_DELAY_MS)
 
     return () => window.clearTimeout(timer)
-  }, [activeIndex])
+  }, [activeIndex, setActiveIndex])
 
   function showSlide(nextIndex: number) {
-    setActiveIndex((nextIndex + slides.length) % slides.length)
+    setActiveIndex(nextIndex)
   }
 
   function showPreviousSlide() {
@@ -71,9 +96,9 @@ export function WelcomeCarousel() {
 
   return (
     <div className="glass-card relative aspect-[3/2] overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(23,49,60,0.08))]" />
+      <div className="carousel-frame-overlay absolute inset-0" />
 
-      {slides.map((slide, index) => (
+      {welcomeSlides.map((slide, index) => (
         <div
           key={slide.src}
           aria-hidden={index !== activeIndex}
@@ -96,7 +121,7 @@ export function WelcomeCarousel() {
       <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-1 md:px-1.5">
         <button
           aria-label="Show previous image"
-          className="pointer-events-auto inline-flex h-14 w-8 items-center justify-center text-black/10 [filter:drop-shadow(0_2px_8px_rgba(23,49,60,0.35))] transition text-black/30 focus-visible:text-black/30 focus-visible:outline-none"
+          className="carousel-arrow-button pointer-events-auto inline-flex h-14 w-8 items-center justify-center transition focus-visible:outline-none"
           onClick={showPreviousSlide}
           type="button"
         >
@@ -105,7 +130,7 @@ export function WelcomeCarousel() {
 
         <button
           aria-label="Show next image"
-          className="pointer-events-auto inline-flex h-14 w-8 items-center justify-center text-black/10 [filter:drop-shadow(0_2px_8px_rgba(23,49,60,0.35))] transition text-black/30 focus-visible:text-black/30 focus-visible:outline-none"
+          className="carousel-arrow-button pointer-events-auto inline-flex h-14 w-8 items-center justify-center transition focus-visible:outline-none"
           onClick={showNextSlide}
           type="button"
         >
@@ -113,19 +138,19 @@ export function WelcomeCarousel() {
         </button>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 bg-[linear-gradient(180deg,rgba(23,49,60,0),rgba(23,49,60,0.6))] px-5 py-4 md:px-6">
-        <p className="text-sm font-semibold tracking-[0.04em] text-white/92">
-          {slides[activeIndex].label}
+      <div className="carousel-footer absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 px-5 py-4 md:px-6">
+        <p className="carousel-label text-sm font-semibold tracking-[0.04em]">
+          {welcomeSlides[activeIndex].label}
         </p>
 
         <div className="flex items-center gap-2">
-          {slides.map((slide, index) => (
+          {welcomeSlides.map((slide, index) => (
             <button
               key={slide.src}
               aria-label={`Show ${slide.label}`}
               className={[
                 'h-2.5 rounded-full transition-all',
-                index === activeIndex ? 'w-7 bg-white' : 'w-2.5 bg-white/55 hover:bg-white/75',
+                index === activeIndex ? 'carousel-dot-active w-7' : 'carousel-dot-idle w-2.5',
               ].join(' ')}
               onClick={() => showSlide(index)}
               type="button"

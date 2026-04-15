@@ -149,11 +149,18 @@ The frontend expects the following environment variables:
 API_BASE_URL=https://madenroll.duckdns.org/
 MADGRADES_API=https://api.madgrades.com/
 MADGRADES_API_TOKEN=replace_with_your_server_token
+GOOGLE_OAUTH_CLIENT_ID=replace_with_google_web_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=replace_with_google_web_client_secret
+GOOGLE_LOGIN_BACKEND_PASSWORD_SECRET=replace_with_long_random_server_secret
+# Optional if your public callback URL cannot be inferred from request headers:
+# GOOGLE_OAUTH_REDIRECT_URI=https://your-domain.com/api/session/google/callback
 FALL_2026=1272
 SUMMER_2026=1266
 ```
 
 `FALL_2026` and `SUMMER_2026` are used by the seat-alert search flow to resolve the backend term id for course and section searches.
+
+Google login uses the standard Google OAuth web flow with `openid email`, then bridges the verified email back into the existing MadEnroll backend by creating or logging into a matching backend account with a server-derived password. If an email already belongs to an older password-based account, users will need to keep using email/password until the backend supports account linking.
 
 ## Backend Dependencies
 
