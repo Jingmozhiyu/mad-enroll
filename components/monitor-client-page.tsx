@@ -60,6 +60,13 @@ function getActiveTasks(tasks: Task[]) {
   return sortTasks(tasks.filter((task) => task.enabled !== false))
 }
 
+function upsertTask(tasks: Task[], nextTask: Task) {
+  return getActiveTasks([
+    ...tasks.filter((task) => task.docId !== nextTask.docId),
+    nextTask,
+  ])
+}
+
 function SearchIcon() {
   return (
     <svg
@@ -486,11 +493,22 @@ export function MonitorClientPage({
     try {
       setAddingDocId(docId)
       const nextTask = await addTask(docId)
+      setSectionResults((current) =>
+        current.map((section) =>
+          section.docId === docId
+            ? {
+                ...section,
+                ...nextTask,
+                enabled: nextTask.enabled ?? true,
+                id: nextTask.id ?? section.id,
+              }
+            : section,
+        ),
+      )
       startTransition(() => {
-        setIsSearchOpen(false)
+        setTasks((current) => upsertTask(current, nextTask))
       })
-      resetSearchFlow()
-      await loadTasks(`Section ${nextTask.sectionId} added to your monitor list.`)
+      setSearchMessage(`Section ${nextTask.sectionId} added. You can keep adding more sections.`)
     } catch (error) {
       setSearchMessage(getErrorMessage(error, 'Add request failed.'))
     } finally {
