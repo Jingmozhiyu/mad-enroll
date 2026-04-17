@@ -397,9 +397,12 @@ export function AdminDashboardPage() {
         } else if (failedSections.length > 0) {
           setStatusMessage(`Loaded partial admin data. Failed to refresh ${failedSections.join(', ')}.`)
         } else {
-          const nextSubscriptions = nextSubscriptionsResult.value
-          const nextDeliveries = nextDeliveriesResult.value
-          const nextDeadLetters = nextDeadLettersResult.value
+          const nextSubscriptions =
+            nextSubscriptionsResult.status === 'fulfilled' ? nextSubscriptionsResult.value : []
+          const nextDeliveries =
+            nextDeliveriesResult.status === 'fulfilled' ? nextDeliveriesResult.value : []
+          const nextDeadLetters =
+            nextDeadLettersResult.status === 'fulfilled' ? nextDeadLettersResult.value : []
           setStatusMessage(
             message ??
               `Loaded ${nextSubscriptions.length} users, ${nextDeliveries.length} deliveries, and ${nextDeadLetters.length} dead letters.`,
