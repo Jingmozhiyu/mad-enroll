@@ -244,18 +244,12 @@
   --progress-glow: rgba(136, 221, 68, 0.56);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    --page-background-solid: #0b1c23;
-  }
-}
-
 * {
   box-sizing: border-box;
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   background: var(--page-background-solid);
 }
 
@@ -872,6 +866,11 @@ html[data-theme-ready='true'] .theme-ready-only {
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.2s ease;
+}
+
+.input-shell-compact {
+  width: 4.5rem;
+  flex: 0 0 3.5rem;
 }
 
 .input-shell:focus {

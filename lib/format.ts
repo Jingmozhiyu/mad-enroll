@@ -1,5 +1,7 @@
 import type { MeetingSlot, Task } from '@/lib/types'
 
+const DISPLAY_TIME_ZONE = 'America/Chicago'
+
 function parseMeetingInfo(meetingInfo: string) {
   if (!meetingInfo) {
     return [] as MeetingSlot[]
@@ -111,6 +113,29 @@ export function formatDateTime(value?: string) {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    timeZone: DISPLAY_TIME_ZONE,
+  }).format(date)
+}
+
+export function formatDateOnly(value?: string) {
+  if (!value) {
+    return 'Unknown date'
+  }
+
+  const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value}T12:00:00Z`
+    : /(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+      ? value
+      : `${value}Z`
+  const date = new Date(normalizedValue)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: DISPLAY_TIME_ZONE,
   }).format(date)
 }
 
