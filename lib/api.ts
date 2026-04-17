@@ -20,6 +20,7 @@ const api = axios.create({
   timeout: 20000,
   withCredentials: true,
 })
+const ADMIN_REQUEST_TIMEOUT = 60000
 
 export function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError(error)) {
@@ -115,7 +116,9 @@ export async function submitFeedback(payload: FeedbackPayload) {
 }
 
 export async function fetchAdminSubscriptions() {
-  const response = await api.get<AdminUserSubscriptions[]>('/api/admin/subscriptions')
+  const response = await api.get<AdminUserSubscriptions[]>('/api/admin/subscriptions', {
+    timeout: ADMIN_REQUEST_TIMEOUT,
+  })
   return response.data
 }
 
@@ -132,22 +135,30 @@ export async function patchAdminSubscription(subscriptionId: string, enabled: bo
 }
 
 export async function fetchAdminDeadLetters() {
-  const response = await api.get<AlertDeadLetter[]>('/api/admin/dead-letters')
+  const response = await api.get<AlertDeadLetter[]>('/api/admin/dead-letters', {
+    timeout: ADMIN_REQUEST_TIMEOUT,
+  })
   return response.data
 }
 
 export async function fetchAdminMailDeliveries() {
-  const response = await api.get<AlertDeliveryLog[]>('/api/admin/mail-deliveries')
+  const response = await api.get<AlertDeliveryLog[]>('/api/admin/mail-deliveries', {
+    timeout: ADMIN_REQUEST_TIMEOUT,
+  })
   return response.data
 }
 
 export async function fetchAdminMailStats() {
-  const response = await api.get<MailDailyStat[]>('/api/admin/mail-stats')
+  const response = await api.get<MailDailyStat[]>('/api/admin/mail-stats', {
+    timeout: ADMIN_REQUEST_TIMEOUT,
+  })
   return response.data
 }
 
 export async function fetchAdminSchedulerStatus() {
-  const response = await api.get<SchedulerStatus>('/api/admin/scheduler-status')
+  const response = await api.get<SchedulerStatus>('/api/admin/scheduler-status', {
+    timeout: ADMIN_REQUEST_TIMEOUT,
+  })
   return response.data
 }
 

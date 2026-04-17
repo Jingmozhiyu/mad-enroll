@@ -344,12 +344,12 @@ export function AdminDashboardPage() {
       try {
         setLoading(true)
         const [
-          nextSubscriptions,
-          nextDeadLetters,
-          nextDeliveries,
-          nextMailStats,
-          nextSchedulerStatus,
-        ] = await Promise.all([
+          nextSubscriptionsResult,
+          nextDeadLettersResult,
+          nextDeliveriesResult,
+          nextMailStatsResult,
+          nextSchedulerStatusResult,
+        ] = await Promise.allSettled([
           fetchAdminSubscriptions(),
           fetchAdminDeadLetters(),
           fetchAdminMailDeliveries(),
@@ -357,27 +357,55 @@ export function AdminDashboardPage() {
           fetchAdminSchedulerStatus(),
         ])
 
-        setSubscriptions(nextSubscriptions)
-        setDeadLetters(nextDeadLetters)
-        setMailDeliveries(nextDeliveries)
-        setMailStats(nextMailStats)
-        setSchedulerStatus(nextSchedulerStatus)
+        const failedSections = [
+          nextSubscriptionsResult.status === 'rejected' ? 'users' : null,
+          nextDeadLettersResult.status === 'rejected' ? 'dead letters' : null,
+          nextDeliveriesResult.status === 'rejected' ? 'deliveries' : null,
+          nextMailStatsResult.status === 'rejected' ? 'daily stats' : null,
+          nextSchedulerStatusResult.status === 'rejected' ? 'snapshot' : null,
+        ].filter((value): value is string => Boolean(value))
+        const unauthorized =
+          nextSubscriptionsResult.status === 'rejected' &&
+          isUnauthorizedError(nextSubscriptionsResult.reason)
+
+        setSubscriptions((current) =>
+          nextSubscriptionsResult.status === 'fulfilled' ? nextSubscriptionsResult.value : current,
+        )
+        setDeadLetters((current) =>
+          nextDeadLettersResult.status === 'fulfilled' ? nextDeadLettersResult.value : current,
+        )
+        setMailDeliveries((current) =>
+          nextDeliveriesResult.status === 'fulfilled' ? nextDeliveriesResult.value : current,
+        )
+        setMailStats((current) =>
+          nextMailStatsResult.status === 'fulfilled' ? nextMailStatsResult.value : current,
+        )
+        setSchedulerStatus((current) =>
+          nextSchedulerStatusResult.status === 'fulfilled'
+            ? nextSchedulerStatusResult.value
+            : current,
+        )
         setShowQueuedCourseIds(false)
         setEmailHistoryPage(1)
         setMailStatsPage(1)
         setDeadLettersPage(1)
         setUsersPage(1)
         setExpandedUserIds([])
-        setStatusMessage(
-          message ??
-            `Loaded ${nextSubscriptions.length} users, ${nextDeliveries.length} deliveries, and ${nextDeadLetters.length} dead letters.`,
-        )
+
+        if (unauthorized) {
+          setStatusMessage('Admin access is required for this route.')
+        } else if (failedSections.length > 0) {
+          setStatusMessage(`Loaded partial admin data. Failed to refresh ${failedSections.join(', ')}.`)
+        } else {
+          const nextSubscriptions = nextSubscriptionsResult.value
+          const nextDeliveries = nextDeliveriesResult.value
+          const nextDeadLetters = nextDeadLettersResult.value
+          setStatusMessage(
+            message ??
+              `Loaded ${nextSubscriptions.length} users, ${nextDeliveries.length} deliveries, and ${nextDeadLetters.length} dead letters.`,
+          )
+        }
       } catch (error) {
-        setSubscriptions([])
-        setDeadLetters([])
-        setMailDeliveries([])
-        setMailStats([])
-        setSchedulerStatus(null)
         if (isUnauthorizedError(error)) {
           setStatusMessage('Admin access is required for this route.')
         } else {
@@ -607,13 +635,7 @@ export function AdminDashboardPage() {
                     <span>F {schedulerStatus.fetchIntervalMs} ms</span>
                     <span>Active {schedulerStatus.activeCourseCount}</span>
                     <span className="relative">
-                      <button
-                        className="bg-transparent p-0 text-sm text-[var(--color-ink-soft)] underline underline-offset-4 transition hover:text-[var(--color-ink)]"
-                        onClick={() => setShowQueuedCourseIds((current) => !current)}
-                        type="button"
-                      >
                         Queue {schedulerStatus.queueSize}
-                      </button>
                       {showQueuedCourseIds && schedulerStatus.queuedCourseIds.length > 0 ? (
                         <div className="surface-popover absolute left-0 top-[calc(100%+0.4rem)] z-10 min-w-[280px] max-w-[min(75vw,36rem)] rounded-xl px-3 py-2 text-xs leading-6 text-[var(--color-ink)]">
                           {schedulerStatus.queuedCourseIds.join(', ')}
