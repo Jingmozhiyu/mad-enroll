@@ -121,7 +121,7 @@ export default async function RootLayout({
   const { session } = await getServerSession()
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-theme-ready="true">
       <head>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
