@@ -200,13 +200,21 @@ function MiniPagination({
     return null
   }
 
-  const visiblePages = Array.from(
-    new Set(
-      [1, 2, 3, currentPage, totalPages]
-        .filter((page) => page >= 1 && page <= totalPages)
-        .sort((left, right) => left - right),
-    ),
-  )
+  const visiblePages = (() => {
+    if (totalPages <= 4) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1)
+    }
+
+    if (currentPage <= 3) {
+      return [1, 2, 3, totalPages]
+    }
+
+    if (currentPage >= totalPages - 2) {
+      return [1, totalPages - 2, totalPages - 1, totalPages]
+    }
+
+    return [1, currentPage, totalPages]
+  })()
 
   return (
     <div className="mt-auto flex flex-wrap items-center gap-3 pt-3 text-sm text-[var(--color-ink-soft)]">
@@ -330,7 +338,12 @@ export function AdminDashboardPage() {
   )
 
   const loadDashboard = useCallback(
-    async (message?: string) => {
+    async (
+      message?: string,
+      options?: {
+        preservePagination?: boolean
+      },
+    ) => {
       if (!isLoggedIn) {
         setSubscriptions([])
         setDeadLetters([])
@@ -386,11 +399,13 @@ export function AdminDashboardPage() {
             : current,
         )
         setShowQueuedCourseIds(false)
-        setEmailHistoryPage(1)
-        setMailStatsPage(1)
-        setDeadLettersPage(1)
-        setUsersPage(1)
-        setExpandedUserIds([])
+        if (!options?.preservePagination) {
+          setEmailHistoryPage(1)
+          setMailStatsPage(1)
+          setDeadLettersPage(1)
+          setUsersPage(1)
+          setExpandedUserIds([])
+        }
 
         if (unauthorized) {
           setStatusMessage('Admin access is required for this route.')
@@ -433,7 +448,9 @@ export function AdminDashboardPage() {
     try {
       setTogglingId(subscriptionId)
       await patchAdminSubscription(subscriptionId, enabled)
-      await loadDashboard(`Subscription ${enabled ? 'enabled' : 'disabled'} successfully.`)
+      await loadDashboard(`Subscription ${enabled ? 'enabled' : 'disabled'} successfully.`, {
+        preservePagination: true,
+      })
     } catch (error) {
       if (isUnauthorizedError(error)) {
         void logout()
