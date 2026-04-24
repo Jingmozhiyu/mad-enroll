@@ -15,7 +15,7 @@ import {
   patchAdminSubscription,
   sendAdminTestEmail,
 } from '@/lib/api'
-import {formatDateOnly, formatDateTime} from '@/lib/format'
+import { formatDateOnly } from '@/lib/format'
 import type {
   AdminSubscription,
   AdminUserSubscriptions,
@@ -66,7 +66,7 @@ function getSubscriptionState(subscription: AdminSubscription): AdminSubscriptio
     return 'open'
   }
 
-  if (normalizedStatus === 'WAITLIST') {
+  if (normalizedStatus === 'WAITLIST' || normalizedStatus === 'WAITLISTED') {
     return 'waitlist'
   }
 
