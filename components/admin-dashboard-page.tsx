@@ -15,7 +15,7 @@ import {
   patchAdminSubscription,
   sendAdminTestEmail,
 } from '@/lib/api'
-import { formatDateOnly } from '@/lib/format'
+import {formatDateOnly, formatDateTime} from '@/lib/format'
 import type {
   AdminSubscription,
   AdminUserSubscriptions,
