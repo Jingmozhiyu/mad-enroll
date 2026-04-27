@@ -576,7 +576,10 @@ export function MonitorClientPage({
               <div className="monitor-auth-stack">
                 <input
                   autoComplete="email"
+                  aria-label="Email"
                   className="input-shell monitor-auth-input h-12"
+                  id="monitor-email"
+                  name="email"
                   onChange={(event) => updateAuthField('email', event.target.value)}
                   placeholder="Email"
                   type="email"
@@ -584,7 +587,10 @@ export function MonitorClientPage({
                 />
                 <input
                   autoComplete="current-password"
+                  aria-label="Password"
                   className="input-shell monitor-auth-input h-12"
+                  id="monitor-password"
+                  name="password"
                   onChange={(event) => updateAuthField('password', event.target.value)}
                   placeholder="Password"
                   type="password"
