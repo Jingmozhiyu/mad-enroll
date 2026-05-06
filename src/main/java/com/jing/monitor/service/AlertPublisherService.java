@@ -4,10 +4,13 @@ import com.jing.monitor.model.AlertType;
 import com.jing.monitor.model.event.AlertEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -19,13 +22,19 @@ import java.util.UUID;
 @Slf4j
 public class AlertPublisherService {
 
+    private static final String PUBLISH_EVENT_KEY_PREFIX = "rabbit:publish:event:";
+
     private final RabbitTemplate rabbitTemplate;
+    private final StringRedisTemplate redisTemplate;
 
     @Value("${app.rabbitmq.exchange}")
     private String alertExchangeName;
 
     @Value("${app.rabbitmq.routing-key}")
     private String alertRoutingKey;
+
+    @Value("${app.rabbitmq.event-id-publish-ttl-seconds:3600}")
+    private long publishEventIdTtlSeconds;
 
     /**
      * Publishes one alert event for asynchronous processing.
@@ -74,7 +83,7 @@ public class AlertPublisherService {
         event.setManualTest(manualTest);
         event.setCreatedAt(LocalDateTime.now());
 
-        rabbitTemplate.convertAndSend(alertExchangeName, alertRoutingKey, event);
+        publishEvent(event);
         log.info("[AlertPublisher] Published {} alert event {} for section {} to {}", alertType, event.getEventId(), sectionId, recipientEmail);
     }
 
@@ -106,7 +115,55 @@ public class AlertPublisherService {
         event.setManualTest(false);
         event.setCreatedAt(LocalDateTime.now());
 
-        rabbitTemplate.convertAndSend(alertExchangeName, alertRoutingKey, event);
+        publishEvent(event);
         log.info("[AlertPublisher] Published FEEDBACK event {} from {}", event.getEventId(), senderEmail);
+    }
+
+    private void publishEvent(AlertEvent event) {
+        String correlationId = event.getEventId().toString();
+        if (!reservePublishEventId(correlationId)) {
+            log.warn("[AlertPublisher] Skipping duplicate publish for eventId={}", correlationId);
+            return;
+        }
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    alertExchangeName,
+                    alertRoutingKey,
+                    event,
+                    message -> {
+                        message.getMessageProperties().setMessageId(correlationId);
+                        message.getMessageProperties().setHeader("eventId", correlationId);
+                        message.getMessageProperties().setHeader("alertType", event.getAlertType().name());
+                        return message;
+                    },
+                    new CorrelationData(correlationId)
+            );
+        } catch (Exception e) {
+            clearPublishEventId(correlationId);
+            throw e;
+        }
+    }
+
+    private boolean reservePublishEventId(String eventId) {
+        try {
+            Boolean reserved = redisTemplate.opsForValue().setIfAbsent(
+                    PUBLISH_EVENT_KEY_PREFIX + eventId,
+                    "1",
+                    Duration.ofSeconds(Math.max(publishEventIdTtlSeconds, 1))
+            );
+            return Boolean.TRUE.equals(reserved);
+        } catch (Exception e) {
+            log.error("[AlertPublisher] Redis publish de-dup failed for eventId={}. Falling back to publish.", eventId, e);
+            return true;
+        }
+    }
+
+    private void clearPublishEventId(String eventId) {
+        try {
+            redisTemplate.delete(PUBLISH_EVENT_KEY_PREFIX + eventId);
+        } catch (Exception e) {
+            log.warn("[AlertPublisher] Failed to clear publish de-dup key for eventId={}", eventId, e);
+        }
     }
 }

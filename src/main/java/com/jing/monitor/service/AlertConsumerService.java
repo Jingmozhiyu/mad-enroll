@@ -1,5 +1,6 @@
 package com.jing.monitor.service;
 
+import com.rabbitmq.client.Channel;
 import com.jing.monitor.model.AlertDeadLetter;
 import com.jing.monitor.model.AlertDeliveryLog;
 import com.jing.monitor.model.AlertType;
@@ -8,13 +9,15 @@ import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -26,13 +29,19 @@ import java.util.Map;
 @Slf4j
 public class AlertConsumerService {
 
+    private static final String CONSUMED_EVENT_KEY_PREFIX = "rabbit:consume:event:";
+
     private final MailService mailService;
     private final AlertDeadLetterRepository alertDeadLetterRepository;
     private final AlertDeliveryLogRepository alertDeliveryLogRepository;
     private final MailCounterService mailCounterService;
+    private final StringRedisTemplate redisTemplate;
 
     @Value("${app.rabbitmq.queue}")
     private String alertQueueName;
+
+    @Value("${app.rabbitmq.event-id-consume-ttl-seconds:604800}")
+    private long consumedEventIdTtlSeconds;
 
     /**
      * Delivers one queued alert email. Failures are rejected and routed into the DLQ.
@@ -40,7 +49,14 @@ public class AlertConsumerService {
      * @param event queued alert payload
      */
     @RabbitListener(queues = "${app.rabbitmq.queue}")
-    public void consumeAlert(AlertEvent event) {
+    public void consumeAlert(AlertEvent event, Message message, Channel channel) throws IOException {
+        long deliveryTag = message.getMessageProperties().getDeliveryTag();
+        String eventId = resolveEventId(event, message);
+        if (isAlreadyConsumed(eventId)) {
+            log.warn("[AlertConsumer] Skipping duplicate delivery for eventId={}.", eventId);
+            channel.basicAck(deliveryTag, false);
+            return;
+        }
         try {
             if (event.getAlertType() == AlertType.OPEN) {
                 mailService.sendCourseOpenAlert(
@@ -66,9 +82,12 @@ public class AlertConsumerService {
 
             saveDeliveryLogQuietly(event);
             mailCounterService.recordSuccessfulSend(event);
+            markConsumed(eventId);
+            channel.basicAck(deliveryTag, false);
+            log.info("[AlertConsumer] ACKed alert event {} on queue {}", event.getEventId(), alertQueueName);
         } catch (Exception e) {
             log.error("[AlertConsumer] Mail send failed for event {} on queue {}", event.getEventId(), alertQueueName, e);
-            throw new AmqpRejectAndDontRequeueException("Mail send failed: " + e.getMessage(), e);
+            channel.basicReject(deliveryTag, false);
         }
     }
 
@@ -81,23 +100,30 @@ public class AlertConsumerService {
      */
     @RabbitListener(queues = "${app.rabbitmq.dlq}")
     @Transactional
-    public void consumeDeadLetter(AlertEvent event, Message message) {
-        AlertDeadLetter deadLetter = new AlertDeadLetter();
-        deadLetter.setEventId(event == null ? null : event.getEventId());
-        deadLetter.setAlertType(event == null || event.getAlertType() == null ? null : event.getAlertType().name());
-        deadLetter.setRecipientEmail(event == null ? null : event.getRecipientEmail());
-        deadLetter.setSectionId(event == null ? null : event.getSectionId());
-        deadLetter.setCourseDisplayName(event == null ? null : event.getCourseDisplayName());
-        deadLetter.setTermId(event == null ? null : event.getTermId());
-        deadLetter.setReason(extractDeadLetterReason(message));
-        deadLetter.setSourceQueue(extractSourceQueue(message));
-        deadLetter.setCreatedAt(LocalDateTime.now());
-        deadLetter.setPayloadJson(extractPayloadJson(message));
-        alertDeadLetterRepository.save(deadLetter);
-        mailCounterService.recordDeadLetter(event);
+    public void consumeDeadLetter(AlertEvent event, Message message, Channel channel) throws IOException {
+        long deliveryTag = message.getMessageProperties().getDeliveryTag();
+        try {
+            AlertDeadLetter deadLetter = new AlertDeadLetter();
+            deadLetter.setEventId(event == null ? null : event.getEventId());
+            deadLetter.setAlertType(event == null || event.getAlertType() == null ? null : event.getAlertType().name());
+            deadLetter.setRecipientEmail(event == null ? null : event.getRecipientEmail());
+            deadLetter.setSectionId(event == null ? null : event.getSectionId());
+            deadLetter.setCourseDisplayName(event == null ? null : event.getCourseDisplayName());
+            deadLetter.setTermId(event == null ? null : event.getTermId());
+            deadLetter.setReason(extractDeadLetterReason(message));
+            deadLetter.setSourceQueue(extractSourceQueue(message));
+            deadLetter.setCreatedAt(LocalDateTime.now());
+            deadLetter.setPayloadJson(extractPayloadJson(message));
+            alertDeadLetterRepository.save(deadLetter);
+            mailCounterService.recordDeadLetter(event);
+            channel.basicAck(deliveryTag, false);
 
-        log.error("[AlertConsumer] Dead letter saved for event {} from queue {} with reason {}",
-                deadLetter.getEventId(), deadLetter.getSourceQueue(), deadLetter.getReason());
+            log.error("[AlertConsumer] Dead letter saved for event {} from queue {} with reason {}",
+                    deadLetter.getEventId(), deadLetter.getSourceQueue(), deadLetter.getReason());
+        } catch (Exception e) {
+            log.error("[AlertConsumer] Failed to persist dead letter event {}", event == null ? null : event.getEventId(), e);
+            channel.basicNack(deliveryTag, false, true);
+        }
     }
 
     private String extractDeadLetterReason(Message message) {
@@ -148,6 +174,35 @@ public class AlertConsumerService {
             alertDeliveryLogRepository.save(deliveryLog);
         } catch (Exception e) {
             log.error("[AlertConsumer] Mail was sent, but delivery log persistence failed for event {}", event.getEventId(), e);
+        }
+    }
+
+    private String resolveEventId(AlertEvent event, Message message) {
+        String messageId = message.getMessageProperties().getMessageId();
+        if (messageId != null && !messageId.isBlank()) {
+            return messageId;
+        }
+        return event.getEventId().toString();
+    }
+
+    private boolean isAlreadyConsumed(String eventId) {
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey(CONSUMED_EVENT_KEY_PREFIX + eventId));
+        } catch (Exception e) {
+            log.error("[AlertConsumer] Redis consume de-dup lookup failed for eventId={}. Continuing without de-dup.", eventId, e);
+            return false;
+        }
+    }
+
+    private void markConsumed(String eventId) {
+        try {
+            redisTemplate.opsForValue().set(
+                    CONSUMED_EVENT_KEY_PREFIX + eventId,
+                    "1",
+                    Duration.ofSeconds(Math.max(consumedEventIdTtlSeconds, 1))
+            );
+        } catch (Exception e) {
+            log.error("[AlertConsumer] Failed to persist consumed eventId={} into Redis.", eventId, e);
         }
     }
 }

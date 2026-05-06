@@ -1,14 +1,20 @@
 package com.jing.monitor.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarables;
 import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +25,7 @@ import java.util.Map;
  * RabbitMQ exchange, queue, binding, and converter configuration.
  */
 @Configuration
+@Slf4j
 public class RabbitMqConfig {
 
     @Bean
@@ -69,10 +76,53 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            SimpleRabbitListenerContainerFactoryConfigurer configurer,
+            ConnectionFactory connectionFactory,
+            MessageConverter rabbitMessageConverter
+    ) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        configurer.configure(factory, connectionFactory);
+        factory.setMessageConverter(rabbitMessageConverter);
+        factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+        factory.setDefaultRequeueRejected(false);
+        factory.setPrefetchCount(1);
+        return factory;
+    }
+
+    @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter rabbitMessageConverter) {
         // Use the shared JSON converter for every outgoing RabbitMQ message.
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(rabbitMessageConverter);
+        rabbitTemplate.setMandatory(true);
+        rabbitTemplate.setConfirmCallback(this::handlePublisherConfirm);
+        rabbitTemplate.setReturnsCallback(returned ->
+                log.error(
+                        "[RabbitMQ] Message returned by broker: replyCode={}, replyText={}, exchange={}, routingKey={}, messageId={}",
+                        returned.getReplyCode(),
+                        returned.getReplyText(),
+                        returned.getExchange(),
+                        returned.getRoutingKey(),
+                        extractMessageId(returned.getMessage())
+                ));
         return rabbitTemplate;
+    }
+
+    private void handlePublisherConfirm(CorrelationData correlationData, boolean ack, String cause) {
+        String correlationId = correlationData == null ? "unknown" : correlationData.getId();
+        if (ack) {
+            log.info("[RabbitMQ] Publisher confirm ACK received for correlationId={}", correlationId);
+            return;
+        }
+        log.error("[RabbitMQ] Publisher confirm NACK received for correlationId={} cause={}", correlationId, cause);
+    }
+
+    private String extractMessageId(Message message) {
+        if (message == null || message.getMessageProperties() == null) {
+            return "unknown";
+        }
+        String messageId = message.getMessageProperties().getMessageId();
+        return messageId == null || messageId.isBlank() ? "unknown" : messageId;
     }
 }

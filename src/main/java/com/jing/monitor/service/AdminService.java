@@ -57,33 +57,22 @@ public class AdminService {
         requireAdmin();
 
         List<User> users = userRepository.findAll();
-        Map<UUID,List<UserSectionSubscription>> subsByUUID = subscriptionRepository.findAll()
+        Map<UUID, List<UserSectionSubscription>> subsByUUID = subscriptionRepository.findAll()
                 .stream().collect(Collectors.groupingBy(
-                        sub -> sub.getUser().getId(), HashMap::new,Collectors.toList()));
-
+                        sub -> sub.getUser().getId(), HashMap::new, Collectors.toList()));
 
         List<AdminUserSubsRespDto> userResp = new ArrayList<>();
 
-        for(User user: users){
-            if(!subsByUUID.containsKey(user.getId())){
-                AdminUserSubsRespDto dto = new AdminUserSubsRespDto();
-                dto.setUserId(user.getId());
-                dto.setEmail(user.getEmail());
-                dto.setRole(user.getRole());
-                dto.setSubscriptions(new ArrayList<>());
-                userResp.add(dto);
-
-            }
-            else{
-                AdminUserSubsRespDto dto = new AdminUserSubsRespDto();
-                dto.setUserId(user.getId());
-                dto.setEmail(user.getEmail());
-                dto.setRole(user.getRole());
-                dto.setSubscriptions(subsByUUID.get(user.getId()).stream().map(this::toAdminSubResp).collect(Collectors.toList()));
-                userResp.add(dto);
-            }
+        for (User user : users) {
+            AdminUserSubsRespDto dto = new AdminUserSubsRespDto();
+            dto.setUserId(user.getId());
+            dto.setEmail(user.getEmail());
+            dto.setRole(user.getRole());
+            dto.setSubscriptions(subsByUUID.getOrDefault(user.getId(), List.of()).stream()
+                    .map(this::toAdminSubResp)
+                    .collect(Collectors.toList()));
+            userResp.add(dto);
         }
-
 
         return userResp;
     }

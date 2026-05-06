@@ -17,6 +17,10 @@ import java.util.UUID;
 @Repository
 public interface UserSectionSubscriptionRepository extends JpaRepository<UserSectionSubscription, UUID> {
 
+    @Override
+    @EntityGraph(attributePaths = {"user", "section", "section.course"})
+    List<UserSectionSubscription> findAll();
+
     @EntityGraph(attributePaths = {"user", "section", "section.course"})
     List<UserSectionSubscription> findAllByUser_Id(UUID userId);
 
