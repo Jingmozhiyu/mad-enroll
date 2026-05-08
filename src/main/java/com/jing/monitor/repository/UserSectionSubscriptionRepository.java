@@ -38,6 +38,8 @@ public interface UserSectionSubscriptionRepository extends JpaRepository<UserSec
 
     boolean existsByEnabledTrueAndSection_Course_Id(UUID courseId);
 
+    boolean existsByIdAndEnabledTrue(UUID id);
+
     @Query("""
             select count(distinct sub.section.course.id)
             from UserSectionSubscription sub

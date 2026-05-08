@@ -238,7 +238,7 @@ public class SchedulerService {
                             log.warn("[Scheduler] Skipping sub {} because email is missing.", sub.getId());
                             continue;
                         }
-                        dispatchMail(action, recipientEmail, info);
+                        dispatchMail(action, recipientEmail, info, sub.getId());
                     }
                 }
             }
@@ -279,7 +279,7 @@ public class SchedulerService {
      * @param recipientEmail notification recipient
      * @param info latest section snapshot
      */
-    private void dispatchMail(AlertAction action, String recipientEmail, SectionInfo info) {
+    private void dispatchMail(AlertAction action, String recipientEmail, SectionInfo info, UUID subscriptionId) {
         if (action == AlertAction.SEND_OPEN_EMAIL) {
             log.info("[Scheduler] ALERT OPEN detected for {}", info.getSectionId());
             alertPublisherService.publishAlert(
@@ -287,7 +287,8 @@ public class SchedulerService {
                     recipientEmail,
                     info.getSectionId(),
                     info.getCourseDisplayName(),
-                    info.getTermCode()
+                    info.getTermCode(),
+                    subscriptionId
             );
         } else if (action == AlertAction.SEND_WAITLIST_EMAIL) {
             log.info("[Scheduler] ALERT WAITLIST detected for {}", info.getSectionId());
@@ -296,7 +297,8 @@ public class SchedulerService {
                     recipientEmail,
                     info.getSectionId(),
                     info.getCourseDisplayName(),
-                    info.getTermCode()
+                    info.getTermCode(),
+                    subscriptionId
             );
         }
     }

@@ -15,8 +15,6 @@ import com.jing.monitor.repository.UserRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.aop.framework.AopContext;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +36,6 @@ import java.util.Locale;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@EnableAspectJAutoProxy(exposeProxy = true)
 public class TaskService {
 
     private static final long MAX_ENABLED_SECTION_SUBSCRIPTIONS = 15;
@@ -125,7 +122,7 @@ public class TaskService {
             throw new RuntimeException("Course details unavailable: " + courseId);
         }
 
-        Map<String, CourseSection> sectionsByDocId = ((TaskService) AopContext.currentProxy()).syncSections(infos);
+        Map<String, CourseSection> sectionsByDocId = syncSections(infos);
         UUID userId = authContextService.currentUserId();
         Map<String, UserSectionSubscription> subsByDocId =
                 subscriptionRepository.findAllBySection_DocIdInAndUser_Id(sectionsByDocId.keySet(), userId).stream()

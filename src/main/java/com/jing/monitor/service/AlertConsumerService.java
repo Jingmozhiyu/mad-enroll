@@ -7,6 +7,7 @@ import com.jing.monitor.model.AlertType;
 import com.jing.monitor.model.event.AlertEvent;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
+import com.jing.monitor.repository.UserSectionSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -36,6 +37,7 @@ public class AlertConsumerService {
     private final AlertDeliveryLogRepository alertDeliveryLogRepository;
     private final MailCounterService mailCounterService;
     private final StringRedisTemplate redisTemplate;
+    private final UserSectionSubscriptionRepository subscriptionRepository;
 
     @Value("${app.rabbitmq.queue}")
     private String alertQueueName;
@@ -58,6 +60,14 @@ public class AlertConsumerService {
             return;
         }
         try {
+            if (isDisabledCourseAlert(event)) {
+                log.warn("[AlertConsumer] Skipping stale alert event {} because subscription {} is no longer enabled.",
+                        event.getEventId(), event.getSubscriptionId());
+                markConsumed(eventId);
+                channel.basicAck(deliveryTag, false);
+                return;
+            }
+
             if (event.getAlertType() == AlertType.OPEN) {
                 mailService.sendCourseOpenAlert(
                         event.getRecipientEmail(),
@@ -175,6 +185,16 @@ public class AlertConsumerService {
         } catch (Exception e) {
             log.error("[AlertConsumer] Mail was sent, but delivery log persistence failed for event {}", event.getEventId(), e);
         }
+    }
+
+    private boolean isDisabledCourseAlert(AlertEvent event) {
+        if (event.getSubscriptionId() == null) {
+            return false;
+        }
+        if (event.getAlertType() != AlertType.OPEN && event.getAlertType() != AlertType.WAITLIST) {
+            return false;
+        }
+        return !subscriptionRepository.existsByIdAndEnabledTrue(event.getSubscriptionId());
     }
 
     private String resolveEventId(AlertEvent event, Message message) {

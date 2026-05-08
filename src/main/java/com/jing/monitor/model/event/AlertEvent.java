@@ -15,6 +15,7 @@ import java.util.UUID;
 public class AlertEvent {
 
     private UUID eventId;
+    private UUID subscriptionId;
     private AlertType alertType;
     private String recipientEmail;
     private String senderEmail;

@@ -37,32 +37,14 @@ public class AlertPublisherService {
     private long publishEventIdTtlSeconds;
 
     /**
-     * Publishes one alert event for asynchronous processing.
-     *
-     * @param alertType alert category
-     * @param recipientEmail email recipient
-     * @param sectionId section identifier
-     * @param courseDisplayName display name rendered in the email
-     */
-    public void publishAlert(
-            AlertType alertType,
-            String recipientEmail,
-            String sectionId,
-            String courseDisplayName,
-            String termId
-    ) {
-        publishAlert(alertType, recipientEmail, sectionId, courseDisplayName, termId, false);
-    }
-
-    /**
-     * Publishes one alert event for asynchronous processing.
+     * Publishes one scheduler-generated course alert for asynchronous processing.
      *
      * @param alertType alert category
      * @param recipientEmail email recipient
      * @param sectionId section identifier
      * @param courseDisplayName display name rendered in the email
      * @param termId UW term id used to build the enroll search URL inside the email
-     * @param manualTest whether this event comes from the admin test endpoint
+     * @param subscriptionId subscription that caused this alert
      */
     public void publishAlert(
             AlertType alertType,
@@ -70,10 +52,42 @@ public class AlertPublisherService {
             String sectionId,
             String courseDisplayName,
             String termId,
-            boolean manualTest
+            UUID subscriptionId
+    ) {
+        publishAlert(alertType, recipientEmail, sectionId, courseDisplayName, termId, false, subscriptionId);
+    }
+
+    /**
+     * Publishes one admin-triggered test alert.
+     *
+     * @param alertType alert category
+     * @param recipientEmail email recipient
+     * @param sectionId section identifier
+     * @param courseDisplayName display name rendered in the email
+     * @param termId UW term id used to build the enroll search URL inside the email
+     */
+    public void publishManualTestAlert(
+            AlertType alertType,
+            String recipientEmail,
+            String sectionId,
+            String courseDisplayName,
+            String termId
+    ) {
+        publishAlert(alertType, recipientEmail, sectionId, courseDisplayName, termId, true, null);
+    }
+
+    private void publishAlert(
+            AlertType alertType,
+            String recipientEmail,
+            String sectionId,
+            String courseDisplayName,
+            String termId,
+            boolean manualTest,
+            UUID subscriptionId
     ) {
         AlertEvent event = new AlertEvent();
         event.setEventId(UUID.randomUUID());
+        event.setSubscriptionId(subscriptionId);
         event.setAlertType(alertType);
         event.setRecipientEmail(recipientEmail);
         event.setSectionId(sectionId);
@@ -93,7 +107,7 @@ public class AlertPublisherService {
      * @param recipientEmail email recipient
      */
     public void publishWelcomeEmail(String recipientEmail) {
-        publishAlert(AlertType.WELCOME, recipientEmail, "WELCOME", "Welcome to MadEnroll", null, false);
+        publishAlert(AlertType.WELCOME, recipientEmail, "WELCOME", "Welcome to MadEnroll", null, false, null);
     }
 
     /**

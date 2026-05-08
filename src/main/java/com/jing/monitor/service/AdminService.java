@@ -150,13 +150,12 @@ public class AdminService {
         String courseDisplayName = firstNonBlank(req.getCourseDisplayName(), "TEST COURSE");
         String termId = requireValidTermId(req.getTermId());
 
-        alertPublisherService.publishAlert(
+        alertPublisherService.publishManualTestAlert(
                 alertType,
                 recipientEmail,
                 sectionId,
                 courseDisplayName,
-                termId,
-                true
+                termId
         );
     }
 
