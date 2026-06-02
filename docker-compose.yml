@@ -65,7 +65,9 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      FETCH_INTERVAL: ${FETCH_INTERVAL}
+      FETCH_INTERVAL_HIGH: ${FETCH_INTERVAL_HIGH:-1000}
+      FETCH_INTERVAL_MID: ${FETCH_INTERVAL_MID:-2000}
+      FETCH_INTERVAL_LOW: ${FETCH_INTERVAL_LOW:-5000}
     volumes:
       - ./app.jar:/app.jar:ro
     command: ["java", "-jar", "/app.jar"]

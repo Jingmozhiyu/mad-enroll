@@ -345,7 +345,7 @@ Response `data`: `MailDailyStatRespDto[]`
 
 Meaning:
 - Return an internal scheduler snapshot for operational debugging
-- Useful for checking queue backlog, due course count, and recent fetch activity
+- Useful for checking queue backlog, due course count, current dynamic fetch interval, and recent fetch activity
 
 Response `data`: `SchedulerStatusRespDto`
 
@@ -353,7 +353,7 @@ Response `data`: `SchedulerStatusRespDto`
 {
   "observedAt": "2026-04-01T18:30:00",
   "heartbeatIntervalMs": 1000,
-  "fetchIntervalMs": 3000,
+  "fetchIntervalMs": 1000,
   "activeCourseCount": 12,
   "dueCourseCount": 4,
   "queueSize": 3,

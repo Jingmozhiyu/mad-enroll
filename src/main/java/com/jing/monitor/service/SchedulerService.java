@@ -18,7 +18,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,12 +63,20 @@ public class SchedulerService {
     private volatile LocalDateTime lastFetchStartedAt;
     private volatile LocalDateTime lastFetchFinishedAt;
     private volatile String lastFetchedCourseId;
+    private volatile long lastFetchFinishedAtMillis;
+    private volatile long currentFetchIntervalMs;
 
     @Value("${monitor.scheduler-heartbeat-ms:1000}")
     private long heartbeatIntervalMs;
 
-    @Value("${monitor.scheduler-fetch-interval-ms:3000}")
-    private long fetchIntervalMs;
+    @Value("${monitor.scheduler-fetch-interval-high-ms:1000}")
+    private long fetchIntervalHighMs;
+
+    @Value("${monitor.scheduler-fetch-interval-mid-ms:2000}")
+    private long fetchIntervalMidMs;
+
+    @Value("${monitor.scheduler-fetch-interval-low-ms:5000}")
+    private long fetchIntervalLowMs;
 
     @Value("${monitor.scheduler-slow-task-warn-ms:20000}")
     private long slowTaskWarnMs;
@@ -74,13 +84,15 @@ public class SchedulerService {
     enum AlertAction { NONE, SEND_OPEN_EMAIL, SEND_WAITLIST_EMAIL }
 
     /**
-     * Heartbeat scheduler that discovers due courses and enqueues them for the fixed-rate
-     * crawler worker. The heartbeat itself never calls the crawler directly.
+     * Heartbeat scheduler that discovers due courses and enqueues them for the crawler
+     * worker. The heartbeat itself never calls the crawler directly.
      */
     @Scheduled(fixedDelayString = "${monitor.scheduler-heartbeat-ms:1000}")
     public synchronized void monitorTask() {
         LocalDateTime now = LocalDateTime.now();
         lastHeartbeatAt = now;
+        refreshCurrentFetchIntervalMs();
+
         long startedAtMillis = System.currentTimeMillis();
         try {
             List<Course> dueCourses = courseRepository.findAllDueForPolling(now);
@@ -109,11 +121,16 @@ public class SchedulerService {
     }
 
     /**
-     * Fixed-rate crawler worker that consumes at most one due course per interval.
-     * This method is the only place where crawler calls happen, which caps global fetch rate.
+     * Crawler worker that consumes queued courses at the current global interval.
      */
-    @Scheduled(fixedDelayString = "${monitor.scheduler-fetch-interval-ms}")
+    @Scheduled(fixedDelayString = "${monitor.scheduler-fetch-tick-ms:1000}")
     public void consumeDueCourseQueue() {
+        long nowMillis = System.currentTimeMillis();
+        long intervalMs = currentFetchIntervalMs > 0 ? currentFetchIntervalMs : refreshCurrentFetchIntervalMs();
+        if (lastFetchFinishedAtMillis > 0 && nowMillis - lastFetchFinishedAtMillis < intervalMs) {
+            return;
+        }
+
         QueuedCourse q = pollNextCourseId();
         if (q == null) {
             return;
@@ -139,6 +156,7 @@ public class SchedulerService {
             log.error("[Scheduler] Unhandled error while consuming queued course {}:{}", termCode, courseId, e);
         } finally {
             lastFetchFinishedAt = LocalDateTime.now();
+            lastFetchFinishedAtMillis = System.currentTimeMillis();
             logSlowTask("fetch", startedAtMillis, termCode + ":" + courseId);
         }
     }
@@ -564,6 +582,21 @@ public class SchedulerService {
         return course.getUnchangedPollCount() == null ? 0 : course.getUnchangedPollCount();
     }
 
+    private long refreshCurrentFetchIntervalMs() {
+        currentFetchIntervalMs = determineFetchIntervalMs(LocalTime.now(Clock.systemUTC()).getHour());
+        return currentFetchIntervalMs;
+    }
+
+    long determineFetchIntervalMs(int utcHour) {
+        if (utcHour >= 13 && utcHour < 23) {
+            return fetchIntervalHighMs;
+        }
+        if (utcHour >= 6 && utcHour < 13) {
+            return fetchIntervalLowMs;
+        }
+        return fetchIntervalMidMs;
+    }
+
     /**
      * Returns an internal scheduler snapshot for admin diagnostics.
      *
@@ -574,7 +607,7 @@ public class SchedulerService {
         SchedulerStatusRespDto dto = new SchedulerStatusRespDto();
         dto.setObservedAt(now);
         dto.setHeartbeatIntervalMs(heartbeatIntervalMs);
-        dto.setFetchIntervalMs(fetchIntervalMs);
+        dto.setFetchIntervalMs(refreshCurrentFetchIntervalMs());
         dto.setActiveCourseCount(subscriptionRepository.countDistinctEnabledCourses());
         dto.setDueCourseCount(courseRepository.countDueForPolling(now));
         dto.setQueueSize(dueCourseQueue.size());

@@ -33,7 +33,7 @@ In short, it was updated from a basic monitor into a more production-oriented sy
 Main changes:
 - Reworked the data model from the old task-centric structure to `users`, `courses`, `course_sections`, and `user_section_subscriptions`
 - Changed polling from per-user fetching to course-level deduplicated crawling
-- Added dynamic polling with `nextPollAt` and a queue-based fixed-rate scheduler
+- Added dynamic polling with `nextPollAt`, a queue-based scheduler, and UTC-5 time-window fetch intervals
 - Introduced RabbitMQ for asynchronous email delivery and dead-letter handling
 - Added Redis-backed rate limiting, search miss caching, and daily mail counters
 - Split user APIs and admin APIs more clearly
@@ -71,12 +71,17 @@ If needed, also adjust:
 - `REDIS_HOST`
 - `REDIS_PORT`
 
+Scheduler fetch intervals use UTC server time shifted from the service's UTC-5 hours:
+- `FETCH_INTERVAL_HIGH=1000` for 13:00-23:00 UTC (08:00-18:00 UTC-5)
+- `FETCH_INTERVAL_MID=2000` for 23:00-06:00 UTC (18:00-01:00 UTC-5)
+- `FETCH_INTERVAL_LOW=5000` for 06:00-13:00 UTC (01:00-08:00 UTC-5)
+
 ### 2. Check the domain
 
 Edit `Caddyfile` and replace the domain if needed:
 
 ```caddy
-madenroll.duckdns.org {
+api.madenroll.com {
     reverse_proxy app:8080
 }
 ```
