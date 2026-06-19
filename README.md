@@ -4,8 +4,9 @@
 
 ### A course monitor service for UW-Madison.
 
-> [!NOTE] Visit MadEnroll:
->
+> [!NOTE]
+> Visit MadEnroll:
+> 
 > [madenroll.com](https://madenroll.com)
 
 ### Project Structure：
