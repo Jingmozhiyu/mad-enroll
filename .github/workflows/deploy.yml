@@ -1,0 +1,63 @@
+name: CI/CD Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-gcp
+  cancel-in-progress: true
+
+jobs:
+  test-package-deploy:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Run tests
+        run: ./mvnw -B test
+
+      - name: Package application
+        run: ./mvnw -B package -DskipTests
+
+      - name: Configure SSH
+        env:
+          GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$GCP_SSH_KEY" > ~/.ssh/gcp_key
+          chmod 600 ~/.ssh/gcp_key
+          ssh-keyscan -H 35.238.99.152 >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host gcp
+            HostName 35.238.99.152
+            User jing
+            IdentityFile ~/.ssh/gcp_key
+            StrictHostKeyChecking yes
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Upload artifacts to GCP
+        run: |
+          set -euo pipefail
+          ssh gcp 'mkdir -p ~/course-app'
+          scp target/app.jar docker-compose.yml gcp:~/course-app/
+
+      - name: Deploy with Docker Compose
+        run: |
+          set -euo pipefail
+          ssh gcp 'cd ~/course-app && docker compose up -d --remove-orphans && docker compose up -d --no-deps --force-recreate app'

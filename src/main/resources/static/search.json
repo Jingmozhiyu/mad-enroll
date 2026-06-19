@@ -1,0 +1,107 @@
+{
+  "found": 573,
+  "hits": [
+    {
+      "termCode": "1264",
+      "courseId": "004293",
+      "subject": {
+        "termCode": "1264",
+        "subjectCode": "266",
+        "description": "COMPUTER SCIENCES",
+        "shortDescription": "COMP SCI",
+        "formalDescription": "COMPUTER SCIENCES",
+        "undergraduateCatalogURI": "http://guide.wisc.edu/undergraduate/letters-science/computer-sciences/",
+        "graduateCatalogURI": "http://guide.wisc.edu/graduate/computer-sciences/",
+        "departmentURI": "http://www.cs.wisc.edu/",
+        "uddsFundingSource": null,
+        "schoolCollege": {
+          "academicOrgCode": "L",
+          "academicGroupCode": "L&S",
+          "shortDescription": "Letters and Science",
+          "formalDescription": "Letters and Science, College of",
+          "uddsCode": null,
+          "schoolCollegeURI": "http://www.ls.wisc.edu/"
+        },
+        "footnotes": [
+          "Courses taught and managed by the Computer Sciences department often have enrollment restrictions that give students in UW-Madison Computer Sciences programs priority access during initial enrollment periods. Those restrictions are removed after the conclusion of sophomore enrollment.\n\nSome CS courses add seats gradually during enrollment. Once all seats have been released, a wait list will be added. Visit this Comp Sci webpage for specific CS course enrollment information:  https://www.cs.wisc.edu/courses-2/ \n\nEvening exams are likely for most of our undergraduate courses."
+        ],
+        "departmentOwnerAcademicOrgCode": "L0780"
+      },
+      "catalogNumber": "640",
+      "approvedForTopics": false,
+      "topics": [],
+      "minimumCredits": 3,
+      "maximumCredits": 3,
+      "creditRange": "3",
+      "firstTaught": "0914",
+      "lastTaught": "1264",
+      "typicallyOffered": "Fall, Spring",
+      "generalEd": null,
+      "ethnicStudies": null,
+      "breadths": [],
+      "lettersAndScienceCredits": {
+        "code": "C",
+        "description": "Counts as LAS credit (L&S)"
+      },
+      "workplaceExperience": null,
+      "foreignLanguage": null,
+      "honors": null,
+      "levels": [
+        {
+          "code": "A",
+          "description": "Advanced"
+        }
+      ],
+      "openToFirstYear": false,
+      "advisoryPrerequisites": null,
+      "enrollmentPrerequisites": "(E C E/COMP SCI 354 and COMP SCI 400) or graduate/professional standing",
+      "allCrossListedSubjects": [],
+      "title": "Introduction to Computer Networks",
+      "description": "Architecture of computer networks and network protocols, protocol layering, reliable transmission, congestion control, flow control, naming and addressing, unicast and multicast routing, network security, network performance widely used protocols such as Ethernet, wireless LANs, IP, TCP, and HTTP.",
+      "catalogPrintFlag": true,
+      "academicGroupCode": null,
+      "currentlyTaught": true,
+      "gradingBasis": {
+        "code": "OPT",
+        "description": "Student Option"
+      },
+      "repeatable": "N",
+      "gradCourseWork": null,
+      "sustainability": null,
+      "instructorProvidedContent": null,
+      "courseRequirements": {
+        "018015=": [
+          55978,
+          71882,
+          79607
+        ],
+        "018015=100010": [
+          76949
+        ]
+      },
+      "courseDesignation": "COMP SCI 640",
+      "courseDesignationRaw": "COMP SCI 640",
+      "fullCourseDesignation": "COMPUTER SCIENCES 640",
+      "fullCourseDesignationRaw": "COMPUTER SCIENCES 640",
+      "lastUpdated": 1772008941351,
+      "catalogSort": "00640",
+      "subjectAggregate": "COMPUTER SCIENCES 266",
+      "titleSuggest": {
+        "input": [
+          "Introduction to Computer Networks"
+        ],
+        "payload": {
+          "courseId": "004293"
+        }
+      },
+      "matched_queries": [
+        "Course Designation",
+        "Short Subject",
+        "Catalog Number",
+        "Subject Catalog"
+      ]
+    }
+  ],
+  "message": null,
+  "success": true
+}
