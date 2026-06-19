@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 concurrency:
@@ -26,11 +29,14 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
       - name: Run tests
+        working-directory: backend
         run: ./mvnw -B test
 
       - name: Package application
+        working-directory: backend
         run: ./mvnw -B package -DskipTests
 
       - name: Configure SSH
@@ -55,7 +61,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh gcp 'mkdir -p ~/course-app'
-          scp target/app.jar docker-compose.yml gcp:~/course-app/
+          scp backend/target/app.jar backend/docker-compose.yml gcp:~/course-app/
 
       - name: Deploy with Docker Compose
         run: |
