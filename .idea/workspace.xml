@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="3bce7e14-19c6-4a55-a9ce-a6216d447ffc" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/deploy.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Caddyfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api-reference.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/MonitorApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/common/GlobalExceptionHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/common/Result.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/config/RabbitMqConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/config/SchedulingConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/config/SecurityConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/controller/AdminController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/controller/AuthController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/controller/FeedbackController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/controller/TaskController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/core/CourseCrawler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/AlertDeadLetter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/AlertDeliveryLog.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/AlertType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/Course.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/CourseSection.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/MailDailyStat.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/SectionInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/StatusMapping.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/UserRole.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/UserSectionSubscription.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AdminSectionSubRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AdminTestEmailReqDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AdminUserSubsRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AlertDeadLetterRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AlertDeliveryLogRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AuthLoginReqDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AuthLoginRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/AuthRegisterReqDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/FeedbackReqDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/MailDailyStatRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/SchedulerStatusRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/SearchCourseRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/dto/TaskRespDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/model/event/AlertEvent.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/AlertDeadLetterRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/AlertDeliveryLogRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/CourseRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/CourseSectionRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/FileRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/MailDailyStatRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/UserRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/repository/UserSectionSubscriptionRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/security/AuthenticatedUser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/security/JwtAuthenticationFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/security/JwtService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/security/RateLimitFilter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/AdminBootstrapService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/AdminService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/AlertConsumerService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/AlertPublisherService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/AuthContextService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/AuthService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/FeedbackService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/MailCounterService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/MailService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/RateLimitService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/SchedulerService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/jing/monitor/service/TaskService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application-dev.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application-prod.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/static/api.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/static/app.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/static/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/static/js/axios.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/static/js/axios.min.js.map" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/static/search.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/jing/monitor/UserAlertBusinessFlowTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/jing/monitor/service/SchedulerServiceTest.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="3B5AamojIDCSI0uyG9zAHURphwk" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;javascript.preferred.runtime.type.id&quot;: &quot;node&quot;,
+    &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/jing/Dev/MadEnroll/mad-enroll&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_interpreter_path&quot;: &quot;node&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;npm.npm dev.executor&quot;: &quot;Run&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/jing/Dev/MadEnroll/mad-enroll/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/public" />
+      <recent name="$PROJECT_DIR$" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/components" />
+    </key>
+  </component>
+  <component name="RunManager" selected="npm.npm dev">
+    <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
+      <method v="2" />
+    </configuration>
+    <configuration name="npm dev" type="js.build_tools.npm">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-WS-253.29346.242" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3bce7e14-19c6-4a55-a9ce-a6216d447ffc" name="Changes" comment="" />
+      <created>1773768622922</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1773768622922</updated>
+      <workItem from="1773768623896" duration="11376000" />
+      <workItem from="1773859187593" duration="2105000" />
+      <workItem from="1773934155757" duration="1227000" />
+      <workItem from="1774067695153" duration="8000" />
+      <workItem from="1774067739482" duration="70000" />
+      <workItem from="1774075882354" duration="781000" />
+      <workItem from="1774458074350" duration="3646000" />
+      <workItem from="1774560530280" duration="3000" />
+      <workItem from="1774933123144" duration="10647000" />
+      <workItem from="1775094437018" duration="22251000" />
+      <workItem from="1775135515232" duration="12507000" />
+      <workItem from="1775249822014" duration="32632000" />
+      <workItem from="1775347890753" duration="803000" />
+      <workItem from="1775391393838" duration="7192000" />
+      <workItem from="1775522502960" duration="2341000" />
+      <workItem from="1775529732215" duration="1286000" />
+      <workItem from="1775580240444" duration="111000" />
+      <workItem from="1775580752480" duration="201000" />
+      <workItem from="1775581052322" duration="6723000" />
+      <workItem from="1775654107690" duration="7000" />
+      <workItem from="1775672006556" duration="2276000" />
+      <workItem from="1775802465602" duration="2029000" />
+      <workItem from="1776061813631" duration="14000" />
+      <workItem from="1776223685980" duration="7902000" />
+      <workItem from="1776262267928" duration="2502000" />
+      <workItem from="1776307291216" duration="1061000" />
+      <workItem from="1776325441212" duration="598000" />
+      <workItem from="1776401144183" duration="6621000" />
+      <workItem from="1776432582179" duration="17000" />
+      <workItem from="1776433155422" duration="2213000" />
+      <workItem from="1776467541333" duration="664000" />
+      <workItem from="1776657480206" duration="1000" />
+      <workItem from="1776703346456" duration="1301000" />
+      <workItem from="1776740330518" duration="18000" />
+      <workItem from="1776994117000" duration="399000" />
+      <workItem from="1777088373647" duration="6000" />
+      <workItem from="1777180538158" duration="7000" />
+      <workItem from="1777328885959" duration="6013000" />
+      <workItem from="1778109422899" duration="694000" />
+      <workItem from="1778198181996" duration="1009000" />
+      <workItem from="1778199880175" duration="195000" />
+      <workItem from="1778554592208" duration="7000" />
+      <workItem from="1778671795270" duration="7000" />
+      <workItem from="1778682283321" duration="3000" />
+      <workItem from="1779173014389" duration="10277000" />
+      <workItem from="1779233792426" duration="176000" />
+      <workItem from="1779279888024" duration="2755000" />
+      <workItem from="1779292867450" duration="16000" />
+      <workItem from="1780902970796" duration="531000" />
+      <workItem from="1781112510992" duration="36000" />
+      <workItem from="1781369640231" duration="10000" />
+      <workItem from="1781840416141" duration="1550000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/lib/auth/session.ts</url>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
