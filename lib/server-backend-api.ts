@@ -17,7 +17,7 @@ import type {
 } from '@/lib/types'
 
 const API_BASE_URL =
-  process.env.API_BASE_URL ?? 'https://madenroll.duckdns.org/'
+  process.env.API_BASE_URL ?? 'https://api.madenroll.com/'
 const FEEDBACK_API_PATH = process.env.FEEDBACK_API_PATH ?? '/api/feedback'
 
 async function backendRequest<T>(
