@@ -1,5 +1,5 @@
-import { AboutHero } from '@/components/about-hero'
+import {AboutHero} from '@/components/about-hero'
 
 export default function AboutPage() {
-  return <AboutHero />
+    return <AboutHero/>
 }

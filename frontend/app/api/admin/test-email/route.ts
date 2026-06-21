@@ -1,15 +1,20 @@
-import { NextResponse } from 'next/server'
-import { backendSendAdminTestEmail } from '@/lib/server-backend-api'
-import { getServerSession } from '@/lib/server-session'
-import type { TestEmailPayload } from '@/lib/types'
+import {NextResponse} from 'next/server'
+import {backendSendAdminTestEmail} from '@/lib/api/server/admin'
+import {getServerSession} from '@/lib/auth/session.server'
+import {jsonError, unauthorizedResponse} from '@/lib/api/server/responses'
+import type {TestEmailPayload} from '@/lib/admin/types'
 
 export async function POST(request: Request) {
-  const { token } = await getServerSession()
-  if (!token) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+    const {token} = await getServerSession()
+    if (!token) {
+        return unauthorizedResponse()
+    }
 
-  const payload = (await request.json()) as TestEmailPayload
-  await backendSendAdminTestEmail(token, payload)
-  return NextResponse.json({ ok: true })
+    try {
+        const payload = (await request.json()) as TestEmailPayload
+        await backendSendAdminTestEmail(token, payload)
+        return NextResponse.json({ok: true})
+    } catch (error) {
+        return jsonError(error, 'Failed to send test email.')
+    }
 }

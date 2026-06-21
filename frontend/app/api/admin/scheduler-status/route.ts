@@ -1,30 +1,18 @@
-import { NextResponse } from 'next/server'
-import { backendFetchAdminSchedulerStatus } from '@/lib/server-backend-api'
-import { getServerSession } from '@/lib/server-session'
-
-function toErrorResponse(error: unknown, fallbackMessage: string) {
-  const status =
-    typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    typeof (error as { status?: unknown }).status === 'number'
-      ? (error as { status: number }).status
-      : 500
-
-  const message = error instanceof Error ? error.message : fallbackMessage
-  return NextResponse.json({ message }, { status })
-}
+import {NextResponse} from 'next/server'
+import {backendFetchAdminSchedulerStatus} from '@/lib/api/server/admin'
+import {getServerSession} from '@/lib/auth/session.server'
+import {jsonError, unauthorizedResponse} from '@/lib/api/server/responses'
 
 export async function GET() {
-  const { token } = await getServerSession()
-  if (!token) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
+    const {token} = await getServerSession()
+    if (!token) {
+        return unauthorizedResponse()
+    }
 
-  try {
-    const data = await backendFetchAdminSchedulerStatus(token)
-    return NextResponse.json(data)
-  } catch (error) {
-    return toErrorResponse(error, 'Failed to load scheduler status.')
-  }
+    try {
+        const data = await backendFetchAdminSchedulerStatus(token)
+        return NextResponse.json(data)
+    } catch (error) {
+        return jsonError(error, 'Failed to load scheduler status.')
+    }
 }

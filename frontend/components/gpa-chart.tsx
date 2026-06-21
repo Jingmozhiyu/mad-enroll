@@ -107,7 +107,7 @@ export function GpaChart({
 
             <div className={`${heightClassName} min-w-0 w-full`}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <LineChart data={data} margin={{top: 10, right: 20, bottom: 2, left: 0}}>
+                    <LineChart data={data} margin={{top: 10, right: 20, bottom: 2, left: 0}}>
                         <CartesianGrid stroke="var(--chart-grid)" vertical={false}/>
                         <XAxis
                             dataKey="termName"
@@ -171,7 +171,12 @@ export function GpaChart({
                                 name="Selected semester"
                                 stroke="transparent"
                                 strokeWidth={0}
-                                dot={{r: 6, fill: highlightColor, stroke: 'var(--chart-highlight-stroke)', strokeWidth: 2}}
+                                dot={{
+                                    r: 6,
+                                    fill: highlightColor,
+                                    stroke: 'var(--chart-highlight-stroke)',
+                                    strokeWidth: 2
+                                }}
                                 activeDot={{r: 7}}
                                 connectNulls={false}
                             />

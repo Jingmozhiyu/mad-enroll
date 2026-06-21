@@ -1,6 +1,7 @@
 # Frontend API
 
 Base behavior:
+
 - All `/api/tasks/**` and `/api/admin/**` requests require `Authorization: Bearer <token>`
 - Response wrapper format is always:
 
@@ -65,9 +66,11 @@ Response:
 ### `GET /api/tasks`
 
 Meaning:
+
 - Get current logged-in user's subscriptions
 
 Query params:
+
 - None
 
 Response `data`: `TaskRespDto[]`
@@ -97,12 +100,14 @@ Response `data`: `TaskRespDto[]`
 ### `GET /api/tasks/search/courses?courseName=640&termId=1272&page=1`
 
 Meaning:
+
 - Search course-level hits only
 - Does not crawl section details yet
 - Supports fuzzy queries and paging through UW search results
 - Works for any subject supported by the UW search API, not only `COMP SCI`
 
 Query params:
+
 - `courseName`: string
 - `termId`: 4-digit UW term id
 - `page`: 1-based result page, defaults to `1`
@@ -123,18 +128,21 @@ Example response:
 ```
 
 Notes:
+
 - `subjectId` and `courseId` from one search hit should be passed into the section search endpoint below
 - `termId` is not repeated in the payload; the frontend should continue using the same `termId` it searched with
 
 ### `GET /api/tasks/search/sections?termId=1272&subjectId=266&courseId=026032`
 
 Meaning:
+
 - Crawl one concrete course selected from the course-search results
 - Sync backend course/section rows
 - Return section rows to frontend
 - Does not create subscription
 
 Query params:
+
 - `termId`: 4-digit UW term id
 - `subjectId`: subject code returned by `search/courses`
 - `courseId`: course id returned by `search/courses`
@@ -142,7 +150,9 @@ Query params:
 Response `data`: `TaskRespDto[]`
 
 Notes:
-- If current user already subscribed to a returned section, `id` will be that subscription UUID and `enabled` reflects current state
+
+- If current user already subscribed to a returned section, `id` will be that subscription UUID and `enabled` reflects
+  current state
 - If not subscribed, `id` is `null` and `enabled` is `false`
 
 Example response:
@@ -172,29 +182,36 @@ Example response:
 ### `POST /api/tasks?docId=1272-A1-266-240-002-330`
 
 Meaning:
+
 - Create one subscription for the current user by unique section doc id
 
 Query params:
+
 - `docId`: unique section doc id
 
 Body:
+
 - None
 
 Response `data`: `TaskRespDto`
 
 Notes:
+
 - Returns the same `TaskRespDto` shape as `GET /api/tasks`, including seat fields
 
 ### `DELETE /api/tasks?docId=1272-A1-266-240-002-330`
 
 Meaning:
+
 - Soft delete
 - Actually sets current user's subscription `enabled=false`
 
 Query params:
+
 - `docId`: unique section doc id
 
 Body:
+
 - None
 
 Response:
@@ -214,6 +231,7 @@ Admin APIs are internal/admin-only. Keep them in version control, but do not exp
 ### `GET /api/admin/subscriptions`
 
 Meaning:
+
 - List all users and their subscriptions
 
 Response `data`: `AdminUserSubsRespDto[]`
@@ -250,15 +268,19 @@ Response `data`: `AdminUserSubsRespDto[]`
 ### `PATCH /api/admin/subscriptions/{subscriptionId}?enabled=true`
 
 Meaning:
+
 - Admin enables or disables one subscription
 
 Path params:
+
 - `subscriptionId`: UUID
 
 Query params:
+
 - `enabled`: `true` or `false`
 
 Body:
+
 - None
 
 Response `data`: `AdminSectionSubRespDto`
@@ -266,6 +288,7 @@ Response `data`: `AdminSectionSubRespDto`
 ### `GET /api/admin/dead-letters`
 
 Meaning:
+
 - List failed alert events that were rejected by the mail consumer and routed into the DLQ
 
 Response `data`: `AlertDeadLetterRespDto[]`
@@ -293,6 +316,7 @@ Example response:
 ### `GET /api/admin/mail-deliveries`
 
 Meaning:
+
 - List successful email deliveries
 - Useful for counting sent emails without mixing in dead letters
 
@@ -318,6 +342,7 @@ Response `data`: `AlertDeliveryLogRespDto[]`
 ### `GET /api/admin/mail-stats`
 
 Meaning:
+
 - List persisted daily mail statistics flushed from Redis into the database
 
 Response `data`: `MailDailyStatRespDto[]`
@@ -344,6 +369,7 @@ Response `data`: `MailDailyStatRespDto[]`
 ### `GET /api/admin/scheduler-status`
 
 Meaning:
+
 - Return an internal scheduler snapshot for operational debugging
 - Useful for checking queue backlog, due course count, and recent fetch activity
 
@@ -372,6 +398,7 @@ Response `data`: `SchedulerStatusRespDto`
 ### `POST /api/admin/test-email`
 
 Meaning:
+
 - Enqueue one manual test email through RabbitMQ
 - This uses the same consumer/mail pipeline as scheduler-generated alerts
 
@@ -388,6 +415,7 @@ Request body:
 ```
 
 Notes:
+
 - `recipientEmail` is optional; if omitted, the backend falls back to the current admin's email
 - `alertType` defaults to `OPEN`
 - `sectionId` defaults to `99999`
@@ -407,5 +435,6 @@ Response:
 ## Error Handling
 
 Common failure responses:
+
 - `401 Unauthorized`: missing/invalid token or non-admin accessing admin API
 - `400 Bad Request`: invalid input, missing section, course not found, etc.

@@ -1,5 +1,5 @@
-import { SearchPageSkeleton } from '@/components/page-skeletons'
+import {SearchPageSkeleton} from '@/components/page-skeletons'
 
 export default function SearchLoading() {
-  return <SearchPageSkeleton />
+    return <SearchPageSkeleton/>
 }

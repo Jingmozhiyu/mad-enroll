@@ -1,353 +1,374 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
-import { getErrorMessage, submitFeedback } from '@/lib/api'
+import {useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode} from 'react'
+import {createPortal} from 'react-dom'
+import {submitFeedback} from '@/lib/api/client/feedback'
+import {getErrorMessage} from '@/lib/api/client/http'
 
 export type PanelKey = 'developer-log' | 'faq' | 'feedback' | null
 
 type FeedbackFormState = {
-  message: string
+    message: string
 }
 
 type FaqItem = {
-  question: string
-  answer: string
+    question: string
+    answer: string
 }
 
 const initialFeedbackForm: FeedbackFormState = {
-  message: '',
+    message: '',
 }
 
 function useHasMounted() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  )
+    return useSyncExternalStore(
+        () => () => {
+        },
+        () => true,
+        () => false,
+    )
 }
 
-const developerLogEntry = {
-  title: 'Product Update',
-  date: 'April 5, 2026',
-  body: [
-    'MadEnroll now centers the product around seat alerts for specific UW-Madison courses and sections.',
-    'Course browsing and grade distributions still exist, but they now support that main alert workflow instead of competing with it.',
-  ],
-}
+const developerLogEntries = [
+    {
+        title: 'Interface and API cleanup',
+        date: 'June 21, 2026',
+        body: [
+            'MadEnroll now has a much clearer UI than before.',
+            'The frontend API layer and CSS structure were reorganized so future changes are easier to make safely.',
+        ],
+    },
+    {
+        title: 'MadEnroll is released!',
+        date: 'April 5, 2026',
+        body: [
+            'Welcome to MadEnroll. Snipe popular courses as you wish.',
+        ],
+    }
+]
+
 
 const faqItems: FaqItem[] = [
-  {
-    question: 'When will I receive an email alert?',
-    answer:
-      'You will receive an email when a section becomes more available, for example, when it changes from closed to waitlist, closed to open, or waitlist to open.\n\nBecause seats can disappear quickly, one alert does not guarantee successful enrollment. If the section becomes available again later, another alert may be sent.',
-  },
-  {
-    question: 'When is MadEnroll most useful?',
-    answer:
-      'MadEnroll is most useful when a course or section has no waitlist, when departments release seats in batches during SOAR, or when seats reappear during the add/drop period.',
-  },
-  {
-    question: 'Does MadEnroll replace the official waitlist?',
-    answer:
-      'No. MadEnroll is not a replacement for the official waitlist. It is a separate alert tool for cases where waitlists are limited, unavailable, or not enough for the specific section you want.',
-  },
-  {
-    question: 'What information do I need to create an account?',
-    answer:
-      'To use seat alerts, you only need an email address and a password. You can browse grade distributions without creating an account.\n\nYour email is used only for alert-related messages, and your password is stored as a secure hash.',
-  },
+    {
+        question: 'When will I receive an email alert?',
+        answer:
+            'You will receive an email when a section becomes more available, for example, when it changes from closed to waitlist, closed to open, or waitlist to open.\n\nBecause seats can disappear quickly, one alert does not guarantee successful enrollment. If the section becomes available again later, another alert may be sent.',
+    },
+    {
+        question: 'When is MadEnroll most useful?',
+        answer:
+            'MadEnroll is most useful when a course or section has no waitlist, when departments release seats in batches during SOAR, or when seats reappear during the add/drop period.',
+    },
+    {
+        question: 'Does MadEnroll replace the official waitlist?',
+        answer:
+            'No. MadEnroll is not a replacement for the official waitlist. It is a separate alert tool for cases where waitlists are limited, unavailable, or not enough for the specific section you want.',
+    },
+    {
+        question: 'What information do I need to create an account?',
+        answer:
+            'To use seat alerts, you only need an email address and a password. You can browse grade distributions without creating an account.\n\nYour email is used only for alert-related messages, and your password is stored as a secure hash.',
+    },
 ]
 
 function ModalShell({
-  title,
-  eyebrow,
-  onClose,
-  children,
-}: {
-  title: string
-  eyebrow: string
-  onClose: () => void
-  children: ReactNode
+                        title,
+                        onClose,
+                        children,
+                    }: {
+    title: string
+    onClose: () => void
+    children: ReactNode
 }) {
-  const hasMounted = useHasMounted()
+    const hasMounted = useHasMounted()
 
-  useEffect(() => {
-    function handleKeydown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose()
-      }
+    useEffect(() => {
+        function handleKeydown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                onClose()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeydown)
+        return () => window.removeEventListener('keydown', handleKeydown)
+    }, [onClose])
+
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+
+        return () => {
+            document.body.style.overflow = previousOverflow
+        }
+    }, [])
+
+    if (!hasMounted) {
+        return null
     }
 
-    window.addEventListener('keydown', handleKeydown)
-    return () => window.removeEventListener('keydown', handleKeydown)
-  }, [onClose])
+    return createPortal(
+        <div
+            className="overlay-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm">
+            <div className="surface-panel-strong relative max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[14px]">
+                <div
+                    className="subtle-panel-divider flex items-center justify-between gap-4 border-b px-6 py-4 md:px-8">
+                    <div>
+                        <h2 className="text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
+                            {title}
+                        </h2>
+                    </div>
+                    <button
+                        className="button-ghost min-w-[96px] focus:outline-none focus-visible:outline-none"
+                        onClick={onClose}
+                        type="button"
+                    >
+                        Close
+                    </button>
+                </div>
 
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [])
-
-  if (!hasMounted) {
-    return null
-  }
-
-  return createPortal(
-    <div className="overlay-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm">
-        <div className="glass-card relative max-h-[88vh] w-full max-w-3xl overflow-hidden">
-        <div className="subtle-panel-divider flex items-start justify-between gap-4 border-b px-6 py-5 md:px-8">
-          <div>
-            <p className="eyebrow">{eyebrow}</p>
-            <h2 className="mt-2 text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
-              {title}
-            </h2>
-          </div>
-          <button
-            className="button-ghost min-w-[96px] focus:outline-none focus-visible:outline-none"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
-
-        <div className="max-h-[calc(88vh-6.5rem)] overflow-y-auto px-6 py-5 md:px-8">
-          {children}
-        </div>
-      </div>
-    </div>,
-    document.body,
-  )
+                <div className="max-h-[calc(88vh-5.75rem)] overflow-y-auto px-6 py-5 md:px-8">
+                    {children}
+                </div>
+            </div>
+        </div>,
+        document.body,
+    )
 }
 
 function InlineAction({
-  label,
-  onClick,
-}: {
-  label: string
-  onClick: () => void
+                          label,
+                          onClick,
+                      }: {
+    label: string
+    onClick: () => void
 }) {
-  return (
-    <button
-      className="bg-transparent p-0 text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--about-inline-decoration)] underline-offset-[0.24em] transition hover:text-[var(--color-ink)] hover:decoration-[var(--about-inline-decoration-hover)] focus:outline-none focus-visible:outline-none"
-      onClick={onClick}
-      type="button"
-    >
-      {label}
-    </button>
-  )
+    return (
+        <button
+            className="bg-transparent p-0 text-sm font-medium text-[var(--color-ink-soft)] underline decoration-[var(--about-inline-decoration)] underline-offset-[0.24em] transition hover:text-[var(--color-ink)] hover:decoration-[var(--about-inline-decoration-hover)] focus:outline-none focus-visible:outline-none"
+            onClick={onClick}
+            type="button"
+        >
+            {label}
+        </button>
+    )
 }
 
 function AccordionItem({
-  item,
-  index,
-  isOpen,
-  onToggle,
-}: {
-  item: FaqItem
-  index: number
-  isOpen: boolean
-  onToggle: () => void
+                           item,
+                           isOpen,
+                           onToggle,
+                       }: {
+    item: FaqItem
+    isOpen: boolean
+    onToggle: () => void
 }) {
-  return (
-    <div className="surface-panel-muted overflow-hidden rounded-[24px]">
-      <button
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left focus:outline-none focus-visible:outline-none"
-        onClick={onToggle}
-        type="button"
-      >
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-deep-teal)]">
-            FAQ {String(index + 1).padStart(2, '0')}
-          </p>
-          <p className="mt-1 text-base font-semibold text-[var(--color-ink)]">
-            {item.question}
-          </p>
-        </div>
-        <span className="text-xl leading-none text-[var(--color-ink-soft)]">
+    return (
+        <div className="border-b border-[var(--surface-divider)] last:border-b-0">
+            <button
+                className="flex w-full items-center justify-between gap-4 py-4 text-left focus:outline-none focus-visible:outline-none"
+                onClick={onToggle}
+                type="button"
+            >
+                <div>
+                    <p className="text-base font-semibold text-[var(--color-ink)]">
+                        {item.question}
+                    </p>
+                </div>
+                <span className="text-xl leading-none text-[var(--color-ink-soft)]">
           {isOpen ? '−' : '+'}
         </span>
-      </button>
+            </button>
 
-      {isOpen ? (
-        <div className="border-t border-[var(--surface-border)] px-5 py-5">
-          <p className="whitespace-pre-line text-md leading-7 text-[var(--color-ink-soft)]">
-            {item.answer}
-          </p>
+            {isOpen ? (
+                <div className="pb-5">
+                    <p className="whitespace-pre-line text-md leading-7 text-[var(--color-ink-soft)]">
+                        {item.answer}
+                    </p>
+                </div>
+            ) : null}
         </div>
-      ) : null}
-    </div>
-  )
+    )
 }
 
-function ThankYouToast({ visible }: { visible: boolean }) {
-  const hasMounted = useHasMounted()
+function ThankYouToast({visible}: { visible: boolean }) {
+    const hasMounted = useHasMounted()
 
-  if (!hasMounted) {
-    return null
-  }
+    if (!hasMounted) {
+        return null
+    }
 
-  return createPortal(
-    <div
-      className={[
-        'pointer-events-none fixed inset-x-0 top-10 z-[60] flex justify-center px-4 transition-all duration-500',
-        visible ? 'translate-y-0 opacity-100' : '-translate-y-3 opacity-0',
-      ].join(' ')}
-    >
-      <div className="surface-toast flex w-full max-w-lg items-center gap-5 rounded-[8px] px-5 py-4">
-        <div className="surface-panel-muted flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[8px]">
-          <Image alt="Thank you" height={112} src="/img.png" width={112} />
-        </div>
-        <div>
-          <p className="text-lg font-semibold text-[var(--color-ink)]">Thank you for the note.</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
-            Developer will receive the feedback immediately.
-          </p>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  )
+    return createPortal(
+        <div
+            className={[
+                'pointer-events-none fixed inset-x-0 top-10 z-[60] flex justify-center px-4 transition-all duration-500',
+                visible ? 'translate-y-0 opacity-100' : '-translate-y-3 opacity-0',
+            ].join(' ')}
+        >
+            <div className="surface-toast flex w-full max-w-lg items-center gap-5 rounded-[8px] px-5 py-4">
+                <div
+                    className="surface-panel-muted flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[8px]">
+                    <Image alt="Thank you" height={112} src="/img.png" width={112}/>
+                </div>
+                <div>
+                    <p className="text-lg font-semibold text-[var(--color-ink)]">Thank you for the note.</p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--color-ink-soft)]">
+                        Developer will receive the feedback immediately.
+                    </p>
+                </div>
+            </div>
+        </div>,
+        document.body,
+    )
 }
 
 export function AboutSecondaryActions({
-  activePanel: controlledActivePanel,
-  onActivePanelChange,
-}: {
-  activePanel?: PanelKey
-  onActivePanelChange?: (panel: PanelKey) => void
+                                          activePanel: controlledActivePanel,
+                                          onActivePanelChange,
+                                      }: {
+    activePanel?: PanelKey
+    onActivePanelChange?: (panel: PanelKey) => void
 } = {}) {
-  const [internalActivePanel, setInternalActivePanel] = useState<PanelKey>(null)
-  const [openFaqIndex, setOpenFaqIndex] = useState<number>(0)
-  const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm)
-  const [feedbackError, setFeedbackError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showThankYou, setShowThankYou] = useState(false)
-  const activePanel = controlledActivePanel ?? internalActivePanel
+    const [internalActivePanel, setInternalActivePanel] = useState<PanelKey>(null)
+    const [openFaqIndex, setOpenFaqIndex] = useState<number>(0)
+    const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm)
+    const [feedbackError, setFeedbackError] = useState<string | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [showThankYou, setShowThankYou] = useState(false)
+    const activePanel = controlledActivePanel ?? internalActivePanel
 
-  function setActivePanel(panel: PanelKey) {
-    if (controlledActivePanel === undefined) {
-      setInternalActivePanel(panel)
+    function setActivePanel(panel: PanelKey) {
+        if (controlledActivePanel === undefined) {
+            setInternalActivePanel(panel)
+        }
+
+        onActivePanelChange?.(panel)
     }
 
-    onActivePanelChange?.(panel)
-  }
+    useEffect(() => {
+        if (!showThankYou) {
+            return
+        }
 
-  useEffect(() => {
-    if (!showThankYou) {
-      return
+        const hideTimer = window.setTimeout(() => {
+            setShowThankYou(false)
+        }, 5000)
+
+        return () => window.clearTimeout(hideTimer)
+    }, [showThankYou])
+
+    function closePanel() {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+        }
+        setFeedbackError(null)
+        setActivePanel(null)
     }
 
-    const hideTimer = window.setTimeout(() => {
-      setShowThankYou(false)
-    }, 5000)
+    async function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault()
 
-    return () => window.clearTimeout(hideTimer)
-  }, [showThankYou])
-
-  function closePanel() {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur()
+        try {
+            setIsSubmitting(true)
+            setFeedbackError(null)
+            await submitFeedback(feedbackForm)
+            setFeedbackForm(initialFeedbackForm)
+            closePanel()
+            setShowThankYou(true)
+        } catch (error) {
+            setFeedbackError(getErrorMessage(error, 'Failed to submit feedback.'))
+        } finally {
+            setIsSubmitting(false)
+        }
     }
-    setFeedbackError(null)
-    setActivePanel(null)
-  }
 
-  async function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    return (
+        <>
+            <div className="flex flex-wrap items-center justify-center gap-0 pt-4 text-center">
+                <InlineAction label="📖 Developer Log" onClick={() => setActivePanel('developer-log')}/>
+                <span className="px-3 text-[var(--inline-muted)]">|</span>
+                <InlineAction label="❓ FAQ" onClick={() => setActivePanel('faq')}/>
+                <span className="px-3 text-[var(--inline-muted)]">|</span>
+                <InlineAction label="💡 Send Feedback" onClick={() => setActivePanel('feedback')}/>
+            </div>
 
-    try {
-      setIsSubmitting(true)
-      setFeedbackError(null)
-      await submitFeedback(feedbackForm)
-      setFeedbackForm(initialFeedbackForm)
-      closePanel()
-      setShowThankYou(true)
-    } catch (error) {
-      setFeedbackError(getErrorMessage(error, 'Failed to submit feedback.'))
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <>
-      <div className="flex flex-wrap items-center justify-center gap-0 pt-4 text-center">
-        <InlineAction label="📖 Developer Log" onClick={() => setActivePanel('developer-log')} />
-        <span className="px-3 text-[var(--inline-muted)]">|</span>
-        <InlineAction label="❓ FAQ" onClick={() => setActivePanel('faq')} />
-        <span className="px-3 text-[var(--inline-muted)]">|</span>
-        <InlineAction label="💡 Send Feedback" onClick={() => setActivePanel('feedback')} />
-      </div>
-
-      {activePanel === 'developer-log' ? (
-        <ModalShell eyebrow="Developer Log" onClose={closePanel} title={developerLogEntry.title}>
-          <div className="grid gap-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--color-deep-teal)]">
-              {developerLogEntry.date}
-            </p>
-            {developerLogEntry.body.map((paragraph) => (
-              <p key={paragraph} className="text-base leading-8 text-[var(--color-ink-soft)]">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </ModalShell>
-      ) : null}
-
-      {activePanel === 'faq' ? (
-        <ModalShell eyebrow="FAQ" onClose={closePanel} title="Frequently asked questions">
-          <div className="grid gap-4">
-            {faqItems.map((item, index) => (
-              <AccordionItem
-                key={item.question}
-                index={index}
-                isOpen={openFaqIndex === index}
-                item={item}
-                onToggle={() => setOpenFaqIndex((current) => (current === index ? -1 : index))}
-              />
-            ))}
-          </div>
-        </ModalShell>
-      ) : null}
-
-      {activePanel === 'feedback' ? (
-        <ModalShell eyebrow="Feedback" onClose={closePanel} title="Send a quick note">
-          <form className="grid gap-5" onSubmit={handleFeedbackSubmit}>
-            {feedbackError ? (
-              <div className="status-alert-error rounded-[20px] px-4 py-3 text-sm text-[var(--color-ink)]">
-                {feedbackError}
-              </div>
+            {activePanel === 'developer-log' ? (
+                <ModalShell onClose={closePanel} title="Developer Log">
+                    <div className="grid border-y border-[var(--surface-divider)]">
+                        {developerLogEntries.map((entry) => (
+                            <article
+                                className="border-b border-[var(--surface-divider)] py-5 last:border-b-0"
+                                key={entry.title}
+                            >
+                                <div className="flex flex-wrap items-baseline justify-between gap-3">
+                                    <h3 className="text-lg font-semibold text-[var(--color-ink)]">
+                                        {entry.title}
+                                    </h3>
+                                    <p className="text-sm font-semibold text-[var(--color-deep-teal)]">
+                                        {entry.date}
+                                    </p>
+                                </div>
+                                <div className="mt-3 grid gap-3">
+                                    {entry.body.map((paragraph) => (
+                                        <p key={paragraph} className="text-base leading-8 text-[var(--color-ink-soft)]">
+                                            {paragraph}
+                                        </p>
+                                    ))}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </ModalShell>
             ) : null}
 
-            <label className="grid gap-2">
-              <span className="text-sm font-bold text-[var(--color-ink-soft)]">Feedback</span>
-              <textarea
-                className="input-shell min-h-[220px] resize-y"
-                onChange={(event) =>
-                  setFeedbackForm((current) => ({ ...current, message: event.target.value }))
-                }
-                placeholder="Tell me what felt good, what felt confusing, or what should be improved next..."
-                required
-                value={feedbackForm.message}
-              />
-            </label>
+            {activePanel === 'faq' ? (
+                <ModalShell onClose={closePanel} title="Frequently asked questions">
+                    <div className="border-y border-[var(--surface-divider)]">
+                        {faqItems.map((item, index) => (
+                            <AccordionItem
+                                key={item.question}
+                                isOpen={openFaqIndex === index}
+                                item={item}
+                                onToggle={() => setOpenFaqIndex((current) => (current === index ? -1 : index))}
+                            />
+                        ))}
+                    </div>
+                </ModalShell>
+            ) : null}
 
-            <div className="flex justify-end">
-              <button className="button-primary min-w-[144px]" disabled={isSubmitting} type="submit">
-                {isSubmitting ? 'Sending...' : 'Submit'}
-              </button>
-            </div>
-          </form>
-        </ModalShell>
-      ) : null}
+            {activePanel === 'feedback' ? (
+                <ModalShell onClose={closePanel} title="Send a quick note">
+                    <form className="grid gap-5" onSubmit={handleFeedbackSubmit}>
+                        {feedbackError ? (
+                            <div
+                                className="status-alert-error rounded-[10px] px-4 py-3 text-sm text-[var(--color-ink)]">
+                                {feedbackError}
+                            </div>
+                        ) : null}
 
-      <ThankYouToast visible={showThankYou} />
-    </>
-  )
+                        <label className="grid gap-2">
+                            <span className="text-sm font-bold text-[var(--color-ink-soft)]">Feedback</span>
+                            <textarea
+                                className="input-shell min-h-[220px] resize-y"
+                                onChange={(event) =>
+                                    setFeedbackForm((current) => ({...current, message: event.target.value}))
+                                }
+                                placeholder="Tell me what felt good, what felt confusing, or what should be improved next..."
+                                required
+                                value={feedbackForm.message}
+                            />
+                        </label>
+
+                        <div className="flex justify-end">
+                            <button className="button-primary min-w-[144px]" disabled={isSubmitting} type="submit">
+                                {isSubmitting ? 'Sending...' : 'Submit'}
+                            </button>
+                        </div>
+                    </form>
+                </ModalShell>
+            ) : null}
+
+            <ThankYouToast visible={showThankYou}/>
+        </>
+    )
 }
