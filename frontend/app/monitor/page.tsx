@@ -1,4 +1,4 @@
-import {MonitorClientPage} from '@/components/monitor-client-page'
+import {MonitorClientPage} from '@/components/monitor/monitor-client-page'
 import {backendFetchTasks} from '@/lib/api/server/tasks'
 import {getServerSession} from '@/lib/auth/session.server'
 

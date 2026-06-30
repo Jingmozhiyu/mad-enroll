@@ -1,4 +1,4 @@
-import {MadgradesCoursePage} from '@/components/course-page'
+import {MadgradesCoursePage} from '@/components/courses/course-page'
 import {fetchMadgradesCourse, fetchMadgradesCourseGrades, hasMadgradesToken} from '@/lib/madgrades/api'
 import type {CourseCompareState} from '@/lib/madgrades/types'
 

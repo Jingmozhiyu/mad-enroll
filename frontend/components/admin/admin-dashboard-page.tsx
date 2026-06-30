@@ -1,582 +1,72 @@
 'use client'
 
-import {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
+import {Fragment} from 'react'
 import {EmptyState} from '@/components/empty-state'
 import {ProgressLink} from '@/components/navigation-progress'
-import {useAuth} from '@/components/providers'
 import {
-    fetchAdminDeadLetters,
-    fetchAdminMailDeliveries,
-    fetchAdminMailStats,
-    fetchAdminSchedulerStatus,
-    fetchAdminSubscriptions,
-    patchAdminSubscription,
-    sendAdminTestEmail,
-} from '@/lib/api/client/admin'
-import {getErrorMessage, isUnauthorizedError} from '@/lib/api/client/http'
+    CompactPanel,
+    MiniPagination,
+    SummaryMetric,
+} from '@/components/admin/admin-sections'
+import {
+    formatCount,
+    formatSnapshotTime,
+    getDeadLetterSummary,
+    getStatusTextClass,
+    getSubscriptionState,
+    getUserSubscriptionCounts,
+    sortSubscriptionsByState,
+} from '@/components/admin/admin-helpers'
+import {useAdminDashboard} from '@/components/admin/use-admin-dashboard'
 import {formatDateOnly, formatDateTime} from '@/lib/course/format'
-import type {
-    AdminSubscription,
-    AdminUserSubscriptions,
-    AlertDeadLetter,
-    AlertDeliveryLog,
-    MailDailyStat,
-    SchedulerStatus,
-    TestEmailPayload,
-} from '@/lib/admin/types'
-
-const initialTestEmailForm: Required<TestEmailPayload> = {
-    recipientEmail: 'ygong68@wisc.edu',
-    alertType: 'OPEN',
-    sectionId: '31380',
-    courseDisplayName: 'COMP SCI 640',
-    termId: '1272',
-}
-
-const DISPLAY_TIME_ZONE = 'America/Chicago'
-
-type AdminSubscriptionState = 'open' | 'waitlist' | 'closed' | 'disabled'
-
-function getDeadLetterSummary(entry: AlertDeadLetter) {
-    return {
-        title:
-            (typeof entry.courseDisplayName === 'string' && entry.courseDisplayName) ||
-            (typeof entry.alertType === 'string' && entry.alertType) ||
-            'Dead letter event',
-        subtitle:
-            (typeof entry.recipientEmail === 'string' && entry.recipientEmail) ||
-            (typeof entry.sectionId === 'string' && `Section ${entry.sectionId}`) ||
-            'No recipient info',
-        detail:
-            (typeof entry.deadLetterReason === 'string' && entry.deadLetterReason) ||
-            (typeof entry.failedAt === 'string' && formatDateOnly(entry.failedAt)) ||
-            'Details unavailable',
-    }
-}
-
-function getSubscriptionState(subscription: AdminSubscription): AdminSubscriptionState {
-    if (!subscription.enabled) {
-        return 'disabled'
-    }
-
-    const normalizedStatus = subscription.status.trim().toUpperCase()
-
-    if (normalizedStatus === 'OPEN') {
-        return 'open'
-    }
-
-    if (normalizedStatus === 'WAITLIST' || normalizedStatus === 'WAITLISTED') {
-        return 'waitlist'
-    }
-
-    return 'closed'
-}
-
-function getStatusTextClass(state: AdminSubscriptionState) {
-    if (state === 'open') {
-        return 'text-[var(--color-mmj)]'
-    }
-
-    if (state === 'waitlist') {
-        return 'text-[var(--color-monori)]'
-    }
-
-    if (state === 'closed') {
-        return 'text-[var(--color-airi)]'
-    }
-
-    return 'text-[var(--color-haruka)]'
-}
-
-function formatSnapshotTime(value?: string) {
-    if (!value) {
-        return 'N/A'
-    }
-
-    const normalizedValue = /(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`
-    const date = new Date(normalizedValue)
-    if (Number.isNaN(date.getTime())) {
-        return value
-    }
-
-    return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: DISPLAY_TIME_ZONE,
-    }).format(date)
-}
-
-function formatCount(value?: number) {
-    return typeof value === 'number' ? value : '-'
-}
-
-function sortSubscriptionsByState(subscriptions: AdminSubscription[]) {
-    const order: Record<AdminSubscriptionState, number> = {
-        open: 0,
-        waitlist: 1,
-        closed: 2,
-        disabled: 3,
-    }
-
-    return [...subscriptions].sort((left, right) => {
-        const leftState = getSubscriptionState(left)
-        const rightState = getSubscriptionState(right)
-
-        if (leftState !== rightState) {
-            return order[leftState] - order[rightState]
-        }
-
-        if (left.courseDisplayName !== right.courseDisplayName) {
-            return left.courseDisplayName.localeCompare(right.courseDisplayName)
-        }
-
-        return String(left.sectionId).localeCompare(String(right.sectionId))
-    })
-}
-
-function getUserSubscriptionCounts(subscriptions: AdminSubscription[]) {
-    return subscriptions.reduce(
-        (counts, subscription) => {
-            const state = getSubscriptionState(subscription)
-            counts[state] += 1
-            return counts
-        },
-        {open: 0, waitlist: 0, closed: 0, disabled: 0} as Record<AdminSubscriptionState, number>,
-    )
-}
-
-function SummaryMetric({
-                           label,
-                           value,
-                           detail,
-                       }: {
-    label: string
-    value: number
-    detail?: string
-}) {
-    return (
-        <div className="surface-panel-strong rounded-[14px] px-4 py-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
-                {label}
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-[var(--color-ink)]">{value}</p>
-            {detail ? <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{detail}</p> : null}
-        </div>
-    )
-}
-
-function CompactPanel({
-                          title,
-                          className = '',
-                          children,
-                      }: {
-    title: string
-    className?: string
-    children: React.ReactNode
-}) {
-    return (
-        <section
-            className={['surface-panel-strong flex h-full flex-col rounded-[14px] px-4 py-4', className].join(' ')}
-        >
-            <h2 className="text-base font-semibold text-[var(--color-ink)]">{title}</h2>
-            <div className="mt-4 flex flex-1 flex-col">{children}</div>
-        </section>
-    )
-}
-
-function MiniPagination({
-                            currentPage,
-                            totalPages,
-                            onPageChange,
-                        }: {
-    currentPage: number
-    totalPages: number
-    onPageChange: (page: number) => void
-}) {
-    if (totalPages <= 1) {
-        return null
-    }
-
-    const visiblePages = (() => {
-        if (totalPages <= 4) {
-            return Array.from({length: totalPages}, (_, index) => index + 1)
-        }
-
-        if (currentPage <= 3) {
-            return [1, 2, 3, totalPages]
-        }
-
-        if (currentPage >= totalPages - 2) {
-            return [1, totalPages - 2, totalPages - 1, totalPages]
-        }
-
-        return [1, currentPage, totalPages]
-    })()
-
-    return (
-        <div className="mt-auto flex flex-wrap items-center gap-3 pt-3 text-sm text-[var(--color-ink-soft)]">
-            <button
-                className="bg-transparent p-0 transition hover:text-[var(--color-ink)] disabled:opacity-40"
-                disabled={currentPage === 1}
-                onClick={() => onPageChange(currentPage - 1)}
-                type="button"
-            >
-                ←
-            </button>
-            <div className="flex flex-wrap items-center gap-2">
-                {visiblePages.map((page, index) => {
-                    const previousPage = visiblePages[index - 1]
-                    const showEllipsis = previousPage !== undefined && page - previousPage > 1
-
-                    return (
-                        <div key={page} className="flex items-center gap-2">
-                            {showEllipsis ? <span aria-hidden="true">...</span> : null}
-                            <button
-                                className={[
-                                    'bg-transparent p-0 transition hover:text-[var(--color-ink)]',
-                                    page === currentPage
-                                        ? 'font-semibold text-[var(--color-ink)] underline underline-offset-4'
-                                        : '',
-                                ].join(' ')}
-                                onClick={() => onPageChange(page)}
-                                type="button"
-                            >
-                                {page}
-                            </button>
-                        </div>
-                    )
-                })}
-            </div>
-            <button
-                className="bg-transparent p-0 transition hover:text-[var(--color-ink)] disabled:opacity-40"
-                disabled={currentPage === totalPages}
-                onClick={() => onPageChange(currentPage + 1)}
-                type="button"
-            >
-                →
-            </button>
-            <label className="flex items-center gap-2">
-                <span>Jump</span>
-                <input
-                    aria-label="Jump to page"
-                    className="input-shell input-shell-compact h-8 rounded-[8px] px-2 py-0"
-                    inputMode="numeric"
-                    max={totalPages}
-                    min={1}
-                    name="jump-page"
-                    onKeyDown={(event) => {
-                        if (event.key !== 'Enter') {
-                            return
-                        }
-
-                        const nextPage = Number((event.currentTarget as HTMLInputElement).value)
-                        if (Number.isInteger(nextPage) && nextPage >= 1 && nextPage <= totalPages) {
-                            onPageChange(nextPage)
-                            ;(event.currentTarget as HTMLInputElement).value = ''
-                        }
-                    }}
-                    placeholder={`${currentPage}`}
-                    type="text"
-                />
-            </label>
-        </div>
-    )
-}
 
 export function AdminDashboardPage() {
-    const {ready, isLoggedIn, session, logout} = useAuth()
-    const [subscriptions, setSubscriptions] = useState<AdminUserSubscriptions[]>([])
-    const [deadLetters, setDeadLetters] = useState<AlertDeadLetter[]>([])
-    const [mailDeliveries, setMailDeliveries] = useState<AlertDeliveryLog[]>([])
-    const [mailStats, setMailStats] = useState<MailDailyStat[]>([])
-    const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus | null>(null)
-    const [statusMessage, setStatusMessage] = useState(
-        'Login on the monitor page to access admin data.',
-    )
-    const [loading, setLoading] = useState(false)
-    const [pendingAdminSections, setPendingAdminSections] = useState(0)
-    const [snapshotLoading, setSnapshotLoading] = useState(false)
-    const [showQueuedCourseIds, setShowQueuedCourseIds] = useState(false)
-    const [togglingId, setTogglingId] = useState<string | null>(null)
-    const [testingEmail, setTestingEmail] = useState(false)
-    const [emailHistoryPage, setEmailHistoryPage] = useState(1)
-    const [mailStatsPage, setMailStatsPage] = useState(1)
-    const [deadLettersPage, setDeadLettersPage] = useState(1)
-    const [usersPage, setUsersPage] = useState(1)
-    const [expandedUserIds, setExpandedUserIds] = useState<string[]>([])
-    const [testEmailForm, setTestEmailForm] =
-        useState<Required<TestEmailPayload>>(initialTestEmailForm)
-
-    const loadSnapshot = useCallback(
-        async (message?: string) => {
-            if (!isLoggedIn) {
-                setSchedulerStatus(null)
-                return
-            }
-
-            try {
-                setSnapshotLoading(true)
-                const nextSchedulerStatus = await fetchAdminSchedulerStatus()
-                setSchedulerStatus(nextSchedulerStatus)
-                setShowQueuedCourseIds(false)
-                if (message) {
-                    setStatusMessage(message)
-                }
-            } catch (error) {
-                if (isUnauthorizedError(error)) {
-                    setStatusMessage('Admin access is required for this route.')
-                } else {
-                    setStatusMessage(getErrorMessage(error, 'Failed to refresh snapshot.'))
-                }
-            } finally {
-                setSnapshotLoading(false)
-            }
-        },
-        [isLoggedIn],
-    )
-
-    const loadDashboard = useCallback(
-        async (
-            message?: string,
-            options?: {
-                preservePagination?: boolean
-            },
-        ) => {
-            if (!isLoggedIn) {
-                setSubscriptions([])
-                setDeadLetters([])
-                setMailDeliveries([])
-                setMailStats([])
-                setSchedulerStatus(null)
-                setStatusMessage('Login on the monitor page to access admin data.')
-                return
-            }
-
-            try {
-                async function loadAdminSection<T>(
-                    label: string,
-                    load: () => Promise<T>,
-                    apply: (value: T) => void,
-                ) {
-                    try {
-                        const value = await load()
-                        apply(value)
-                        setStatusMessage(`Loaded ${label}.`)
-                        return {label, status: 'fulfilled' as const, value}
-                    } catch (reason) {
-                        return {label, status: 'rejected' as const, reason}
-                    } finally {
-                        setPendingAdminSections((current) => Math.max(0, current - 1))
-                    }
-                }
-
-                const adminRequestCount = 5
-                let loadedSubscriptions: AdminUserSubscriptions[] = []
-                let loadedDeliveries: AlertDeliveryLog[] = []
-                let loadedDeadLetters: AlertDeadLetter[] = []
-
-                setLoading(true)
-                setPendingAdminSections(adminRequestCount)
-
-                const results = await Promise.all(
-                    [
-                        loadAdminSection('users', fetchAdminSubscriptions, (value) => {
-                            loadedSubscriptions = value
-                            setSubscriptions(value)
-                        }),
-                        loadAdminSection('dead letters', fetchAdminDeadLetters, (value) => {
-                            loadedDeadLetters = value
-                            setDeadLetters(value)
-                        }),
-                        loadAdminSection('deliveries', fetchAdminMailDeliveries, (value) => {
-                            loadedDeliveries = value
-                            setMailDeliveries(value)
-                        }),
-                        loadAdminSection('daily stats', fetchAdminMailStats, setMailStats),
-                        loadAdminSection('snapshot', fetchAdminSchedulerStatus, setSchedulerStatus),
-                    ],
-                )
-
-                const failedSections = results
-                    .filter((result) => result.status === 'rejected')
-                    .map((result) => result.label)
-                const unauthorized = results.some(
-                    (result) => result.status === 'rejected' && isUnauthorizedError(result.reason),
-                )
-                setShowQueuedCourseIds(false)
-                if (!options?.preservePagination) {
-                    setEmailHistoryPage(1)
-                    setMailStatsPage(1)
-                    setDeadLettersPage(1)
-                    setUsersPage(1)
-                    setExpandedUserIds([])
-                }
-
-                if (unauthorized) {
-                    setStatusMessage('Admin access is required for this route.')
-                } else if (failedSections.length > 0) {
-                    setStatusMessage(`Loaded partial admin data. Failed to refresh ${failedSections.join(', ')}.`)
-                } else {
-                    setStatusMessage(
-                        message ??
-                        `Loaded ${loadedSubscriptions.length} users, ${loadedDeliveries.length} deliveries, and ${loadedDeadLetters.length} dead letters.`,
-                    )
-                }
-            } catch (error) {
-                if (isUnauthorizedError(error)) {
-                    setStatusMessage('Admin access is required for this route.')
-                } else {
-                    setStatusMessage(getErrorMessage(error, 'Failed to load admin dashboard.'))
-                }
-            } finally {
-                setLoading(false)
-                setPendingAdminSections(0)
-            }
-        },
-        [isLoggedIn],
-    )
-
-    useEffect(() => {
-        if (!ready) {
-            return
-        }
-
-        void loadDashboard()
-    }, [loadDashboard, ready])
-
-    async function handleToggle(subscriptionId: string, enabled: boolean) {
-        try {
-            setTogglingId(subscriptionId)
-            await patchAdminSubscription(subscriptionId, enabled)
-            await loadDashboard(`Subscription ${enabled ? 'enabled' : 'disabled'} successfully.`, {
-                preservePagination: true,
-            })
-        } catch (error) {
-            if (isUnauthorizedError(error)) {
-                void logout()
-            }
-            setStatusMessage(getErrorMessage(error, 'Failed to update subscription.'))
-        } finally {
-            setTogglingId(null)
-        }
-    }
-
-    async function handleSendTestEmail() {
-        try {
-            setTestingEmail(true)
-            const payload: TestEmailPayload = {}
-            const normalizedAlertType = testEmailForm.alertType.trim().toUpperCase()
-
-            if (testEmailForm.recipientEmail.trim()) {
-                payload.recipientEmail = testEmailForm.recipientEmail.trim()
-            }
-            if (
-                normalizedAlertType &&
-                !['OPEN', 'WAITLIST', 'WELCOME'].includes(normalizedAlertType)
-            ) {
-                setStatusMessage('Alert type must be OPEN, WAITLIST, or WELCOME.')
-                return
-            }
-            if (normalizedAlertType) {
-                payload.alertType = normalizedAlertType
-            }
-            if (testEmailForm.sectionId.trim()) {
-                payload.sectionId = testEmailForm.sectionId.trim()
-            }
-            if (testEmailForm.courseDisplayName.trim()) {
-                payload.courseDisplayName = testEmailForm.courseDisplayName.trim()
-            }
-            if (!/^\d{4}$/.test(testEmailForm.termId.trim())) {
-                setStatusMessage('termId is required and must be a 4-digit UW term id.')
-                return
-            }
-            payload.termId = testEmailForm.termId.trim()
-
-            await sendAdminTestEmail(payload)
-            setStatusMessage('Manual test email has been queued successfully.')
-            await loadDashboard()
-        } catch (error) {
-            setStatusMessage(getErrorMessage(error, 'Failed to enqueue test email.'))
-        } finally {
-            setTestingEmail(false)
-        }
-    }
-
-    function toggleExpandedUser(userId: string) {
-        setExpandedUserIds((current) =>
-            current.includes(userId)
-                ? current.filter((currentUserId) => currentUserId !== userId)
-                : [...current, userId],
-        )
-    }
-
-    const totalUsers = subscriptions.length
-    const totalSubscriptions = subscriptions.reduce(
-        (count, row) => count + row.subscriptions.length,
-        0,
-    )
-    const enabledSubscriptions = subscriptions.reduce(
-        (count, row) =>
-            count + row.subscriptions.filter((subscription) => subscription.enabled).length,
-        0,
-    )
-    const latestStat = useMemo(
-        () =>
-            [...mailStats].sort((left, right) => right.statsDate.localeCompare(left.statsDate))[0] ??
-            null,
-        [mailStats],
-    )
-    const sortedUsers = useMemo(
-        () => [...subscriptions].sort((left, right) => left.email.localeCompare(right.email)),
-        [subscriptions],
-    )
-    const latestWelcomeDeliverySummary = useMemo(() => {
-        const latestWelcomeStat = [...mailStats]
-            .filter((stat) => stat.sentWelcome > 0)
-            .sort((left, right) => right.statsDate.localeCompare(left.statsDate))[0]
-
-        if (!latestWelcomeStat) {
-            return null
-        }
-
-        return `${latestWelcomeStat.sentWelcome} new registered on ${formatDateOnly(latestWelcomeStat.statsDate)}`
-    }, [mailStats])
-    const sortedMailStats = useMemo(
-        () => [...mailStats].sort((left, right) => right.statsDate.localeCompare(left.statsDate)),
-        [mailStats],
-    )
-    const emailHistoryPageSize = 3
-    const mailStatsPageSize = 7
-    const deadLettersPageSize = 3
-    const usersPageSize = 20
-    const emailHistoryTotalPages = Math.max(
-        1,
-        Math.ceil(mailDeliveries.length / emailHistoryPageSize),
-    )
-    const mailStatsTotalPages = Math.max(1, Math.ceil(sortedMailStats.length / mailStatsPageSize))
-    const deadLettersTotalPages = Math.max(
-        1,
-        Math.ceil(deadLetters.length / deadLettersPageSize),
-    )
-    const usersTotalPages = Math.max(1, Math.ceil(sortedUsers.length / usersPageSize))
-    const visibleMailDeliveries = mailDeliveries.slice(
-        (emailHistoryPage - 1) * emailHistoryPageSize,
-        emailHistoryPage * emailHistoryPageSize,
-    )
-    const visibleMailStats = sortedMailStats.slice(
-        (mailStatsPage - 1) * mailStatsPageSize,
-        mailStatsPage * mailStatsPageSize,
-    )
-    const visibleDeadLetters = deadLetters.slice(
-        (deadLettersPage - 1) * deadLettersPageSize,
-        deadLettersPage * deadLettersPageSize,
-    )
-    const visibleUsers = sortedUsers.slice(
-        (usersPage - 1) * usersPageSize,
-        usersPage * usersPageSize,
-    )
+    const {
+        deadLetters,
+        deadLettersPage,
+        deadLettersTotalPages,
+        emailHistoryPage,
+        emailHistoryTotalPages,
+        enabledSubscriptions,
+        expandedUserIds,
+        handleSendTestEmail,
+        handleToggle,
+        isLoggedIn,
+        latestStat,
+        latestWelcomeDeliverySummary,
+        loadDashboard,
+        loadSnapshot,
+        loading,
+        mailDeliveries,
+        mailStatsPage,
+        mailStatsTotalPages,
+        pendingAdminSections,
+        ready,
+        schedulerStatus,
+        sessionEmail,
+        setDeadLettersPage,
+        setEmailHistoryPage,
+        setMailStatsPage,
+        setTestEmailForm,
+        setUsersPage,
+        showQueuedCourseIds,
+        snapshotLoading,
+        sortedMailStats,
+        sortedUsers,
+        statusMessage,
+        testEmailForm,
+        testingEmail,
+        togglingId,
+        toggleExpandedUser,
+        totalSubscriptions,
+        totalUsers,
+        usersPage,
+        usersTotalPages,
+        visibleDeadLetters,
+        visibleMailDeliveries,
+        visibleMailStats,
+        visibleUsers,
+    } = useAdminDashboard()
 
     return (
         <div className="grid gap-5">
@@ -602,7 +92,7 @@ export function AdminDashboardPage() {
                         className="hidden surface-panel-strong flex-col gap-2 rounded-[14px] px-4 py-4 md:flex-row md:items-center md:justify-between">
                         <p className="text-sm text-[var(--color-ink-soft)]">{statusMessage}</p>
                         <div className="flex items-center gap-4">
-                            <p className="text-sm text-[var(--color-ink-soft)]">{session?.email}</p>
+                            <p className="text-sm text-[var(--color-ink-soft)]">{sessionEmail}</p>
                             <button
                                 className="button-secondary min-w-[108px]"
                                 disabled={loading}

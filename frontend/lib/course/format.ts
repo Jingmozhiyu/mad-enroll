@@ -23,6 +23,7 @@ function formatClock(milliseconds?: number) {
     return new Intl.DateTimeFormat('en-US', {
         hour: 'numeric',
         minute: '2-digit',
+        timeZone: DISPLAY_TIME_ZONE,
     }).format(new Date(milliseconds))
 }
 

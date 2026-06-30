@@ -1,24 +1,15 @@
 'use client'
 
 import Image from 'next/image'
-import {useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode} from 'react'
+import {useEffect, useSyncExternalStore, type ReactNode} from 'react'
 import {createPortal} from 'react-dom'
-import {submitFeedback} from '@/lib/api/client/feedback'
-import {getErrorMessage} from '@/lib/api/client/http'
+import {useAboutPanels, type PanelKey} from '@/components/about/use-about-panels'
 
-export type PanelKey = 'developer-log' | 'faq' | 'feedback' | null
-
-type FeedbackFormState = {
-    message: string
-}
+export type {PanelKey}
 
 type FaqItem = {
     question: string
     answer: string
-}
-
-const initialFeedbackForm: FeedbackFormState = {
-    message: '',
 }
 
 function useHasMounted() {
@@ -229,58 +220,22 @@ export function AboutSecondaryActions({
     activePanel?: PanelKey
     onActivePanelChange?: (panel: PanelKey) => void
 } = {}) {
-    const [internalActivePanel, setInternalActivePanel] = useState<PanelKey>(null)
-    const [openFaqIndex, setOpenFaqIndex] = useState<number>(0)
-    const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm)
-    const [feedbackError, setFeedbackError] = useState<string | null>(null)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [showThankYou, setShowThankYou] = useState(false)
-    const activePanel = controlledActivePanel ?? internalActivePanel
-
-    function setActivePanel(panel: PanelKey) {
-        if (controlledActivePanel === undefined) {
-            setInternalActivePanel(panel)
-        }
-
-        onActivePanelChange?.(panel)
-    }
-
-    useEffect(() => {
-        if (!showThankYou) {
-            return
-        }
-
-        const hideTimer = window.setTimeout(() => {
-            setShowThankYou(false)
-        }, 5000)
-
-        return () => window.clearTimeout(hideTimer)
-    }, [showThankYou])
-
-    function closePanel() {
-        if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur()
-        }
-        setFeedbackError(null)
-        setActivePanel(null)
-    }
-
-    async function handleFeedbackSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault()
-
-        try {
-            setIsSubmitting(true)
-            setFeedbackError(null)
-            await submitFeedback(feedbackForm)
-            setFeedbackForm(initialFeedbackForm)
-            closePanel()
-            setShowThankYou(true)
-        } catch (error) {
-            setFeedbackError(getErrorMessage(error, 'Failed to submit feedback.'))
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
+    const {
+        activePanel,
+        closePanel,
+        feedbackError,
+        feedbackForm,
+        handleFeedbackSubmit,
+        isSubmitting,
+        openFaqIndex,
+        setActivePanel,
+        setOpenFaqIndex,
+        showThankYou,
+        updateFeedbackMessage,
+    } = useAboutPanels({
+        activePanel: controlledActivePanel,
+        onActivePanelChange,
+    })
 
     return (
         <>
@@ -351,7 +306,7 @@ export function AboutSecondaryActions({
                             <textarea
                                 className="input-shell min-h-[220px] resize-y"
                                 onChange={(event) =>
-                                    setFeedbackForm((current) => ({...current, message: event.target.value}))
+                                    updateFeedbackMessage(event.target.value)
                                 }
                                 placeholder="Tell me what felt good, what felt confusing, or what should be improved next..."
                                 required

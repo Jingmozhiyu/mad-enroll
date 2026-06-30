@@ -3,7 +3,7 @@
 import {useEffect, useRef} from 'react'
 import {createPortal} from 'react-dom'
 import {Pagination} from '@/components/pagination'
-import {StatusBadge} from '@/components/status-badge'
+import {StatusBadge} from '@/components/monitor/monitor-sections'
 import {
     getMeetingDetailLines,
     getOpenSeatsSummary,

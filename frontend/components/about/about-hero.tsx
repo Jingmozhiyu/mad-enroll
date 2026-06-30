@@ -1,7 +1,7 @@
 'use client'
 
 import {useEffect, useRef, useState} from 'react'
-import {AboutSecondaryActions, type PanelKey} from '@/components/about-secondary-actions'
+import {AboutSecondaryActions, type PanelKey} from '@/components/about/about-secondary-actions'
 import {BrandMark} from '@/components/brand-mark'
 
 function revealClass(

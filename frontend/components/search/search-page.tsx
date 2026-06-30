@@ -6,11 +6,10 @@ import {EmptyState} from '@/components/empty-state'
 import {useProgressRouter} from '@/components/navigation-progress'
 import {SearchResultsSkeleton} from '@/components/page-skeletons'
 import {CourseQueryInput} from '@/components/course-query-input'
-import {CourseResultCard} from '@/components/course-result-card'
 import {
     EntityMultiSelect,
     type SearchEntityOption,
-} from '@/components/entity-multi-select'
+} from '@/components/search/entity-multi-select'
 import {Pagination} from '@/components/pagination'
 import {
     fetchInstructorOptions,
@@ -20,6 +19,7 @@ import type {
     MadgradesCourse,
     MadgradesPaginatedResponse,
 } from '@/lib/madgrades/types'
+import {getCourseDisplayLine} from '@/lib/madgrades/utils'
 
 function buildSearchParams(
     query: string,
@@ -58,6 +58,39 @@ type MadgradesSearchPageProps = {
     error: string | null
 }
 
+type SearchFilterState = {
+    query: string
+    selectedSubjects: SearchEntityOption[]
+    selectedInstructors: SearchEntityOption[]
+    sort: string
+}
+
+function CourseResultCard({course}: { course: MadgradesCourse }) {
+    const router = useProgressRouter()
+    const href = `/courses/${course.uuid}`
+
+    return (
+        <button
+            className="glass-card hover-elevated w-full px-5 py-5 text-left transition hover:-translate-y-0.5"
+            onFocus={() => router.prefetch(href)}
+            onMouseEnter={() => router.prefetch(href)}
+            onClick={() => router.push(href)}
+            type="button"
+        >
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                    <h3 className="text-xl font-semibold text-[var(--color-ink)]">{course.name}</h3>
+                    <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{getCourseDisplayLine(course)}</p>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 md:min-w-[180px] md:flex-col md:items-end">
+                    <span className="font-semibold text-[var(--color-deep-teal)]">Open</span>
+                </div>
+            </div>
+        </button>
+    )
+}
+
 export function MadgradesSearchPage({
                                         initialQuery,
                                         initialSubjects,
@@ -69,19 +102,26 @@ export function MadgradesSearchPage({
     const router = useProgressRouter()
     const pathname = usePathname()
     const [isPending, startRouteTransition] = useTransition()
-    const [query, setQuery] = useState(initialQuery)
-    const [selectedSubjects, setSelectedSubjects] = useState<SearchEntityOption[]>(initialSubjects)
-    const [selectedInstructors, setSelectedInstructors] = useState<SearchEntityOption[]>(
-        initialInstructors,
-    )
-    const [sort, setSort] = useState(initialSort)
+    const [filters, setFilters] = useState<SearchFilterState>({
+        query: initialQuery,
+        selectedInstructors: initialInstructors,
+        selectedSubjects: initialSubjects,
+        sort: initialSort,
+    })
 
-    function updateUrl(nextPage = 1, nextQueryValue = query) {
+    function updateFilters(nextFilters: Partial<SearchFilterState>) {
+        setFilters((current) => ({
+            ...current,
+            ...nextFilters,
+        }))
+    }
+
+    function updateUrl(nextPage = 1, nextQueryValue = filters.query) {
         const nextQuery = buildSearchParams(
             nextQueryValue,
-            selectedSubjects,
-            selectedInstructors,
-            sort,
+            filters.selectedSubjects,
+            filters.selectedInstructors,
+            filters.sort,
             nextPage,
         )
 
@@ -101,16 +141,16 @@ export function MadgradesSearchPage({
                                 inputClassName="input-shell search-input-accent h-12 w-full px-4"
                                 onSelectSuggestion={(suggestion) => router.push(`/courses/${suggestion.uuid}`)}
                                 onSubmit={(nextValue) => updateUrl(1, nextValue)}
-                                onValueChange={setQuery}
+                                onValueChange={(query) => updateFilters({query})}
                                 placeholder="ECON 101, Math 234, Algorithms..."
-                                value={query}
+                                value={filters.query}
                             />
                         </label>
 
                         <EntityMultiSelect
                             title="Subjects"
                             placeholder="Start typing a subject..."
-                            onChange={setSelectedSubjects}
+                            onChange={(selectedSubjects) => updateFilters({selectedSubjects})}
                             searcher={async (value) => {
                                 const response = await fetchSubjectOptions(value)
                                 return response.map((subject) => ({
@@ -119,13 +159,13 @@ export function MadgradesSearchPage({
                                     sublabel: subject.abbreviation || subject.code,
                                 }))
                             }}
-                            selected={selectedSubjects}
+                            selected={filters.selectedSubjects}
                         />
 
                         <EntityMultiSelect
                             title="Instructors"
                             placeholder="Start typing an instructor..."
-                            onChange={setSelectedInstructors}
+                            onChange={(selectedInstructors) => updateFilters({selectedInstructors})}
                             searcher={async (value) => {
                                 const response = await fetchInstructorOptions(value)
                                 return response.map((instructor) => ({
@@ -133,15 +173,15 @@ export function MadgradesSearchPage({
                                     label: instructor.name,
                                 }))
                             }}
-                            selected={selectedInstructors}
+                            selected={filters.selectedInstructors}
                         />
 
                         <label className="grid gap-2">
                             <span className="text-sm font-bold text-[var(--color-ink-soft)]">Sort</span>
                             <select
                                 className="input-shell"
-                                onChange={(event) => setSort(event.target.value)}
-                                value={sort}
+                                onChange={(event) => updateFilters({sort: event.target.value})}
+                                value={filters.sort}
                             >
                                 <option value="relevance">Best match</option>
                                 <option value="number">Number ascending</option>
@@ -154,10 +194,12 @@ export function MadgradesSearchPage({
                             <button
                                 className="button-ghost"
                                 onClick={() => {
-                                    setQuery('')
-                                    setSelectedSubjects([])
-                                    setSelectedInstructors([])
-                                    setSort('relevance')
+                                    setFilters({
+                                        query: '',
+                                        selectedInstructors: [],
+                                        selectedSubjects: [],
+                                        sort: 'relevance',
+                                    })
                                     startTransition(() => {
                                         router.push(pathname)
                                     })

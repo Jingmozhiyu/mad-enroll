@@ -4,9 +4,9 @@ import {useMemo, useState} from 'react'
 import {useSearchParams} from 'next/navigation'
 import {EmptyState} from '@/components/empty-state'
 import {CourseQueryInput} from '@/components/course-query-input'
-import {CourseSelectionControls} from '@/components/course-selection-controls'
-import {GpaChart} from '@/components/gpa-chart'
-import {GradeDistributionChart} from '@/components/grade-distribution-chart'
+import {CourseSelectionControls} from '@/components/courses/course-selection-controls'
+import {GpaChart} from '@/components/courses/gpa-chart'
+import {GradeDistributionChart} from '@/components/courses/grade-distribution-chart'
 import {useProgressRouter} from '@/components/navigation-progress'
 import type {
     CourseCompareState,

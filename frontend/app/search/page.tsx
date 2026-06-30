@@ -1,4 +1,4 @@
-import {MadgradesSearchPage} from '@/components/search-page'
+import {MadgradesSearchPage} from '@/components/search/search-page'
 import {
     fetchMadgradesInstructor,
     fetchMadgradesSubject,
@@ -6,7 +6,7 @@ import {
     searchMadgradesCourses
 } from '@/lib/madgrades/api'
 import type {MadgradesPaginatedResponse, MadgradesCourse} from '@/lib/madgrades/types'
-import type {SearchEntityOption} from '@/components/entity-multi-select'
+import type {SearchEntityOption} from '@/components/search/entity-multi-select'
 
 function getSingleParam(value: string | string[] | undefined) {
     return typeof value === 'string' ? value : Array.isArray(value) ? value[0] ?? '' : ''
