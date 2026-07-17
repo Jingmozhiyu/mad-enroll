@@ -27,5 +27,6 @@ out
 
 .env.example
 .env.local
+.codex
 README-zh_cn.md
 README.md

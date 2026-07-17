@@ -2,7 +2,7 @@
 
 ---
 
-### A course monitor service for UW-Madison.
+### A course seat monitor service for UW-Madison.
 
 > [!NOTE]
 >
