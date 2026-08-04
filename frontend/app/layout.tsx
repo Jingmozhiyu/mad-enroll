@@ -1,10 +1,25 @@
 import type {Metadata} from 'next'
-import type {ReactNode} from 'react'
+import localFont from 'next/font/local'
 import {GeistSans} from 'geist/font/sans'
+import type {ReactNode} from 'react'
 import '@/app/globals.css'
 import {Providers} from '@/components/providers'
 import {SiteShell} from '@/components/site-shell'
 import {getServerSession} from '@/lib/auth/session.server'
+
+const hanyiWenHei = localFont({
+    src: [
+        {path: '../public/汉仪文黑-35W.ttf', weight: '300', style: 'normal'},
+        {path: '../public/汉仪文黑-45W.ttf', weight: '400', style: 'normal'},
+        {path: '../public/汉仪文黑-55W.ttf', weight: '500', style: 'normal'},
+        {path: '../public/汉仪文黑-65W.ttf', weight: '600', style: 'normal'},
+        {path: '../public/汉仪文黑-75W.ttf', weight: '700', style: 'normal'},
+        {path: '../public/汉仪文黑-85W.ttf', weight: '800', style: 'normal'},
+    ],
+    display: 'swap',
+    preload: false,
+    fallback: ['Arial', 'sans-serif'],
+})
 
 export const metadata: Metadata = {
     title: 'MadEnroll',
@@ -23,7 +38,7 @@ export default async function RootLayout({
 
     return (
         <html lang="en">
-            <body className={GeistSans.className}>
+            <body className={`${hanyiWenHei.className} ${GeistSans.variable}`}>
                 <Providers initialSession={session} initialSessionResolved>
                     <SiteShell>{children}</SiteShell>
                 </Providers>

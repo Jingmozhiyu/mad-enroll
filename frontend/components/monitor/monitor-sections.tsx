@@ -95,7 +95,7 @@ export function StatusBadge({status}: StatusBadgeProps) {
 
     return (
         <span
-            className={`inline-flex min-w-[96px] items-center justify-center rounded-xl px-2.5 py-2 text-sm font-bold tracking-[0.02em] ${statusClass}`}
+            className={`monitor-status-badge inline-flex min-w-[96px] items-center justify-center rounded-xl px-2.5 py-2 text-sm tracking-[0.02em] ${statusClass}`}
         >
             {displayLabel}
         </span>
@@ -209,7 +209,7 @@ export function MonitorPageHeader({
                     Seat Alerts
                 </h1>
                 {ready && isLoggedIn ? (
-                    <p className="text-sm font-medium tracking-[0.04em] text-[var(--color-ink-soft)] md:text-base">
+                    <p className="text-sm font-[var(--font-weight-body-bold)] tracking-[0.04em] text-[var(--color-ink-soft)] md:text-base">
                         Track courses and sections by email.
                     </p>
                 ) : (
@@ -232,7 +232,7 @@ export function MonitorPageHeader({
                                 Search courses...
                             </span>
                         </span>
-                        <span className="rounded-full border border-[var(--search-trigger-hint-border)] bg-[var(--search-trigger-hint-background)] px-2.5 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[var(--search-trigger-hint-text)]">
+                        <span className="rounded-full border border-[var(--search-trigger-hint-border)] bg-[var(--search-trigger-hint-background)] px-2.5 py-1 text-xs font-semibold text-[var(--search-trigger-hint-text)]">
                             Enter
                         </span>
                     </button>
@@ -301,22 +301,22 @@ export function MonitorTaskList({
                         </div>
 
                         <dl className="mt-5 mb-4 grid gap-3 border-t border-[var(--surface-divider)] pt-4 text-md leading-6 text-[var(--color-ink-soft)]">
-                            <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-3">
+                            <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-1.5">
                                 <dt className="font-semibold text-[var(--color-open)]">Open seats</dt>
                                 <dd className="min-w-0 leading-7">{task.openSeats ?? '?'} / {task.capacity ?? '?'}</dd>
                             </div>
-                            <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-3">
-                                <dt className="font-semibold text-[var(--color-waitlist)]">Waitlist</dt>
+                            <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-1.5">
+                                <dt className="font-semibold text-[var(--color-waitlist)]">Waitlist spots</dt>
                                 <dd className="min-w-0 leading-7">{task.waitlistSeats ?? '?'} / {task.waitlistCapacity ?? '?'}</dd>
                             </div>
                             {meetingSummary ? (
-                                <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-3">
+                                <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-1.5">
                                     <dt className="font-semibold text-[var(--color-schedule)]">Schedule</dt>
                                     <dd className="min-w-0 leading-7">{meetingSummary}</dd>
                                 </div>
                             ) : null}
                             {meetingLocationSummary ? (
-                                <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-3">
+                                <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] items-start gap-1.5">
                                     <dt className="font-semibold text-[var(--color-location)]">Location</dt>
                                     <dd className="min-w-0 leading-7">{meetingLocationSummary}</dd>
                                 </div>

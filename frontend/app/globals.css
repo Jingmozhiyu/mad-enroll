@@ -85,7 +85,7 @@
     --about-copy-color: #4f666e;
     --about-inline-decoration: #9eafb4;
     --about-inline-decoration-hover: #33ccbb;
-    --about-story-background: #ffffff;
+    --about-story-background: transparent;
 
     --monitor-header-color: #2f867c;
     --monitor-header-glow: transparent;
@@ -98,6 +98,12 @@
     --course-tag-background: #e9f6df;
     --progress-line: #33ccbb;
     --progress-glow: rgba(51, 204, 187, 0.32);
+
+    /* Global typography controls: 500 = 55W, 600 = 65W, 700 = 75W, 800 = 85W. */
+    --font-weight-body: 500;
+    --font-weight-body-bold: 600;
+    --font-weight-emphasis-heading: 800;
+    --font-weight-monitor-status: 700;
 }
 
 * {
@@ -115,9 +121,26 @@ body {
     min-height: 100vh;
     color: var(--color-ink);
     background: var(--page-background);
+    font-weight: var(--font-weight-body);
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+b,
+strong,
+.font-medium,
+.font-semibold {
+    font-weight: var(--font-weight-emphasis-heading);
+}
+
+.monitor-status-badge {
+    font-weight: var(--font-weight-monitor-status);
+}
+
+.font-geist-brand {
+    font-family: var(--font-geist-sans), Arial, sans-serif;
+    font-weight: 600;
 }
 
 @keyframes skeleton-shimmer {
@@ -171,7 +194,8 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
     font: inherit;
     -webkit-tap-highlight-color: transparent;
 }
@@ -393,7 +417,7 @@ button {
 .welcome-hero-copy {
     display: grid;
     justify-items: center;
-    gap: 2rem;
+    gap: 3rem;
     text-align: center;
 }
 
@@ -407,8 +431,9 @@ button {
 .welcome-hero-headline {
     max-width: 14ch;
     color: var(--welcome-hero-headline);
+    font-family: var(--font-geist-sans), Arial, sans-serif;
     font-size: 3.6rem;
-    font-weight: 760;
+    font-weight: 700;
     line-height: 0.98;
 }
 
@@ -445,7 +470,7 @@ button {
     border-radius: 10px;
     padding: 0.85rem 1.35rem;
     font-size: 1rem;
-    font-weight: 760;
+    font-weight: 800;
     line-height: 1.1;
     letter-spacing: 0;
     transition: transform 180ms ease,
@@ -796,7 +821,7 @@ button {
     background: #ffffff;
     color: var(--search-trigger-text);
     text-align: left;
-    font-weight: 600;
+    font-weight: var(--font-weight-emphasis-heading);
     box-shadow: var(--surface-shadow-soft);
     transition: border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -954,11 +979,11 @@ button {
 }
 
 .about-story-shell {
-    border: 1px solid var(--surface-border);
+    border: 1px solid transparent;
     border-radius: 18px;
     padding: 28px 28px 24px;
     background: var(--about-story-background);
-    box-shadow: var(--surface-shadow-soft);
+    box-shadow: none;
 }
 
 .brand-mark-link {
@@ -981,6 +1006,7 @@ button {
 
 .about-brand-word {
     display: inline-flex;
+    font-family: var(--font-geist-sans), Arial, sans-serif;
     font-size: clamp(3rem, 4vw, 4.75rem);
     font-weight: 600;
     line-height: 0.96;
@@ -1013,7 +1039,7 @@ button {
 
 .about-inline-link {
     color: color-mix(in srgb, var(--about-copy-color) 94%, white 6%);
-    font-weight: 400;
+    font-weight: inherit;
     text-decoration: underline;
     text-decoration-color: var(--about-inline-decoration);
     text-decoration-thickness: 1px;

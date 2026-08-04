@@ -11,7 +11,7 @@ export function SummaryMetric({
 }) {
     return (
         <div className="surface-panel-strong rounded-[14px] px-4 py-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[var(--color-ink-soft)]">
+            <p className="text-sm font-semibold text-[var(--color-ink-soft)]">
                 {label}
             </p>
             <p className="mt-2 text-4xl font-semibold text-[var(--color-ink)]">{value}</p>

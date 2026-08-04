@@ -60,7 +60,7 @@ export function SiteShell({children}: { children: ReactNode }) {
                         className="mb-8 flex flex-col gap-5 border-b border-[var(--surface-divider)] px-0 pb-4 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center">
                             <ProgressLink aria-label="Go to homepage" className="brand-mark-link" href="/">
-                                <h1 className="text-3xl font-semibold leading-[1.16] tracking-tight text-[var(--color-ink)] md:text-4xl">
+                                <h1 className="font-geist-brand text-3xl leading-[1.16] tracking-tight text-[var(--color-ink)] md:text-4xl">
                                     <BrandMark variant={pathname === '/about' ? 'colorful' : 'default'}/>
                                 </h1>
                             </ProgressLink>

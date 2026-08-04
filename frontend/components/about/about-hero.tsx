@@ -63,7 +63,7 @@ export function AboutHero() {
     return (
         <section ref={sectionRef} className="px-1 py-2 md:px-2 md:py-4">
             <div
-                className="mx-auto flex min-h-[540px] w-full max-w-4xl flex-col items-center justify-center gap-8 md:gap-10">
+                className="mx-auto flex min-h-[540px] w-full max-w-4xl flex-col items-center justify-center gap-4 md:gap-6">
                 <div
                     className={revealClass(
                         hasEntered,
