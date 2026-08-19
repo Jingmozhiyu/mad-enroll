@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-gcp
+  group: deploy-orcl
   cancel-in-progress: true
 
 jobs:
@@ -41,29 +41,29 @@ jobs:
 
       - name: Configure SSH
         env:
-          GCP_SSH_KEY: ${{ secrets.GCP_SSH_KEY }}
+          ORCL_SSH_KEY: ${{ secrets.ORCL_SSH_KEY }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          printf '%s\n' "$GCP_SSH_KEY" > ~/.ssh/gcp_key
-          chmod 600 ~/.ssh/gcp_key
-          ssh-keyscan -H 35.238.99.152 >> ~/.ssh/known_hosts
+          printf '%s\n' "$ORCL_SSH_KEY" > ~/.ssh/orcl_key
+          chmod 600 ~/.ssh/orcl_key
+          ssh-keyscan -H 163.192.101.89 >> ~/.ssh/known_hosts
           cat > ~/.ssh/config <<'EOF'
-          Host gcp
-            HostName 35.238.99.152
-            User jing
-            IdentityFile ~/.ssh/gcp_key
+          Host orcl
+            HostName 163.192.101.89
+            User ubuntu
+            IdentityFile ~/.ssh/orcl_key
             StrictHostKeyChecking yes
           EOF
           chmod 600 ~/.ssh/config
 
-      - name: Upload artifacts to GCP
+      - name: Upload artifacts to Oracle VM
         run: |
           set -euo pipefail
-          ssh gcp 'mkdir -p ~/course-app'
-          scp backend/target/app.jar backend/docker-compose.yml gcp:~/course-app/
+          ssh orcl 'mkdir -p ~/mad-enroll'
+          scp backend/target/app.jar backend/docker-compose.yml backend/Caddyfile orcl:~/mad-enroll/
 
       - name: Deploy with Docker Compose
         run: |
           set -euo pipefail
-          ssh gcp 'cd ~/course-app && docker compose up -d --remove-orphans && docker compose up -d --no-deps --force-recreate app'
+          ssh orcl 'cd ~/mad-enroll && docker compose up -d --remove-orphans && docker compose up -d --no-deps --force-recreate app caddy'
