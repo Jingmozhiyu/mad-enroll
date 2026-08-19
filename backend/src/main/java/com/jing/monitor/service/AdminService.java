@@ -9,11 +9,13 @@ import com.jing.monitor.model.User;
 import com.jing.monitor.model.UserRole;
 import com.jing.monitor.model.UserSectionSubscription;
 import com.jing.monitor.model.dto.AdminSectionSubRespDto;
+import com.jing.monitor.model.dto.AdminSummaryRespDto;
 import com.jing.monitor.model.dto.AdminTestEmailReqDto;
 import com.jing.monitor.model.dto.AdminUserSubsRespDto;
 import com.jing.monitor.model.dto.AlertDeadLetterRespDto;
 import com.jing.monitor.model.dto.AlertDeliveryLogRespDto;
 import com.jing.monitor.model.dto.MailDailyStatRespDto;
+import com.jing.monitor.model.dto.PageRespDto;
 import com.jing.monitor.model.dto.SchedulerStatusRespDto;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
@@ -21,6 +23,9 @@ import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.UserRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +41,8 @@ import java.util.stream.Collectors;
 public class AdminService {
 
     private static final long MAX_ENABLED_SECTION_SUBSCRIPTIONS = 15;
+    private static final int USER_PAGE_SIZE = 20;
+    private static final int DELIVERY_PAGE_SIZE = 3;
 
     private final UserRepository userRepository;
     private final UserSectionSubscriptionRepository subscriptionRepository;
@@ -48,22 +55,30 @@ public class AdminService {
     private final AuthContextService authContextService;
 
     /**
-     * Returns every user's email together with their current section subscriptions.
+     * Returns one page of users together with their current section subscriptions.
      *
      * @return grouped admin-facing subscription data
      */
     @Transactional(readOnly = true)
-    public List<AdminUserSubsRespDto> getAllUserSubscriptions() {
+    public PageRespDto<AdminUserSubsRespDto> getUserSubscriptionsPage(int page) {
         requireAdmin();
 
-        List<User> users = userRepository.findAll();
-        Map<UUID, List<UserSectionSubscription>> subsByUUID = subscriptionRepository.findAll()
-                .stream().collect(Collectors.groupingBy(
+        Page<User> usersPage = userRepository.findAll(PageRequest.of(
+                Math.max(0, page - 1),
+                USER_PAGE_SIZE,
+                Sort.by(Sort.Direction.ASC, "email").and(Sort.by(Sort.Direction.ASC, "id"))
+        ));
+        List<UUID> userIds = usersPage.getContent().stream().map(User::getId).toList();
+        List<UserSectionSubscription> pageSubscriptions = userIds.isEmpty()
+                ? List.of()
+                : subscriptionRepository.findAllByUser_IdIn(userIds);
+        Map<UUID, List<UserSectionSubscription>> subsByUUID = pageSubscriptions.stream()
+                .collect(Collectors.groupingBy(
                         sub -> sub.getUser().getId(), HashMap::new, Collectors.toList()));
 
         List<AdminUserSubsRespDto> userResp = new ArrayList<>();
 
-        for (User user : users) {
+        for (User user : usersPage.getContent()) {
             AdminUserSubsRespDto dto = new AdminUserSubsRespDto();
             dto.setUserId(user.getId());
             dto.setEmail(user.getEmail());
@@ -74,7 +89,13 @@ public class AdminService {
             userResp.add(dto);
         }
 
-        return userResp;
+        return new PageRespDto<>(
+                userResp,
+                usersPage.getNumber() + 1,
+                usersPage.getSize(),
+                usersPage.getTotalElements(),
+                usersPage.getTotalPages()
+        );
     }
 
     /**
@@ -118,12 +139,40 @@ public class AdminService {
      * @return successful email deliveries ordered from newest to oldest
      */
     @Transactional(readOnly = true)
-    public List<AlertDeliveryLogRespDto> getMailDeliveries() {
+    public PageRespDto<AlertDeliveryLogRespDto> getMailDeliveriesPage(int page) {
         requireAdmin();
-        return alertDeliveryLogRepository.findAll().stream()
-                .sorted(Comparator.comparing(AlertDeliveryLog::getSentAt).reversed())
+        Page<AlertDeliveryLog> deliveriesPage = alertDeliveryLogRepository.findAll(PageRequest.of(
+                Math.max(0, page - 1),
+                DELIVERY_PAGE_SIZE,
+                Sort.by(Sort.Direction.DESC, "sentAt").and(Sort.by(Sort.Direction.DESC, "id"))
+        ));
+        List<AlertDeliveryLogRespDto> deliveries = deliveriesPage.getContent().stream()
                 .map(this::toDeliveryLogResp)
                 .toList();
+        return new PageRespDto<>(
+                deliveries,
+                deliveriesPage.getNumber() + 1,
+                deliveriesPage.getSize(),
+                deliveriesPage.getTotalElements(),
+                deliveriesPage.getTotalPages()
+        );
+    }
+
+    /**
+     * Returns aggregate admin counts using database count queries only.
+     *
+     * @return admin dashboard summary counts
+     */
+    @Transactional(readOnly = true)
+    public AdminSummaryRespDto getSummary() {
+        requireAdmin();
+        return new AdminSummaryRespDto(
+                userRepository.count(),
+                subscriptionRepository.count(),
+                subscriptionRepository.countByEnabledTrue(),
+                alertDeliveryLogRepository.count(),
+                alertDeadLetterRepository.count()
+        );
     }
 
     /**

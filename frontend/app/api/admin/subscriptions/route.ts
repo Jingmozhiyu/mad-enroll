@@ -1,16 +1,18 @@
-import {NextResponse} from 'next/server'
+import {NextRequest, NextResponse} from 'next/server'
 import {backendFetchAdminSubscriptions} from '@/lib/api/server/admin'
 import {getServerSession} from '@/lib/auth/session.server'
 import {jsonError, unauthorizedResponse} from '@/lib/api/server/responses'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     const {token} = await getServerSession()
     if (!token) {
         return unauthorizedResponse()
     }
 
     try {
-        const data = await backendFetchAdminSubscriptions(token)
+        const requestedPage = Number(request.nextUrl.searchParams.get('page') ?? '1')
+        const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
+        const data = await backendFetchAdminSubscriptions(token, page)
         return NextResponse.json(data)
     } catch (error) {
         return jsonError(error, 'Failed to load admin subscriptions.')

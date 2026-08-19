@@ -4,15 +4,25 @@ import {backendRequest} from '@/lib/api/server/http'
 import type {
     AlertDeadLetter,
     AlertDeliveryLog,
+    AdminSummary,
     AdminSubscription,
     AdminUserSubscriptions,
     MailDailyStat,
+    PageResponse,
     SchedulerStatus,
     TestEmailPayload,
 } from '@/lib/admin/types'
 
-export async function backendFetchAdminSubscriptions(token: string) {
-    return backendRequest<AdminUserSubscriptions[]>('/api/admin/subscriptions', {method: 'GET'}, token)
+export async function backendFetchAdminSubscriptions(token: string, page: number) {
+    return backendRequest<PageResponse<AdminUserSubscriptions>>(
+        `/api/admin/subscriptions?page=${page}`,
+        {method: 'GET'},
+        token,
+    )
+}
+
+export async function backendFetchAdminSummary(token: string) {
+    return backendRequest<AdminSummary>('/api/admin/summary', {method: 'GET'}, token)
 }
 
 export async function backendPatchAdminSubscription(
@@ -28,8 +38,12 @@ export async function backendFetchAdminDeadLetters(token: string) {
     return backendRequest<AlertDeadLetter[]>('/api/admin/dead-letters', {method: 'GET'}, token)
 }
 
-export async function backendFetchAdminMailDeliveries(token: string) {
-    return backendRequest<AlertDeliveryLog[]>('/api/admin/mail-deliveries', {method: 'GET'}, token)
+export async function backendFetchAdminMailDeliveries(token: string, page: number) {
+    return backendRequest<PageResponse<AlertDeliveryLog>>(
+        `/api/admin/mail-deliveries?page=${page}`,
+        {method: 'GET'},
+        token,
+    )
 }
 
 export async function backendFetchAdminMailStats(token: string) {

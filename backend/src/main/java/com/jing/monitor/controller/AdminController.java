@@ -4,9 +4,11 @@ import com.jing.monitor.common.Result;
 import com.jing.monitor.model.dto.AdminSectionSubRespDto;
 import com.jing.monitor.model.dto.AdminTestEmailReqDto;
 import com.jing.monitor.model.dto.AdminUserSubsRespDto;
+import com.jing.monitor.model.dto.AdminSummaryRespDto;
 import com.jing.monitor.model.dto.AlertDeadLetterRespDto;
 import com.jing.monitor.model.dto.AlertDeliveryLogRespDto;
 import com.jing.monitor.model.dto.MailDailyStatRespDto;
+import com.jing.monitor.model.dto.PageRespDto;
 import com.jing.monitor.model.dto.SchedulerStatusRespDto;
 import com.jing.monitor.service.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -27,13 +29,15 @@ public class AdminController {
     private final AdminService adminService;
 
     /**
-     * Lists every user email together with the subscribed course and section info.
+     * Lists one page of users together with their subscribed course and section info.
      *
      * @return grouped admin-facing user subscription data
      */
     @GetMapping("/subscriptions")
-    public Result<List<AdminUserSubsRespDto>> listAllSubscriptions() {
-        return Result.success(adminService.getAllUserSubscriptions());
+    public Result<PageRespDto<AdminUserSubsRespDto>> listSubscriptions(
+            @RequestParam(defaultValue = "1") int page
+    ) {
+        return Result.success(adminService.getUserSubscriptionsPage(page));
     }
 
     /**
@@ -62,13 +66,25 @@ public class AdminController {
     }
 
     /**
-     * Lists successful email deliveries for admin-side counting and review.
+     * Lists one page of successful email deliveries for review.
      *
      * @return successful delivery records
      */
     @GetMapping("/mail-deliveries")
-    public Result<List<AlertDeliveryLogRespDto>> listMailDeliveries() {
-        return Result.success(adminService.getMailDeliveries());
+    public Result<PageRespDto<AlertDeliveryLogRespDto>> listMailDeliveries(
+            @RequestParam(defaultValue = "1") int page
+    ) {
+        return Result.success(adminService.getMailDeliveriesPage(page));
+    }
+
+    /**
+     * Returns aggregate counts without loading admin table rows.
+     *
+     * @return admin dashboard summary counts
+     */
+    @GetMapping("/summary")
+    public Result<AdminSummaryRespDto> getSummary() {
+        return Result.success(adminService.getSummary());
     }
 
     /**

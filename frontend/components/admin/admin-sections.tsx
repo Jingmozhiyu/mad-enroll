@@ -41,10 +41,12 @@ export function CompactPanel({
 
 export function MiniPagination({
                                    currentPage,
+                                   disabled = false,
                                    totalPages,
                                    onPageChange,
                                }: {
     currentPage: number
+    disabled?: boolean
     totalPages: number
     onPageChange: (page: number) => void
 }) {
@@ -72,7 +74,7 @@ export function MiniPagination({
         <div className="mt-auto flex flex-wrap items-center gap-3 pt-3 text-sm text-[var(--color-ink-soft)]">
             <button
                 className="bg-transparent p-0 transition hover:text-[var(--color-ink)] disabled:opacity-40"
-                disabled={currentPage === 1}
+                disabled={disabled || currentPage === 1}
                 onClick={() => onPageChange(currentPage - 1)}
                 type="button"
             >
@@ -88,11 +90,12 @@ export function MiniPagination({
                             {showEllipsis ? <span aria-hidden="true">...</span> : null}
                             <button
                                 className={[
-                                    'bg-transparent p-0 transition hover:text-[var(--color-ink)]',
+                                    'bg-transparent p-0 transition hover:text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-40',
                                     page === currentPage
                                         ? 'font-semibold text-[var(--color-ink)] underline underline-offset-4'
                                         : '',
                                 ].join(' ')}
+                                disabled={disabled}
                                 onClick={() => onPageChange(page)}
                                 type="button"
                             >
@@ -104,7 +107,7 @@ export function MiniPagination({
             </div>
             <button
                 className="bg-transparent p-0 transition hover:text-[var(--color-ink)] disabled:opacity-40"
-                disabled={currentPage === totalPages}
+                disabled={disabled || currentPage === totalPages}
                 onClick={() => onPageChange(currentPage + 1)}
                 type="button"
             >
@@ -115,6 +118,7 @@ export function MiniPagination({
                 <input
                     aria-label="Jump to page"
                     className="input-shell input-shell-compact h-8 rounded-[8px] px-2 py-0"
+                    disabled={disabled}
                     inputMode="numeric"
                     max={totalPages}
                     min={1}

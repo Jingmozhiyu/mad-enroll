@@ -7,6 +7,7 @@ import {
     fetchAdminMailDeliveries,
     fetchAdminMailStats,
     fetchAdminSchedulerStatus,
+    fetchAdminSummary,
     fetchAdminSubscriptions,
     patchAdminSubscription,
     sendAdminTestEmail,
@@ -15,12 +16,21 @@ import {getErrorMessage, isUnauthorizedError} from '@/lib/api/client/http'
 import {formatDateOnly} from '@/lib/course/format'
 import type {
     AdminUserSubscriptions,
+    AdminSummary,
     AlertDeadLetter,
     AlertDeliveryLog,
     MailDailyStat,
     SchedulerStatus,
     TestEmailPayload,
 } from '@/lib/admin/types'
+
+const emptyAdminSummary: AdminSummary = {
+    totalUsers: 0,
+    totalSubscriptions: 0,
+    enabledSubscriptions: 0,
+    totalDeliveries: 0,
+    totalDeadLetters: 0,
+}
 
 const initialTestEmailForm: Required<TestEmailPayload> = {
     recipientEmail: 'ygong68@wisc.edu',
@@ -33,6 +43,7 @@ const initialTestEmailForm: Required<TestEmailPayload> = {
 export function useAdminDashboard() {
     const {ready, isLoggedIn, session, logout} = useAuth()
     const [subscriptions, setSubscriptions] = useState<AdminUserSubscriptions[]>([])
+    const [adminSummary, setAdminSummary] = useState<AdminSummary>(emptyAdminSummary)
     const [deadLetters, setDeadLetters] = useState<AlertDeadLetter[]>([])
     const [mailDeliveries, setMailDeliveries] = useState<AlertDeliveryLog[]>([])
     const [mailStats, setMailStats] = useState<MailDailyStat[]>([])
@@ -47,9 +58,13 @@ export function useAdminDashboard() {
     const [togglingId, setTogglingId] = useState<string | null>(null)
     const [testingEmail, setTestingEmail] = useState(false)
     const [emailHistoryPage, setEmailHistoryPage] = useState(1)
+    const [emailHistoryTotalPages, setEmailHistoryTotalPages] = useState(1)
+    const [emailHistoryLoading, setEmailHistoryLoading] = useState(false)
     const [mailStatsPage, setMailStatsPage] = useState(1)
     const [deadLettersPage, setDeadLettersPage] = useState(1)
     const [usersPage, setUsersPage] = useState(1)
+    const [usersTotalPages, setUsersTotalPages] = useState(1)
+    const [usersLoading, setUsersLoading] = useState(false)
     const [expandedUserIds, setExpandedUserIds] = useState<string[]>([])
     const [testEmailForm, setTestEmailForm] =
         useState<Required<TestEmailPayload>>(initialTestEmailForm)
@@ -86,15 +101,22 @@ export function useAdminDashboard() {
         async (
             message?: string,
             options?: {
-                preservePagination?: boolean
+                usersPage?: number
+                emailHistoryPage?: number
+                preserveClientPagination?: boolean
             },
         ) => {
             if (!isLoggedIn) {
                 setSubscriptions([])
+                setAdminSummary(emptyAdminSummary)
                 setDeadLetters([])
                 setMailDeliveries([])
                 setMailStats([])
                 setSchedulerStatus(null)
+                setUsersPage(1)
+                setUsersTotalPages(1)
+                setEmailHistoryPage(1)
+                setEmailHistoryTotalPages(1)
                 setStatusMessage('Login on the monitor page to access admin data.')
                 return
             }
@@ -117,27 +139,32 @@ export function useAdminDashboard() {
                     }
                 }
 
-                const adminRequestCount = 5
-                let loadedSubscriptions: AdminUserSubscriptions[] = []
-                let loadedDeliveries: AlertDeliveryLog[] = []
-                let loadedDeadLetters: AlertDeadLetter[] = []
+                const requestedUsersPage = options?.usersPage ?? 1
+                const requestedEmailHistoryPage = options?.emailHistoryPage ?? 1
+                const adminRequestCount = 6
+                let loadedSummary = emptyAdminSummary
 
                 setLoading(true)
                 setPendingAdminSections(adminRequestCount)
 
                 const results = await Promise.all(
                     [
-                        loadAdminSection('users', fetchAdminSubscriptions, (value) => {
-                            loadedSubscriptions = value
-                            setSubscriptions(value)
+                        loadAdminSection('summary', fetchAdminSummary, (value) => {
+                            loadedSummary = value
+                            setAdminSummary(value)
+                        }),
+                        loadAdminSection('users', () => fetchAdminSubscriptions(requestedUsersPage), (value) => {
+                            setSubscriptions(value.items)
+                            setUsersPage(value.page)
+                            setUsersTotalPages(Math.max(1, value.totalPages))
                         }),
                         loadAdminSection('dead letters', fetchAdminDeadLetters, (value) => {
-                            loadedDeadLetters = value
                             setDeadLetters(value)
                         }),
-                        loadAdminSection('deliveries', fetchAdminMailDeliveries, (value) => {
-                            loadedDeliveries = value
-                            setMailDeliveries(value)
+                        loadAdminSection('deliveries', () => fetchAdminMailDeliveries(requestedEmailHistoryPage), (value) => {
+                            setMailDeliveries(value.items)
+                            setEmailHistoryPage(value.page)
+                            setEmailHistoryTotalPages(Math.max(1, value.totalPages))
                         }),
                         loadAdminSection('daily stats', fetchAdminMailStats, setMailStats),
                         loadAdminSection('snapshot', fetchAdminSchedulerStatus, setSchedulerStatus),
@@ -151,11 +178,9 @@ export function useAdminDashboard() {
                     (result) => result.status === 'rejected' && isUnauthorizedError(result.reason),
                 )
                 setShowQueuedCourseIds(false)
-                if (!options?.preservePagination) {
-                    setEmailHistoryPage(1)
+                if (!options?.preserveClientPagination) {
                     setMailStatsPage(1)
                     setDeadLettersPage(1)
-                    setUsersPage(1)
                     setExpandedUserIds([])
                 }
 
@@ -166,7 +191,7 @@ export function useAdminDashboard() {
                 } else {
                     setStatusMessage(
                         message ??
-                        `Loaded ${loadedSubscriptions.length} users, ${loadedDeliveries.length} deliveries, and ${loadedDeadLetters.length} dead letters.`,
+                        `Loaded ${loadedSummary.totalUsers} users, ${loadedSummary.totalDeliveries} deliveries, and ${loadedSummary.totalDeadLetters} dead letters.`,
                     )
                 }
             } catch (error) {
@@ -196,7 +221,9 @@ export function useAdminDashboard() {
             setTogglingId(subscriptionId)
             await patchAdminSubscription(subscriptionId, enabled)
             await loadDashboard(`Subscription ${enabled ? 'enabled' : 'disabled'} successfully.`, {
-                preservePagination: true,
+                usersPage,
+                emailHistoryPage,
+                preserveClientPagination: true,
             })
         } catch (error) {
             if (isUnauthorizedError(error)) {
@@ -205,6 +232,49 @@ export function useAdminDashboard() {
             setStatusMessage(getErrorMessage(error, 'Failed to update subscription.'))
         } finally {
             setTogglingId(null)
+        }
+    }
+
+    async function handleUsersPageChange(nextPage: number) {
+        if (nextPage === usersPage || usersLoading) {
+            return
+        }
+
+        try {
+            setUsersLoading(true)
+            const nextUsersPage = await fetchAdminSubscriptions(nextPage)
+            setSubscriptions(nextUsersPage.items)
+            setUsersPage(nextUsersPage.page)
+            setUsersTotalPages(Math.max(1, nextUsersPage.totalPages))
+            setExpandedUserIds([])
+        } catch (error) {
+            if (isUnauthorizedError(error)) {
+                void logout()
+            }
+            setStatusMessage(getErrorMessage(error, 'Failed to load users page.'))
+        } finally {
+            setUsersLoading(false)
+        }
+    }
+
+    async function handleEmailHistoryPageChange(nextPage: number) {
+        if (nextPage === emailHistoryPage || emailHistoryLoading) {
+            return
+        }
+
+        try {
+            setEmailHistoryLoading(true)
+            const nextDeliveriesPage = await fetchAdminMailDeliveries(nextPage)
+            setMailDeliveries(nextDeliveriesPage.items)
+            setEmailHistoryPage(nextDeliveriesPage.page)
+            setEmailHistoryTotalPages(Math.max(1, nextDeliveriesPage.totalPages))
+        } catch (error) {
+            if (isUnauthorizedError(error)) {
+                void logout()
+            }
+            setStatusMessage(getErrorMessage(error, 'Failed to load email history page.'))
+        } finally {
+            setEmailHistoryLoading(false)
         }
     }
 
@@ -257,16 +327,13 @@ export function useAdminDashboard() {
         )
     }
 
-    const totalUsers = subscriptions.length
-    const totalSubscriptions = subscriptions.reduce(
-        (count, row) => count + row.subscriptions.length,
-        0,
-    )
-    const enabledSubscriptions = subscriptions.reduce(
-        (count, row) =>
-            count + row.subscriptions.filter((subscription) => subscription.enabled).length,
-        0,
-    )
+    const {
+        enabledSubscriptions,
+        totalDeadLetters,
+        totalDeliveries,
+        totalSubscriptions,
+        totalUsers,
+    } = adminSummary
     const latestStat = useMemo(
         () =>
             [...mailStats].sort((left, right) => right.statsDate.localeCompare(left.statsDate))[0] ??
@@ -292,24 +359,14 @@ export function useAdminDashboard() {
         () => [...mailStats].sort((left, right) => right.statsDate.localeCompare(left.statsDate)),
         [mailStats],
     )
-    const emailHistoryPageSize = 3
     const mailStatsPageSize = 7
     const deadLettersPageSize = 3
-    const usersPageSize = 20
-    const emailHistoryTotalPages = Math.max(
-        1,
-        Math.ceil(mailDeliveries.length / emailHistoryPageSize),
-    )
     const mailStatsTotalPages = Math.max(1, Math.ceil(sortedMailStats.length / mailStatsPageSize))
     const deadLettersTotalPages = Math.max(
         1,
         Math.ceil(deadLetters.length / deadLettersPageSize),
     )
-    const usersTotalPages = Math.max(1, Math.ceil(sortedUsers.length / usersPageSize))
-    const visibleMailDeliveries = mailDeliveries.slice(
-        (emailHistoryPage - 1) * emailHistoryPageSize,
-        emailHistoryPage * emailHistoryPageSize,
-    )
+    const visibleMailDeliveries = mailDeliveries
     const visibleMailStats = sortedMailStats.slice(
         (mailStatsPage - 1) * mailStatsPageSize,
         mailStatsPage * mailStatsPageSize,
@@ -318,21 +375,21 @@ export function useAdminDashboard() {
         (deadLettersPage - 1) * deadLettersPageSize,
         deadLettersPage * deadLettersPageSize,
     )
-    const visibleUsers = sortedUsers.slice(
-        (usersPage - 1) * usersPageSize,
-        usersPage * usersPageSize,
-    )
+    const visibleUsers = sortedUsers
 
     return {
         deadLetters,
         deadLettersPage,
         deadLettersTotalPages,
         emailHistoryPage,
+        emailHistoryLoading,
         emailHistoryTotalPages,
         enabledSubscriptions,
         expandedUserIds,
+        handleEmailHistoryPageChange,
         handleSendTestEmail,
         handleToggle,
+        handleUsersPageChange,
         isLoggedIn,
         latestStat,
         latestWelcomeDeliverySummary,
@@ -347,10 +404,8 @@ export function useAdminDashboard() {
         schedulerStatus,
         sessionEmail: session?.email,
         setDeadLettersPage,
-        setEmailHistoryPage,
         setMailStatsPage,
         setTestEmailForm,
-        setUsersPage,
         showQueuedCourseIds,
         snapshotLoading,
         sortedMailStats,
@@ -360,9 +415,12 @@ export function useAdminDashboard() {
         testingEmail,
         togglingId,
         toggleExpandedUser,
+        totalDeadLetters,
+        totalDeliveries,
         totalSubscriptions,
         totalUsers,
         usersPage,
+        usersLoading,
         usersTotalPages,
         visibleDeadLetters,
         visibleMailDeliveries,

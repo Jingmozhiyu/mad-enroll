@@ -22,6 +22,22 @@ export type AdminUserSubscriptions = {
     subscriptions: AdminSubscription[]
 }
 
+export type PageResponse<T> = {
+    items: T[]
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+}
+
+export type AdminSummary = {
+    totalUsers: number
+    totalSubscriptions: number
+    enabledSubscriptions: number
+    totalDeliveries: number
+    totalDeadLetters: number
+}
+
 export type AlertDeadLetter = {
     id?: string
     eventId?: string

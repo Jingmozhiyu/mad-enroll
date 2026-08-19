@@ -2,15 +2,25 @@ import {ADMIN_REQUEST_TIMEOUT, clientApi} from '@/lib/api/client/http'
 import type {
     AlertDeadLetter,
     AlertDeliveryLog,
+    AdminSummary,
     AdminSubscription,
     AdminUserSubscriptions,
     MailDailyStat,
+    PageResponse,
     SchedulerStatus,
     TestEmailPayload,
 } from '@/lib/admin/types'
 
-export async function fetchAdminSubscriptions() {
-    const response = await clientApi.get<AdminUserSubscriptions[]>('/api/admin/subscriptions', {
+export async function fetchAdminSubscriptions(page = 1) {
+    const response = await clientApi.get<PageResponse<AdminUserSubscriptions>>('/api/admin/subscriptions', {
+        params: {page},
+        timeout: ADMIN_REQUEST_TIMEOUT,
+    })
+    return response.data
+}
+
+export async function fetchAdminSummary() {
+    const response = await clientApi.get<AdminSummary>('/api/admin/summary', {
         timeout: ADMIN_REQUEST_TIMEOUT,
     })
     return response.data
@@ -35,8 +45,9 @@ export async function fetchAdminDeadLetters() {
     return response.data
 }
 
-export async function fetchAdminMailDeliveries() {
-    const response = await clientApi.get<AlertDeliveryLog[]>('/api/admin/mail-deliveries', {
+export async function fetchAdminMailDeliveries(page = 1) {
+    const response = await clientApi.get<PageResponse<AlertDeliveryLog>>('/api/admin/mail-deliveries', {
+        params: {page},
         timeout: ADMIN_REQUEST_TIMEOUT,
     })
     return response.data

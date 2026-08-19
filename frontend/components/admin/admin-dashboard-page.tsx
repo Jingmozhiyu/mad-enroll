@@ -26,11 +26,14 @@ export function AdminDashboardPage() {
         deadLettersPage,
         deadLettersTotalPages,
         emailHistoryPage,
+        emailHistoryLoading,
         emailHistoryTotalPages,
         enabledSubscriptions,
         expandedUserIds,
+        handleEmailHistoryPageChange,
         handleSendTestEmail,
         handleToggle,
+        handleUsersPageChange,
         isLoggedIn,
         latestStat,
         latestWelcomeDeliverySummary,
@@ -45,10 +48,8 @@ export function AdminDashboardPage() {
         schedulerStatus,
         sessionEmail,
         setDeadLettersPage,
-        setEmailHistoryPage,
         setMailStatsPage,
         setTestEmailForm,
-        setUsersPage,
         showQueuedCourseIds,
         snapshotLoading,
         sortedMailStats,
@@ -58,9 +59,12 @@ export function AdminDashboardPage() {
         testingEmail,
         togglingId,
         toggleExpandedUser,
+        totalDeadLetters,
+        totalDeliveries,
         totalSubscriptions,
         totalUsers,
         usersPage,
+        usersLoading,
         usersTotalPages,
         visibleDeadLetters,
         visibleMailDeliveries,
@@ -96,7 +100,11 @@ export function AdminDashboardPage() {
                             <button
                                 className="button-secondary min-w-[108px]"
                                 disabled={loading}
-                                onClick={() => void loadDashboard('Dashboard refreshed.')}
+                                onClick={() => void loadDashboard('Dashboard refreshed.', {
+                                    usersPage,
+                                    emailHistoryPage,
+                                    preserveClientPagination: true,
+                                })}
                                 type="button"
                             >
                                 {loading
@@ -121,7 +129,7 @@ export function AdminDashboardPage() {
                         />
                         <SummaryMetric
                             label="Deliveries"
-                            value={mailDeliveries.length}
+                            value={totalDeliveries}
                             detail={
                                 latestStat
                                     ? `Sent ${latestStat.sentTotal} on ${formatDateOnly(latestStat.statsDate)}`
@@ -130,7 +138,7 @@ export function AdminDashboardPage() {
                         />
                         <SummaryMetric
                             label="Dead Letters"
-                            value={deadLetters.length}
+                            value={totalDeadLetters}
                             detail={
                                 latestStat
                                     ? `Dead ${latestStat.deadTotal} on ${formatDateOnly(latestStat.statsDate)}`
@@ -248,7 +256,8 @@ export function AdminDashboardPage() {
                             </div>
                             <MiniPagination
                                 currentPage={emailHistoryPage}
-                                onPageChange={setEmailHistoryPage}
+                                disabled={emailHistoryLoading}
+                                onPageChange={handleEmailHistoryPageChange}
                                 totalPages={emailHistoryTotalPages}
                             />
                         </CompactPanel>
@@ -422,7 +431,8 @@ export function AdminDashboardPage() {
                                 </div>
                                 <MiniPagination
                                     currentPage={usersPage}
-                                    onPageChange={setUsersPage}
+                                    disabled={usersLoading}
+                                    onPageChange={handleUsersPageChange}
                                     totalPages={usersTotalPages}
                                 />
                             </>
