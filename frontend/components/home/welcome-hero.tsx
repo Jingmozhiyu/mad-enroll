@@ -77,7 +77,7 @@ export function WelcomeHero() {
                                 ),
                             ].join(' ')}
                         >
-                            MadEnroll has sent <span className="welcome-hero-stat">1200+</span> email alerts since fall enrollment began.
+                            MadEnroll has sent <span className="welcome-hero-stat">1300+</span> email alerts since fall enrollment began.
                         </h1>
 
                         <div className="welcome-hero-actions">
