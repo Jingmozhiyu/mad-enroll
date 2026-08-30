@@ -301,8 +301,8 @@ export function SearchOverlay({
 
                                             <div className="mt-auto flex items-center justify-between gap-3">
                         <span
-                            className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-deep-teal)]">
-                          {isExisting ? 'Already added' : 'Ready to add'}
+                            className="text-sm font-bold text-[var(--color-deep-teal)]">
+                          {isExisting ? '' : 'Ready to add ✅'}
                         </span>
                                                 <button
                                                     className={isExisting ? 'button-ghost min-w-[110px]' : 'button-info min-w-[110px]'}
