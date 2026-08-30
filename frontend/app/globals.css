@@ -127,6 +127,10 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+body:has(.welcome-hero) {
+    overflow-x: clip;
+}
+
 b,
 strong,
 .font-medium,
@@ -549,6 +553,12 @@ button {
 
     .welcome-hero-headline {
         font-size: 5.6rem;
+    }
+}
+
+@media (min-width: 1280px) and (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 7 / 4) {
+    .welcome-hero-headline {
+        font-size: 5rem;
     }
 }
 
