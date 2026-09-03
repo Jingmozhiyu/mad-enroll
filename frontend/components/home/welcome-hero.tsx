@@ -2,20 +2,6 @@
 
 import {useEffect, useRef, useState} from 'react'
 import {ProgressLink} from '@/components/navigation-progress'
-import type {MailAlertTotal} from '@/lib/public-stats/types'
-
-const FALLBACK_MAIL_ALERT_TOTAL = '1500+'
-
-function isMailAlertTotal(value: unknown): value is MailAlertTotal {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        'totalSent' in value &&
-        typeof value.totalSent === 'number' &&
-        Number.isSafeInteger(value.totalSent) &&
-        value.totalSent >= 0
-    )
-}
 
 function revealClass(
     hasEntered: boolean,
@@ -33,34 +19,6 @@ function revealClass(
 export function WelcomeHero() {
     const sectionRef = useRef<HTMLElement | null>(null)
     const [hasEntered, setHasEntered] = useState(false)
-    const [mailAlertTotal, setMailAlertTotal] = useState(FALLBACK_MAIL_ALERT_TOTAL)
-
-    useEffect(() => {
-        const abortController = new AbortController()
-
-        async function loadMailAlertTotal() {
-            try {
-                const response = await fetch('/api/mail-alerts/total', {
-                    cache: 'no-store',
-                    signal: abortController.signal,
-                })
-                if (!response.ok) {
-                    return
-                }
-
-                const payload: unknown = await response.json()
-                if (isMailAlertTotal(payload)) {
-                    setMailAlertTotal(payload.totalSent.toLocaleString('en-US'))
-                }
-            } catch {
-                // Keep the static fallback when the aggregate cannot be loaded.
-            }
-        }
-
-        void loadMailAlertTotal()
-
-        return () => abortController.abort()
-    }, [])
 
     useEffect(() => {
         if (typeof window === 'undefined') {
@@ -119,7 +77,7 @@ export function WelcomeHero() {
                                 ),
                             ].join(' ')}
                         >
-                            MadEnroll has sent <span className="welcome-hero-stat">{mailAlertTotal}</span> email alerts since fall enrollment began.
+                            MadEnroll has sent <span className="welcome-hero-stat">1500+</span> email alerts since fall enrollment began.
                         </h1>
 
                         <div className="welcome-hero-actions">

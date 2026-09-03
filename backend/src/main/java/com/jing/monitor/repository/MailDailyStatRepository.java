@@ -2,7 +2,6 @@ package com.jing.monitor.repository;
 
 import com.jing.monitor.model.MailDailyStat;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -19,7 +18,4 @@ public interface MailDailyStatRepository extends JpaRepository<MailDailyStat, UU
     Optional<MailDailyStat> findByStatsDate(LocalDate statsDate);
 
     List<MailDailyStat> findAllByOrderByStatsDateDesc();
-
-    @Query("select coalesce(sum(stat.sentTotal), 0) from MailDailyStat stat")
-    long sumSentTotal();
 }

@@ -107,16 +107,6 @@ public class MailCounterService {
                 .toList();
     }
 
-    /**
-     * Returns the cumulative number of successfully sent emails in persisted daily statistics.
-     *
-     * @return cumulative sent email count
-     */
-    @Transactional(readOnly = true)
-    public long getTotalSentCount() {
-        return mailDailyStatRepository.sumSentTotal();
-    }
-
     private void flushPendingDaysBefore(LocalDate cutoffDateExclusive) {
         Set<String> keys = redisTemplate.keys(KEY_PREFIX + "*");
         if (keys == null || keys.isEmpty()) {
