@@ -12,6 +12,22 @@ Base behavior:
 }
 ```
 
+## Public Statistics
+
+### `GET /api/public/stats/mail-alerts/total`
+
+Meaning:
+- Return the cumulative number of successfully sent emails from persisted daily mail statistics
+- Does not require authentication or return daily detail rows
+
+Response `data`:
+
+```json
+{
+  "totalSent": 1353
+}
+```
+
 ## Auth
 
 ### `POST /auth/register`

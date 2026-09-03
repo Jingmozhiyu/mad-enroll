@@ -13,6 +13,23 @@ Base behavior:
 }
 ```
 
+## Public Statistics
+
+### `GET /api/mail-alerts/total`
+
+Meaning:
+
+- Return the cumulative number of successfully sent emails for the homepage
+- Proxies the backend public aggregate endpoint and does not require a session
+
+Response:
+
+```json
+{
+  "totalSent": 1353
+}
+```
+
 ## Auth
 
 ### `POST /auth/register`
