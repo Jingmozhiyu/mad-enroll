@@ -4,7 +4,7 @@ import {useEffect, useRef, useState} from 'react'
 import {ProgressLink} from '@/components/navigation-progress'
 import type {MailAlertTotal} from '@/lib/public-stats/types'
 
-const FALLBACK_MAIL_ALERT_TOTAL = '1300+'
+const FALLBACK_MAIL_ALERT_TOTAL = '1500+'
 
 function isMailAlertTotal(value: unknown): value is MailAlertTotal {
     return (
