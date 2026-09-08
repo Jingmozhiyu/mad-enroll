@@ -48,6 +48,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final AuthContextService authContextService;
     private final StringRedisTemplate redisTemplate;
+    private final TermService termService;
 
     /**
      * Returns all section subscriptions owned by the current authenticated user.
@@ -73,6 +74,7 @@ public class TaskService {
      */
     public List<SearchCourseRespDto> searchCourse(String courseName, String termId, int page) {
         requireValidTermId(termId);
+        termService.requireSearchable(termId);
         requireValidSearchPage(page);
         String normalizedQuery = normalizeCourseQuery(courseName);
         if (Boolean.TRUE.equals(redisTemplate.hasKey(buildSearchMissKey(normalizedQuery, termId, page)))) {
@@ -115,6 +117,7 @@ public class TaskService {
     @Transactional
     public List<TaskRespDto> searchSections(String termId, String subjectId, String courseId) {
         requireValidTermId(termId);
+        termService.requireSearchable(termId);
         requireNonBlank(subjectId, "subjectId is required.");
         requireNonBlank(courseId, "courseId is required.");
         List<SectionInfo> infos = crawler.fetchCourseStatus(termId, subjectId, courseId);
@@ -122,6 +125,9 @@ public class TaskService {
             throw new RuntimeException("Course details unavailable: " + courseId);
         }
 
+        if (infos.stream().anyMatch(info -> !termId.equals(info.getTermCode()) || !courseId.equals(info.getCourseId()))) {
+            throw new IllegalArgumentException("Course details do not match the requested term and course.");
+        }
         Map<String, CourseSection> sectionsByDocId = syncSections(infos);
         UUID userId = authContextService.currentUserId();
         Map<String, UserSectionSubscription> subsByDocId =
@@ -146,6 +152,7 @@ public class TaskService {
         UUID userId = authContextService.currentUserId();
         CourseSection section = courseSectionRepository.findByDocId(docId)
                 .orElseThrow(() -> new RuntimeException("Section not found. Search before adding: " + docId));
+        termService.lockSubscribableTerm(section.getCourse().getTermCode());
 
         UserSectionSubscription existingSub = subscriptionRepository.findByUser_IdAndSection_DocId(userId, docId)
                 .orElse(null);
@@ -197,9 +204,7 @@ public class TaskService {
         // Persist or refresh the canonical course row shared by all section snapshots.
         SectionInfo firstInfo = infos.get(0);
         Course course = courseRepository.findByTermCodeAndCourseId(firstInfo.getTermCode(), firstInfo.getCourseId())
-                .orElseGet(() -> courseRepository.findByCourseId(firstInfo.getCourseId())
-                        .filter(existingCourse -> firstInfo.getTermCode().equals(existingCourse.getTermCode()))
-                        .orElseGet(() -> new Course(firstInfo.getTermCode(), firstInfo.getCourseId())));
+                .orElseGet(() -> new Course(firstInfo.getTermCode(), firstInfo.getCourseId()));
         course.setTermCode(firstInfo.getTermCode());
         course.setSubjectCode(firstInfo.getSubjectCode());
         course.setSubjectShortName(firstInfo.getSubjectShortName());

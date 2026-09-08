@@ -2,6 +2,9 @@ import 'server-only'
 
 import {backendRequest} from '@/lib/api/server/http'
 import type {
+    AcademicTerm,
+    TermStatus,
+    TermUpdateResult,
     AlertDeadLetter,
     AlertDeliveryLog,
     AdminSummary,
@@ -12,6 +15,24 @@ import type {
     SchedulerStatus,
     TestEmailPayload,
 } from '@/lib/admin/types'
+
+export async function backendFetchAdminTerms(token: string) {
+    return backendRequest<AcademicTerm[]>('/api/admin/terms', {method: 'GET'}, token)
+}
+
+export async function backendCreateAdminTerm(token: string, payload: Pick<AcademicTerm, 'code' | 'label'>) {
+    return backendRequest<AcademicTerm>('/api/admin/terms', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    }, token)
+}
+
+export async function backendUpdateAdminTerm(token: string, code: string, status: TermStatus) {
+    return backendRequest<TermUpdateResult>(`/api/admin/terms/${encodeURIComponent(code)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({status}),
+    }, token)
+}
 
 export async function backendFetchAdminSubscriptions(token: string, page: number) {
     return backendRequest<PageResponse<AdminUserSubscriptions>>(

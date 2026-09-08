@@ -1,16 +1,20 @@
 package com.jing.monitor.service;
 
+import com.jing.monitor.model.AcademicTerm;
 import com.jing.monitor.model.AlertDeadLetter;
 import com.jing.monitor.model.AlertDeliveryLog;
 import com.jing.monitor.model.AlertType;
 import com.jing.monitor.model.Course;
 import com.jing.monitor.model.CourseSection;
+import com.jing.monitor.model.TermStatus;
 import com.jing.monitor.model.User;
 import com.jing.monitor.model.UserRole;
 import com.jing.monitor.model.UserSectionSubscription;
 import com.jing.monitor.model.dto.AdminSectionSubRespDto;
 import com.jing.monitor.model.dto.AdminSummaryRespDto;
 import com.jing.monitor.model.dto.AdminTestEmailReqDto;
+import com.jing.monitor.model.dto.AdminTermReqDto;
+import com.jing.monitor.model.dto.AdminTermUpdateRespDto;
 import com.jing.monitor.model.dto.AdminUserSubsRespDto;
 import com.jing.monitor.model.dto.AlertDeadLetterRespDto;
 import com.jing.monitor.model.dto.AlertDeliveryLogRespDto;
@@ -20,6 +24,7 @@ import com.jing.monitor.model.dto.SchedulerStatusRespDto;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
 import com.jing.monitor.repository.CourseRepository;
+import com.jing.monitor.repository.TermRepository;
 import com.jing.monitor.repository.UserRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +58,42 @@ public class AdminService {
     private final MailCounterService mailCounterService;
     private final SchedulerService schedulerService;
     private final AuthContextService authContextService;
+    private final TermService termService;
+    private final TermRepository termRepository;
+
+    @Transactional(readOnly = true)
+    public List<AcademicTerm> getTerms() {
+        requireAdmin();
+        return termRepository.findAll(Sort.by(Sort.Direction.DESC, "code"));
+    }
+
+    @Transactional
+    public AcademicTerm createTerm(AdminTermReqDto req) {
+        requireAdmin();
+        termService.validateCode(req.code());
+        if (req.label() == null || req.label().isBlank() || req.label().trim().length() > 80) {
+            throw new IllegalArgumentException("Term label must contain 1 to 80 characters.");
+        }
+        if (termRepository.existsById(req.code())) {
+            throw new IllegalArgumentException("Term already exists: " + req.code());
+        }
+        AcademicTerm term = new AcademicTerm(req.code(), req.label().trim());
+        termRepository.insertUpcoming(term.getCode(), term.getLabel());
+        return term;
+    }
+
+    @Transactional
+    public AdminTermUpdateRespDto updateTermStatus(String code, TermStatus status) {
+        requireAdmin();
+        if (status == null) {
+            throw new IllegalArgumentException("Term status is required.");
+        }
+        AcademicTerm term = termService.lockTerm(code);
+        term.setStatus(status);
+        termRepository.saveAndFlush(term);
+        int disabled = status == TermStatus.EXPIRED ? subscriptionRepository.disableAllForTerm(code) : 0;
+        return new AdminTermUpdateRespDto(term, disabled);
+    }
 
     /**
      * Returns one page of users together with their current section subscriptions.
@@ -110,6 +151,9 @@ public class AdminService {
         requireAdmin();
         UserSectionSubscription sub = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found: " + subscriptionId));
+        if (enabled) {
+            termService.lockSubscribableTerm(sub.getSection().getCourse().getTermCode());
+        }
         ensureSectionSubscriptionCapacity(sub, enabled);
         sub.setEnabled(enabled);
         UserSectionSubscription savedSub = subscriptionRepository.save(sub);
@@ -238,6 +282,7 @@ public class AdminService {
         dto.setEnabled(sub.isEnabled());
         dto.setDocId(section.getDocId());
         dto.setCourseId(course.getCourseId());
+        dto.setTermCode(course.getTermCode());
         dto.setSubjectCode(course.getSubjectCode());
         dto.setCatalogNumber(course.getCatalogNumber());
         dto.setCourseDisplayName(buildCourseDisplayName(course));

@@ -19,12 +19,14 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
 
     Optional<Course> findByTermCodeAndCourseId(String termCode, String courseId);
 
-    Optional<Course> findByCourseId(String courseId);
-
     @Query("""
             select c
             from Course c
-            where c.nextPollAt is null or c.nextPollAt <= :now
+            where (c.nextPollAt is null or c.nextPollAt <= :now)
+              and exists (select t.code from AcademicTerm t
+                          where t.code = c.termCode and t.status = com.jing.monitor.model.TermStatus.ACTIVE)
+              and exists (select sub.id from UserSectionSubscription sub
+                          where sub.section.course = c and sub.enabled = true)
             order by c.nextPollAt asc
             """)
     List<Course> findAllDueForPolling(@Param("now") LocalDateTime now);
@@ -32,7 +34,11 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
     @Query("""
             select count(c)
             from Course c
-            where c.nextPollAt is null or c.nextPollAt <= :now
+            where (c.nextPollAt is null or c.nextPollAt <= :now)
+              and exists (select t.code from AcademicTerm t
+                          where t.code = c.termCode and t.status = com.jing.monitor.model.TermStatus.ACTIVE)
+              and exists (select sub.id from UserSectionSubscription sub
+                          where sub.section.course = c and sub.enabled = true)
             """)
     long countDueForPolling(@Param("now") LocalDateTime now);
 }

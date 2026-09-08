@@ -4,6 +4,8 @@ import com.jing.monitor.model.UserSectionSubscription;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -37,9 +39,31 @@ public interface UserSectionSubscriptionRepository extends JpaRepository<UserSec
     List<UserSectionSubscription> findAllByEnabledTrue();
 
     @EntityGraph(attributePaths = {"user", "section", "section.course"})
-    List<UserSectionSubscription> findAllByEnabledTrueAndSection_Course_Id(UUID courseId);
+    @Query("""
+            select sub from UserSectionSubscription sub
+            where sub.enabled = true and sub.section.course.id = :courseId
+              and exists (select t.code from AcademicTerm t
+                          where t.code = sub.section.course.termCode
+                            and t.status = com.jing.monitor.model.TermStatus.ACTIVE)
+            """)
+    List<UserSectionSubscription> findAllEnabledForActiveCourse(@Param("courseId") UUID courseId);
 
-    boolean existsByEnabledTrueAndSection_Course_Id(UUID courseId);
+    @Query("""
+            select (count(sub) > 0) from UserSectionSubscription sub
+            where sub.id = :id and sub.enabled = true
+              and exists (select t.code from AcademicTerm t
+                          where t.code = sub.section.course.termCode
+                            and t.status = com.jing.monitor.model.TermStatus.ACTIVE)
+            """)
+    boolean existsEnabledInActiveTerm(@Param("id") UUID id);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            update UserSectionSubscription sub set sub.enabled = false
+            where sub.enabled = true and sub.section.id in
+                (select sec.id from CourseSection sec where sec.course.termCode = :termCode)
+            """)
+    int disableAllForTerm(@Param("termCode") String termCode);
 
     boolean existsByIdAndEnabledTrue(UUID id);
 
@@ -47,8 +71,11 @@ public interface UserSectionSubscriptionRepository extends JpaRepository<UserSec
             select count(distinct sub.section.course.id)
             from UserSectionSubscription sub
             where sub.enabled = true
+              and exists (select t.code from AcademicTerm t
+                          where t.code = sub.section.course.termCode
+                            and t.status = com.jing.monitor.model.TermStatus.ACTIVE)
             """)
-    long countDistinctEnabledCourses();
+    long countDistinctEnabledActiveCourses();
 
     @EntityGraph(attributePaths = {"user", "section", "section.course"})
     Optional<UserSectionSubscription> findByUser_IdAndSection_DocId(UUID userId, String docId);

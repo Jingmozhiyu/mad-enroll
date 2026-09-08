@@ -1,6 +1,7 @@
 'use client'
 
 import {Fragment} from 'react'
+import {AdminTermsPanel} from '@/components/admin/admin-terms-panel'
 import {EmptyState} from '@/components/empty-state'
 import {ProgressLink} from '@/components/navigation-progress'
 import {
@@ -93,8 +94,8 @@ export function AdminDashboardPage() {
             ) : (
                 <>
                     <div
-                        className="hidden surface-panel-strong flex-col gap-2 rounded-[14px] px-4 py-4 md:flex-row md:items-center md:justify-between">
-                        <p className="text-sm text-[var(--color-ink-soft)]">{statusMessage}</p>
+                        className="surface-panel-strong flex flex-col gap-2 rounded-[14px] px-4 py-4 md:flex-row md:items-center md:justify-between">
+                        <p role="status" className="text-sm text-[var(--color-ink-soft)]">{statusMessage}</p>
                         <div className="flex items-center gap-4">
                             <p className="text-sm text-[var(--color-ink-soft)]">{sessionEmail}</p>
                             <button
@@ -115,6 +116,10 @@ export function AdminDashboardPage() {
                             </button>
                         </div>
                     </div>
+
+                    <AdminTermsPanel onChanged={() => loadDashboard(undefined, {
+                        usersPage, emailHistoryPage, preserveClientPagination: true,
+                    })} />
 
                     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <SummaryMetric
@@ -371,6 +376,7 @@ export function AdminDashboardPage() {
                                                                                         >
                                                                                             <td className="px-3 py-2 text-[var(--color-ink)]">
                                                                                                 {subscription.courseDisplayName}
+                                                                                                <span className="block text-xs font-normal text-[var(--color-ink-soft)]">Term {subscription.termCode}</span>
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-center">
                                                                                                 {subscription.sectionId}

@@ -2,6 +2,10 @@ package com.jing.monitor;
 
 import com.jing.monitor.core.CourseCrawler;
 import com.jing.monitor.model.AlertType;
+import com.jing.monitor.model.AcademicTerm;
+import com.jing.monitor.model.TermStatus;
+import com.jing.monitor.repository.TermRepository;
+import com.jing.monitor.service.TermService;
 import com.jing.monitor.model.SectionInfo;
 import com.jing.monitor.model.StatusMapping;
 import com.jing.monitor.model.UserSectionSubscription;
@@ -115,6 +119,8 @@ class UserAlertBusinessFlowTest {
     private final UserSectionSubscriptionRepository subscriptionRepository;
     private final AlertDeadLetterRepository alertDeadLetterRepository;
     private final AlertDeliveryLogRepository alertDeliveryLogRepository;
+    @Autowired
+    private TermRepository termRepository;
 
     @Autowired
     UserAlertBusinessFlowTest(
@@ -136,6 +142,9 @@ class UserAlertBusinessFlowTest {
 
     @BeforeEach
     void setUp() {
+        AcademicTerm term = new AcademicTerm(TERM_ID, "Fall 2026");
+        term.setStatus(TermStatus.ACTIVE);
+        termRepository.save(term);
         ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
         when(redisTemplate.hasKey(anyString())).thenReturn(false);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
@@ -153,7 +162,8 @@ class UserAlertBusinessFlowTest {
                 subscriptionRepository,
                 userRepository,
                 authContextService,
-                redisTemplate
+                redisTemplate,
+                new TermService(termRepository)
         );
         schedulerService = new SchedulerService(
                 crawler,

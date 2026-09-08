@@ -1,4 +1,5 @@
 export type AdminSubscription = {
+    termCode: string
     subscriptionId: string
     enabled: boolean
     docId?: string
@@ -13,6 +14,19 @@ export type AdminSubscription = {
     waitlistSeats?: number
     waitlistCapacity?: number
     meetingInfo: string
+}
+
+export type TermStatus = 'UPCOMING' | 'ACTIVE' | 'EXPIRED'
+
+export type AcademicTerm = {
+    code: string
+    label: string
+    status: TermStatus
+}
+
+export type TermUpdateResult = {
+    term: AcademicTerm
+    disabledSubscriptions: number
 }
 
 export type AdminUserSubscriptions = {

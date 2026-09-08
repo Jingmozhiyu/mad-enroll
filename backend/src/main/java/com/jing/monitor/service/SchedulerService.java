@@ -102,9 +102,6 @@ public class SchedulerService {
 
             int enqueuedCount = 0;
             for (Course course : dueCourses) {
-                if (!subscriptionRepository.existsByEnabledTrueAndSection_Course_Id(course.getId())) {
-                    continue;
-                }
                 if (enqueueCourseIfAbsent(course.getId(), course.getCourseId(), course.getTermCode(), course.getSubjectCode())) {
                     enqueuedCount++;
                 }
@@ -144,9 +141,9 @@ public class SchedulerService {
         long startedAtMillis = System.currentTimeMillis();
 
         try {
-            List<UserSectionSubscription> subs = subscriptionRepository.findAllByEnabledTrueAndSection_Course_Id(q.courseUuid());
+            List<UserSectionSubscription> subs = subscriptionRepository.findAllEnabledForActiveCourse(q.courseUuid());
             if (subs.isEmpty()) {
-                log.info("[Scheduler] Dropping queued course {}:{} because it no longer has enabled subscriptions.", termCode, courseId);
+                log.info("[Scheduler] Dropping queued course {}:{} because it has no enabled subscriptions in an active term.", termCode, courseId);
                 return;
             }
 
@@ -182,6 +179,9 @@ public class SchedulerService {
                 log.warn("[Scheduler] Fetch failed or returned empty data for course {}", courseId);
                 scheduleAfterFailure(course, polledAt);
                 return;
+            }
+            if (infos.stream().anyMatch(info -> !termCode.equals(info.getTermCode()) || !courseId.equals(info.getCourseId()))) {
+                throw new IllegalArgumentException("Crawler returned a different term or course.");
             }
 
             // Keep the shared course row current before touching section snapshots.
@@ -331,9 +331,7 @@ public class SchedulerService {
     private Course upsertCourse(Course course, SectionInfo info) {
         Course targetCourse = course == null
                 ? courseRepository.findByTermCodeAndCourseId(info.getTermCode(), info.getCourseId())
-                .orElseGet(() -> courseRepository.findByCourseId(info.getCourseId())
-                        .filter(existingCourse -> info.getTermCode().equals(existingCourse.getTermCode()))
-                        .orElseGet(() -> new Course(info.getTermCode(), info.getCourseId())))
+                .orElseGet(() -> new Course(info.getTermCode(), info.getCourseId()))
                 : course;
         targetCourse.setTermCode(info.getTermCode());
         targetCourse.setSubjectCode(info.getSubjectCode());
@@ -608,7 +606,7 @@ public class SchedulerService {
         dto.setObservedAt(now);
         dto.setHeartbeatIntervalMs(heartbeatIntervalMs);
         dto.setFetchIntervalMs(refreshCurrentFetchIntervalMs());
-        dto.setActiveCourseCount(subscriptionRepository.countDistinctEnabledCourses());
+        dto.setActiveCourseCount(subscriptionRepository.countDistinctEnabledActiveCourses());
         dto.setDueCourseCount(courseRepository.countDueForPolling(now));
         dto.setQueueSize(dueCourseQueue.size());
         dto.setQueuedCourseIds(List.copyOf(dueCourseQueue.stream()

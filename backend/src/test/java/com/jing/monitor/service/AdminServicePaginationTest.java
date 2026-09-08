@@ -14,6 +14,7 @@ import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
 import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.UserRepository;
+import com.jing.monitor.repository.TermRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,7 +62,9 @@ class AdminServicePaginationTest {
                 mock(AlertPublisherService.class),
                 mock(MailCounterService.class),
                 mock(SchedulerService.class),
-                authContextService
+                authContextService,
+                mock(TermService.class),
+                mock(TermRepository.class)
         );
     }
 

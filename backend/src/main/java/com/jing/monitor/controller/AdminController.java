@@ -1,5 +1,10 @@
 package com.jing.monitor.controller;
 
+import com.jing.monitor.model.AcademicTerm;
+import com.jing.monitor.model.dto.AdminTermReqDto;
+import com.jing.monitor.model.dto.AdminTermStatusReqDto;
+import com.jing.monitor.model.dto.AdminTermUpdateRespDto;
+
 import com.jing.monitor.common.Result;
 import com.jing.monitor.model.dto.AdminSectionSubRespDto;
 import com.jing.monitor.model.dto.AdminTestEmailReqDto;
@@ -27,6 +32,24 @@ import java.util.UUID;
 public class AdminController {
 
     private final AdminService adminService;
+
+    @GetMapping("/terms")
+    public Result<List<AcademicTerm>> listTerms() {
+        return Result.success(adminService.getTerms());
+    }
+
+    @PostMapping("/terms")
+    public Result<AcademicTerm> createTerm(@RequestBody AdminTermReqDto req) {
+        return Result.success(adminService.createTerm(req));
+    }
+
+    @PatchMapping("/terms/{termCode}")
+    public Result<AdminTermUpdateRespDto> updateTermStatus(
+            @PathVariable String termCode,
+            @RequestBody AdminTermStatusReqDto req
+    ) {
+        return Result.success(adminService.updateTermStatus(termCode, req.status()));
+    }
 
     /**
      * Lists one page of users together with their subscribed course and section info.

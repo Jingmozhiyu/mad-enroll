@@ -61,7 +61,7 @@ public class AlertConsumerService {
         }
         try {
             if (isDisabledCourseAlert(event)) {
-                log.warn("[AlertConsumer] Skipping stale alert event {} because subscription {} is no longer enabled.",
+                log.warn("[AlertConsumer] Skipping stale alert event {} because subscription {} is disabled or its term is not active.",
                         event.getEventId(), event.getSubscriptionId());
                 markConsumed(eventId);
                 channel.basicAck(deliveryTag, false);
@@ -188,13 +188,14 @@ public class AlertConsumerService {
     }
 
     private boolean isDisabledCourseAlert(AlertEvent event) {
-        if (event.getSubscriptionId() == null) {
-            return false;
-        }
         if (event.getAlertType() != AlertType.OPEN && event.getAlertType() != AlertType.WAITLIST) {
             return false;
         }
-        return !subscriptionRepository.existsByIdAndEnabledTrue(event.getSubscriptionId());
+        if (event.isManualTest()) {
+            return false;
+        }
+        return event.getSubscriptionId() == null
+                || !subscriptionRepository.existsEnabledInActiveTerm(event.getSubscriptionId());
     }
 
     private String resolveEventId(AlertEvent event, Message message) {

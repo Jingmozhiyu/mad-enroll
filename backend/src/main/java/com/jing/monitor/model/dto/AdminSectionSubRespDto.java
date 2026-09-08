@@ -10,6 +10,7 @@ import java.util.UUID;
  */
 @Data
 public class AdminSectionSubRespDto {
+    private String termCode;
     private UUID subscriptionId;
     private boolean enabled;
     private String docId;

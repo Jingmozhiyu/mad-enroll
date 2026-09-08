@@ -1,5 +1,8 @@
 import {ADMIN_REQUEST_TIMEOUT, clientApi} from '@/lib/api/client/http'
 import type {
+    AcademicTerm,
+    TermStatus,
+    TermUpdateResult,
     AlertDeadLetter,
     AlertDeliveryLog,
     AdminSummary,
@@ -10,6 +13,27 @@ import type {
     SchedulerStatus,
     TestEmailPayload,
 } from '@/lib/admin/types'
+
+export async function fetchAdminTerms() {
+    const response = await clientApi.get<AcademicTerm[]>('/api/admin/terms', {
+        timeout: ADMIN_REQUEST_TIMEOUT,
+    })
+    return response.data
+}
+
+export async function createAdminTerm(payload: Pick<AcademicTerm, 'code' | 'label'>) {
+    const response = await clientApi.post<AcademicTerm>('/api/admin/terms', payload, {
+        timeout: ADMIN_REQUEST_TIMEOUT,
+    })
+    return response.data
+}
+
+export async function updateAdminTerm(code: string, status: TermStatus) {
+    const response = await clientApi.patch<TermUpdateResult>(
+        `/api/admin/terms/${encodeURIComponent(code)}`, {status}, {timeout: ADMIN_REQUEST_TIMEOUT},
+    )
+    return response.data
+}
 
 export async function fetchAdminSubscriptions(page = 1) {
     const response = await clientApi.get<PageResponse<AdminUserSubscriptions>>('/api/admin/subscriptions', {
