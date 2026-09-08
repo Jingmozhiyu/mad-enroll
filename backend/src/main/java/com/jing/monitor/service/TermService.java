@@ -29,7 +29,9 @@ public class TermService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void lockSubscribableTerm(String code) {
-        requireNotExpired(lockTerm(code));
+        validateCode(code);
+        requireNotExpired(termRepository.findByCodeForShare(code)
+                .orElseThrow(() -> new IllegalArgumentException("Term is not configured: " + code)));
     }
 
     public void validateCode(String code) {

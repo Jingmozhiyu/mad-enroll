@@ -16,6 +16,12 @@ public interface TermRepository extends JpaRepository<AcademicTerm, String> {
     @Query(value = "insert into terms (term_code, label, status) values (:code, :label, 'UPCOMING')", nativeQuery = true)
     void insertUpcoming(@Param("code") String code, @Param("label") String label);
 
+    // Subscription transactions share this lock until the enclosing transaction ends.
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("select t from AcademicTerm t where t.code = :code")
+    Optional<AcademicTerm> findByCodeForShare(@Param("code") String code);
+
+    // State changes exclude subscription transactions and other state changes.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from AcademicTerm t where t.code = :code")
     Optional<AcademicTerm> findByCodeForUpdate(@Param("code") String code);
