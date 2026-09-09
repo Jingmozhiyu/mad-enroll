@@ -256,6 +256,11 @@ public class TaskService {
         return savedSectionsByDocId;
     }
 
+    @Transactional(readOnly = true)
+    public java.util.List<com.jing.monitor.model.dto.SearchTermRespDto> getSearchTerms() {
+        return termService.getSearchTerms();
+    }
+
     /**
      * Builds a response DTO for an already persisted subscription.
      *

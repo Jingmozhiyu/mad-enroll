@@ -11,9 +11,10 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface TermRepository extends JpaRepository<AcademicTerm, String> {
+    java.util.List<AcademicTerm> findAllByStatusNotOrderByCodeDesc(com.jing.monitor.model.TermStatus status);
     // Insert only: a concurrent duplicate create must never merge over an existing term's state.
     @Modifying
-    @Query(value = "insert into terms (term_code, label, status) values (:code, :label, 'UPCOMING')", nativeQuery = true)
+    @Query(value = "insert into terms (term_code, label, status, is_default) values (:code, :label, 'UPCOMING', false)", nativeQuery = true)
     void insertUpcoming(@Param("code") String code, @Param("label") String label);
 
     // Subscription transactions share this lock until the enclosing transaction ends.

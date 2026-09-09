@@ -22,6 +22,7 @@ type MonitorPageHeaderProps = {
     isLoggedIn: boolean
     onLogout: () => void
     onOpenSearch: () => void
+    searchDisabled: boolean
     ready: boolean
     searchTriggerRef: RefObject<HTMLButtonElement | null>
     sessionEmail?: string
@@ -29,6 +30,7 @@ type MonitorPageHeaderProps = {
 }
 
 type MonitorTaskListProps = {
+    canSearch: boolean
     deletingDocId: string | null
     onDelete: (docId: string, sectionId: string) => void
     tasks: Task[]
@@ -197,6 +199,7 @@ export function MonitorPageHeader({
                                       isLoggedIn,
                                       onLogout,
                                       onOpenSearch,
+                                      searchDisabled,
                                       ready,
                                       searchTriggerRef,
                                       sessionEmail,
@@ -224,6 +227,7 @@ export function MonitorPageHeader({
                         ref={searchTriggerRef}
                         className="search-trigger-shell w-full min-w-[320px] max-w-[420px]"
                         onClick={onOpenSearch}
+                        disabled={searchDisabled}
                         type="button"
                     >
                         <span className="flex min-w-0 items-center gap-3">
@@ -262,6 +266,7 @@ export function MonitorPageHeader({
 }
 
 export function MonitorTaskList({
+                                    canSearch,
                                     deletingDocId,
                                     onDelete,
                                     tasks,
@@ -269,7 +274,7 @@ export function MonitorTaskList({
     if (tasks.length === 0) {
         return (
             <EmptyState
-                description="No alerts yet. Search for a course or section to start tracking seat openings."
+                description={canSearch ? 'Search for a course or section to start tracking seat openings.' : 'New alerts are currently unavailable. See the term status above.'}
                 title="No alerts yet"
             />
         )

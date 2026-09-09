@@ -13,6 +13,7 @@ import {
     addTask,
     deleteTask,
     fetchTasks,
+    fetchSearchTerms,
     searchCourses,
     searchSections,
 } from '@/lib/api/client/tasks'
@@ -26,12 +27,7 @@ import {
     normalizeCourseSearchQuery,
 } from '@/lib/course/search'
 import {sortTasks} from '@/lib/course/format'
-import {
-    DEFAULT_TASK_SEARCH_TERM_KEY,
-    TASK_SEARCH_TERM_OPTIONS,
-    type TaskSearchTermKey,
-} from '@/lib/course/task-search-terms'
-import type {SearchCourseHit, Task} from '@/lib/course/types'
+import type {SearchCourseHit, SearchTerm, Task} from '@/lib/course/types'
 
 const initialAuthForm = {
     email: '',
@@ -84,8 +80,13 @@ export function useMonitorClientPage({
     )
     const [searchMessage, setSearchMessage] = useState(INITIAL_SEARCH_MESSAGE)
     const [searchValue, setSearchValue] = useState('')
-    const [selectedTermKey, setSelectedTermKey] =
-        useState<TaskSearchTermKey>(DEFAULT_TASK_SEARCH_TERM_KEY)
+    const [selectedTermId, setSelectedTermId] = useState('')
+    const [termOptions, setTermOptions] = useState<SearchTerm[]>([])
+    const [termsLoading, setTermsLoading] = useState(true)
+    const [termsError, setTermsError] = useState('')
+    const [termRefreshVersion, setTermRefreshVersion] = useState(0)
+    const searchRequestId = useRef(0)
+    const [searchedTermId, setSearchedTermId] = useState('')
     const [searchedQuery, setSearchedQuery] = useState('')
     const [searchStage, setSearchStage] = useState<SearchStage>('courses')
     const [courseSearchPages, setCourseSearchPages] = useState<Record<number, SearchCourseHit[]>>(
@@ -127,9 +128,12 @@ export function useMonitorClientPage({
     )
 
     function resetSearchFlow() {
+        setBusyAction(null)
+        setSearchedTermId('')
         setSearchMessage(INITIAL_SEARCH_MESSAGE)
         setSearchValue('')
-        setSelectedTermKey(DEFAULT_TASK_SEARCH_TERM_KEY)
+        setSelectedTermId('')
+        searchRequestId.current++
         setSearchedQuery('')
         setSearchStage('courses')
         setCourseSearchPages({})
@@ -147,6 +151,9 @@ export function useMonitorClientPage({
     }
 
     function resetSearchResultsForTermChange(nextMessage = INITIAL_SEARCH_MESSAGE) {
+        searchRequestId.current++
+        setBusyAction(null)
+        setSearchedTermId('')
         setSearchMessage(nextMessage)
         setSearchedQuery('')
         setSearchStage('courses')
@@ -157,6 +164,33 @@ export function useMonitorClientPage({
         setSectionResults([])
         setIsSearchStageTransitioning(false)
     }
+
+    useEffect(() => {
+        if (!ready || !isLoggedIn) {
+            setTermOptions([])
+            setTermsError('')
+            return
+        }
+        let active = true
+        setTermsLoading(true)
+        setTermsError('')
+        resetSearchResultsForTermChange()
+        void fetchSearchTerms().then(terms => {
+            if (!active) return
+            setTermOptions(terms)
+            setSelectedTermId(current => {
+                if (terms.some(term => term.code === current)) return current
+                const defaults = terms.filter(term => term.isDefault)
+                return defaults.length === 1 ? defaults[0].code : ''
+            })
+        }).catch(error => {
+            if (!active) return
+            setTermOptions([])
+            setSelectedTermId('')
+            setTermsError(getErrorMessage(error, 'Failed to load available terms.'))
+        }).finally(() => { if (active) setTermsLoading(false) })
+        return () => { active = false }
+    }, [ready, isLoggedIn, termRefreshVersion])
 
     function applyTasks(nextTasks: Task[], message?: string) {
         const sortedTasks = getActiveTasks(nextTasks)
@@ -303,6 +337,12 @@ export function useMonitorClientPage({
     }
 
     async function runCourseSearch(targetPage = 1, force = false) {
+        if (busyAction === 'search-courses' || busyAction === 'search-sections' || addingDocId) return
+        if (termsLoading || termsError || !termOptions.some(term => term.code === selectedTermId)) {
+            setSearchMessage('Choose an available term before searching.')
+            return
+        }
+        const requestId = ++searchRequestId.current
         const query = normalizeCourseSearchQuery(searchValue)
         const validationMessage = getCourseSearchValidationMessage(query)
 
@@ -312,7 +352,7 @@ export function useMonitorClientPage({
         }
 
         const backendPage = Math.ceil(targetPage / UI_PAGES_PER_BACKEND_PAGE)
-        const isNewQuery = query !== searchedQuery
+        const isNewQuery = query !== searchedQuery || selectedTermId !== searchedTermId
         const cachedResults = !isNewQuery && !force ? courseSearchPages[backendPage] : undefined
 
         if (cachedResults) {
@@ -331,9 +371,11 @@ export function useMonitorClientPage({
             setIsSearchStageTransitioning(true)
             const nextResults = await searchCourses(
                 query,
-                selectedTermKey,
+                selectedTermId,
                 backendPage,
             )
+
+            if (requestId !== searchRequestId.current) return
 
             if (backendPage > 1 && nextResults.length === 0) {
                 setHasMoreCoursePages(false)
@@ -342,6 +384,7 @@ export function useMonitorClientPage({
             }
 
             setSearchedQuery(query)
+            setSearchedTermId(selectedTermId)
             setCurrentCoursePage(targetPage)
             setSearchStage('courses')
             setSelectedCourse(null)
@@ -359,6 +402,7 @@ export function useMonitorClientPage({
                     },
             )
         } catch (error) {
+            if (requestId !== searchRequestId.current) return
             if (isUnauthorizedError(error)) {
                 await handleLogout()
             }
@@ -369,8 +413,10 @@ export function useMonitorClientPage({
             setSectionResults([])
             setSearchMessage(getErrorMessage(error, COURSE_SEARCH_FAILURE_MESSAGE))
         } finally {
-            setBusyAction(null)
-            finishSearchStageTransition()
+            if (requestId === searchRequestId.current) {
+                setBusyAction(null)
+                finishSearchStageTransition()
+            }
         }
     }
 
@@ -385,7 +431,7 @@ export function useMonitorClientPage({
         }
 
         const backendPage = Math.ceil(page / UI_PAGES_PER_BACKEND_PAGE)
-        if (courseSearchPages[backendPage]) {
+        if (searchedTermId === selectedTermId && courseSearchPages[backendPage]) {
             setCurrentCoursePage(page)
             return
         }
@@ -398,16 +444,20 @@ export function useMonitorClientPage({
     }
 
     async function handleOpenSections(course: SearchCourseHit) {
+        if (busyAction === 'search-courses' || busyAction === 'search-sections' || addingDocId) return
+        if (termsLoading || termsError || !selectedTermId || searchedTermId !== selectedTermId) return
+        const requestId = ++searchRequestId.current
         try {
             setBusyAction('search-sections')
             setIsSearchStageTransitioning(true)
             const nextResults = sortTasks(
                 await searchSections(
-                    selectedTermKey,
+                    selectedTermId,
                     course.subjectId,
                     course.courseId,
                 ),
             )
+            if (requestId !== searchRequestId.current) return
             setSelectedCourse(course)
             setSectionResults(nextResults)
             setSearchStage('sections')
@@ -415,6 +465,7 @@ export function useMonitorClientPage({
                 nextResults.length === 0 ? COURSE_SEARCH_NOT_FOUND_MESSAGE : SECTION_SELECTION_MESSAGE,
             )
         } catch (error) {
+            if (requestId !== searchRequestId.current) return
             if (isUnauthorizedError(error)) {
                 await handleLogout()
             }
@@ -423,8 +474,10 @@ export function useMonitorClientPage({
             setSearchStage('sections')
             setSearchMessage(getErrorMessage(error, COURSE_SEARCH_FAILURE_MESSAGE))
         } finally {
-            setBusyAction(null)
-            finishSearchStageTransition()
+            if (requestId === searchRequestId.current) {
+                setBusyAction(null)
+                finishSearchStageTransition()
+            }
         }
     }
 
@@ -496,7 +549,8 @@ export function useMonitorClientPage({
         headerProps: {
             isLoggedIn,
             onLogout: () => void handleLogout(),
-            onOpenSearch: () => setIsSearchOpen(true),
+            onOpenSearch: () => { setIsSearchOpen(true); setTermRefreshVersion(value => value + 1) },
+            searchDisabled: termsLoading || !!termsError || termOptions.length === 0,
             ready,
             searchTriggerRef,
             sessionEmail: session?.email,
@@ -516,8 +570,9 @@ export function useMonitorClientPage({
             onCoursePageChange: (page: number) => void handleCoursePageChange(page),
             onOpenSections: (course: SearchCourseHit) => void handleOpenSections(course),
             onSearchValueChange: setSearchValue,
-            onTermChange: (termKey: TaskSearchTermKey) => {
-                setSelectedTermKey(termKey)
+            onTermChange: (termId: string) => {
+                if (addingDocId || !termOptions.some(term => term.code === termId)) return
+                setSelectedTermId(termId)
                 resetSearchResultsForTermChange()
             },
             onSubmit: () => void runCourseSearch(1, true),
@@ -526,13 +581,19 @@ export function useMonitorClientPage({
             searchStage,
             searchValue,
             selectedCourse,
-            selectedTermKey,
+            selectedTermId,
             sectionResults,
-            termOptions: TASK_SEARCH_TERM_OPTIONS,
+            termOptions,
+            termsLoading,
+            termsError,
+            onRetryTerms: () => setTermRefreshVersion(value => value + 1),
         },
+        termStatus: {loading: termsLoading, error: termsError, empty: termOptions.length === 0,
+            retry: () => setTermRefreshVersion(value => value + 1)},
         showAuth: ready && !isLoggedIn,
         showTrackedSections: ready && isLoggedIn,
         taskListProps: {
+            canSearch: !termsLoading && !termsError && termOptions.length > 0,
             deletingDocId,
             onDelete: (docId: string, sectionId: string) => void handleDelete(docId, sectionId),
             tasks,

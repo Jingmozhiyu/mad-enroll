@@ -37,6 +37,7 @@
 | 方法和路径 | 查询参数 | 响应数据 |
 | --- | --- | --- |
 | `GET /api/tasks` | 无 | [TaskRespDto](../../src/main/java/com/jing/monitor/model/dto/TaskRespDto.java) 数组 |
+| `GET /api/tasks/terms` | 无 | [SearchTermRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchTermRespDto.java) 数组：`{code,label,status,isDefault}`，仅非 EXPIRED，按代码降序 |
 | `GET /api/tasks/search/courses` | 必需 `courseName`、`termId`；可选 `page=1` | [SearchCourseRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchCourseRespDto.java) 数组 |
 | `GET /api/tasks/search/sections` | 必需 `termId`、`subjectId`、`courseId` | TaskRespDto 数组 |
 | `POST /api/tasks` | 必需 `docId`；无请求体 | TaskRespDto |
@@ -44,6 +45,7 @@
 
 重要语义：
 
+- 搜索学期来自 `terms`，包括标签和由操作员维护的 `is_default` 标志。空列表是有效响应。API 不会选择或修复默认学期。普通的已认证用户可以读取此端点；管理员学期端点仍包含已过期学期。搜索请求必须提供 `termId`；Next.js 不再接受 `termKey` 作为替代，也不再使用按学期的环境变量或默认代码回退。
 - 搜索要求 termId 已配置、为四位数字且对应 UPCOMING 或 ACTIVE 学期；未知/EXPIRED 学期会被拒绝。课程搜索页码必须至少为 1。其结果是数组，而不是管理员分页封装。
 - 课程搜索返回 `{courseDesignation, title, subjectId, courseId}`。将这些 ID 和相同的 termId 传给 section 搜索。section 搜索会持久化快照，但不会创建订阅。
 - GET tasks 包含已禁用和历史订阅，按 sectionId 排序。当前 UI 会隐藏已禁用行。TaskRespDto **没有 termCode/termStatus 字段**。其 `meetingInfo` 是 JSON 编码的字符串，不是数组。未订阅的搜索行具有 `id: null, enabled: false`。
@@ -85,12 +87,12 @@
 
 ### 学期和订阅更新
 
-创建请求体：`{"code":"1272","label":"Fall 2026"}`。代码必须为四位数字；标签会被修剪空白，长度限制为 1–80 个字符。重复创建会被拒绝。更新要求学期已存在；这些端点不能编辑代码和标签。AcademicTerm 为 `{code, label, status}`。
+创建请求体：`{"code":"1272","label":"Fall 2026"}`。代码必须为四位数字；标签会被修剪空白，长度限制为 1–80 个字符。重复创建会被拒绝。更新要求学期已存在；这些端点不能编辑代码和标签。AcademicTerm 为 `{code, label, status, isDefault}`。新学期的 `isDefault=false`，默认标记由操作员直接在数据库中维护，不影响监控或订阅权限。
 
 PATCH 请求体：`{"status":"EXPIRED"}`。响应**数据**示例：
 
 ```json
-{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED"},"disabledSubscriptions":12}
+{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED","isDefault":false},"disabledSubscriptions":12}
 ```
 
 ACTIVE/UPCOMING 只更改学期状态。EXPIRED 还会在同一事务中禁用该学期已启用的订阅。计数表示新近禁用的行数；重复过期通常返回 0。重新开放不会恢复订阅。允许多个 ACTIVE 学期。添加/启用订阅和过期操作共享学期行锁；参见[学期管理](term-management.md)。

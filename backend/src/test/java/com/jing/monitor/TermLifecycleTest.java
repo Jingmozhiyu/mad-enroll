@@ -138,6 +138,27 @@ class TermLifecycleTest {
     }
 
     @Test
+    void searchTermsExposeLabelsAndDefaultsAndExcludeExpiredTerms() throws Exception {
+        var fall = terms.findById("1272").orElseThrow();
+        fall.setLabel("Fall 2026"); fall.setDefaultTerm(true); terms.save(fall);
+        var expired = new AcademicTerm("1266", "Summer 2026");
+        expired.setStatus(TermStatus.EXPIRED); expired.setDefaultTerm(true); terms.save(expired);
+        user.setRole(UserRole.USER); users.save(user);
+        var mvc = MockMvcBuilders.standaloneSetup(new com.jing.monitor.controller.TaskController(tasks))
+                .setControllerAdvice(new GlobalExceptionHandler()).build();
+        mvc.perform(get("/api/tasks/terms")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].code").value("1274"))
+                .andExpect(jsonPath("$.data[0].status").value("UPCOMING"))
+                .andExpect(jsonPath("$.data[0].isDefault").value(false))
+                .andExpect(jsonPath("$.data[1].label").value("Fall 2026"))
+                .andExpect(jsonPath("$.data[1].isDefault").value(true));
+        for (var term : terms.findAll()) { term.setStatus(TermStatus.EXPIRED); terms.save(term); }
+        mvc.perform(get("/api/tasks/terms")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(0));
+    }
+
+    @Test
     void schedulerFiltersTermsAndSubscriptionsBothBeforeEnqueueAndAtDequeue() {
         CourseSection fall = section("1272", "011630");
         CourseSection spring = section("1274", "011630");
@@ -243,7 +264,9 @@ class TermLifecycleTest {
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
         mvc.perform(post("/api/admin/terms").contentType("application/json")
                         .content("{\"code\":\"1282\",\"label\":\"Fall 2027\"}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("UPCOMING"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("UPCOMING"))
+                .andExpect(jsonPath("$.data.isDefault").value(false))
+                .andExpect(jsonPath("$.data.defaultTerm").doesNotExist());
         tasks.addSection(section("1272", "011630").getDocId());
         mvc.perform(patch("/api/admin/terms/1272").contentType("application/json")
                         .content("{\"status\":\"EXPIRED\"}"))

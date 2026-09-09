@@ -3,7 +3,6 @@ import {backendSearchSections} from '@/lib/api/server/tasks'
 import {
     COURSE_SEARCH_FAILURE_MESSAGE,
 } from '@/lib/course/search'
-import {resolveTaskSearchTermId} from '@/lib/course/task-search-terms.server'
 import {getServerSession} from '@/lib/auth/session.server'
 import {
     badRequestResponse,
@@ -19,8 +18,10 @@ export async function GET(request: Request) {
 
     try {
         const {searchParams} = new URL(request.url)
-        const termId =
-            searchParams.get('termId') ?? resolveTaskSearchTermId(searchParams.get('termKey'))
+        const termId = searchParams.get('termId')
+        if (!termId || !/^\d{4}$/.test(termId)) {
+            return badRequestResponse('A four-digit termId is required.')
+        }
         const subjectId = searchParams.get('subjectId') ?? ''
         const courseId = searchParams.get('courseId') ?? ''
 

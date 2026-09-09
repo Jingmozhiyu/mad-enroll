@@ -44,12 +44,19 @@ Source: [TaskController](../../src/main/java/com/jing/monitor/controller/TaskCon
 | Method and path | Query parameters | Response data |
 | --- | --- | --- |
 | `GET /api/tasks` | None | [TaskRespDto](../../src/main/java/com/jing/monitor/model/dto/TaskRespDto.java) array |
+| `GET /api/tasks/terms` | None | [SearchTermRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchTermRespDto.java) array: `{code,label,status,isDefault}`, non-EXPIRED only, code descending |
 | `GET /api/tasks/search/courses` | Required `courseName`, `termId`; optional `page=1` | [SearchCourseRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchCourseRespDto.java) array |
 | `GET /api/tasks/search/sections` | Required `termId`, `subjectId`, `courseId` | TaskRespDto array |
 | `POST /api/tasks` | Required `docId`; no body | TaskRespDto |
 | `DELETE /api/tasks` | Required `docId`; no body | `null` |
 
 Important semantics:
+
+- Search terms come from `terms`, including labels and the operator-maintained `is_default` flag.
+  An empty list is a valid response. The API does not choose or repair a default term.
+  Ordinary authenticated users can read this endpoint; the admin terms endpoint still includes
+  expired terms. Search requests must supply `termId`; Next.js no longer accepts `termKey`
+  as a substitute or uses per-semester environment variables/default-code fallbacks.
 
 - Search requires a configured four-digit termId in UPCOMING or ACTIVE; unknown/EXPIRED is rejected.
   Course-search page must be at least 1. Its result is an array, not an admin page wrapper.
@@ -119,12 +126,14 @@ acceptance, not SMTP or broker acceptance. Repeating the test request creates a 
 
 Create body: `{"code":"1272","label":"Fall 2026"}`. Code must be four digits; label is trimmed
 and limited to 1–80 characters. Duplicate creation is rejected. Updates require an existing term;
-code and label are not editable through these endpoints. AcademicTerm is `{code, label, status}`.
+code and label are not editable through these endpoints. AcademicTerm is `{code, label, status, isDefault}`.
+New terms have `isDefault=false`. Operators maintain the default flag directly in the database;
+it has no effect on monitoring or subscription permissions.
 
 PATCH body: `{"status":"EXPIRED"}`. Example response **data**:
 
 ```json
-{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED"},"disabledSubscriptions":12}
+{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED","isDefault":false},"disabledSubscriptions":12}
 ```
 
 ACTIVE/UPCOMING change only the term status. EXPIRED also disables that term's enabled

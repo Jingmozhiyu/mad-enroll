@@ -1,3 +1,10 @@
+export type SearchTerm = {
+    code: string
+    label: string
+    status: 'ACTIVE' | 'UPCOMING'
+    isDefault: boolean
+}
+
 export type Task = {
     id: string | null
     docId: string

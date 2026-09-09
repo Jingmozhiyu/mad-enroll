@@ -5,7 +5,6 @@ import {
     getCourseSearchValidationMessage,
     normalizeCourseSearchQuery,
 } from '@/lib/course/search'
-import {resolveTaskSearchTermId} from '@/lib/course/task-search-terms.server'
 import {getServerSession} from '@/lib/auth/session.server'
 import {
     badRequestResponse,
@@ -22,8 +21,10 @@ export async function GET(request: Request) {
     try {
         const {searchParams} = new URL(request.url)
         const courseName = normalizeCourseSearchQuery(searchParams.get('courseName') ?? '')
-        const termId =
-            searchParams.get('termId') ?? resolveTaskSearchTermId(searchParams.get('termKey'))
+        const termId = searchParams.get('termId')
+        if (!termId || !/^\d{4}$/.test(termId)) {
+            return badRequestResponse('A four-digit termId is required.')
+        }
         const page = Math.max(1, Number(searchParams.get('page') ?? '1') || 1)
         const validationMessage = getCourseSearchValidationMessage(courseName)
 

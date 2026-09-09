@@ -1,22 +1,26 @@
 import {clientApi} from '@/lib/api/client/http'
-import type {SearchCourseHit, Task} from '@/lib/course/types'
+import type {SearchCourseHit, SearchTerm, Task} from '@/lib/course/types'
+
+export async function fetchSearchTerms() {
+    return (await clientApi.get<SearchTerm[]>('/api/tasks/terms')).data
+}
 
 export async function fetchTasks() {
     const response = await clientApi.get<Task[]>('/api/tasks')
     return response.data
 }
 
-export async function searchCourses(courseName: string, termKey: string, page: number) {
+export async function searchCourses(courseName: string, termId: string, page: number) {
     const response = await clientApi.get<SearchCourseHit[]>('/api/tasks/search/courses', {
-        params: {courseName, page, termKey},
+        params: {courseName, page, termId},
     })
 
     return response.data
 }
 
-export async function searchSections(termKey: string, subjectId: string, courseId: string) {
+export async function searchSections(termId: string, subjectId: string, courseId: string) {
     const response = await clientApi.get<Task[]>('/api/tasks/search/sections', {
-        params: {courseId, subjectId, termKey},
+        params: {courseId, subjectId, termId},
     })
 
     return response.data

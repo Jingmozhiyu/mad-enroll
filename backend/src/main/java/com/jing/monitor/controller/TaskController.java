@@ -20,6 +20,11 @@ public class TaskController {
 
     private final TaskService taskService;
 
+    @GetMapping("/terms")
+    public Result<List<com.jing.monitor.model.dto.SearchTermRespDto>> terms() {
+        return Result.success(taskService.getSearchTerms());
+    }
+
     /**
      * Lists all tasks for the current authenticated user.
      *

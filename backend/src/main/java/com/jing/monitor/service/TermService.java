@@ -14,6 +14,14 @@ public class TermService {
     private final TermRepository termRepository;
 
     @Transactional(readOnly = true)
+    public java.util.List<com.jing.monitor.model.dto.SearchTermRespDto> getSearchTerms() {
+        return termRepository.findAllByStatusNotOrderByCodeDesc(TermStatus.EXPIRED).stream()
+                .map(term -> new com.jing.monitor.model.dto.SearchTermRespDto(
+                        term.getCode(), term.getLabel(), term.getStatus(), term.isDefaultTerm()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public void requireSearchable(String code) {
         validateCode(code);
         requireNotExpired(termRepository.findById(code)

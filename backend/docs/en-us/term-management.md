@@ -31,20 +31,38 @@ course. Course lookup uses `(termCode, courseId)` exclusively.
 3. Deploy the backend, then the frontend. In `/admin` use **Terms** to add a term as
    UPCOMING, activate monitoring, pause it as UPCOMING, or expire it. Configure any searchable
    term that has no course records yet before exposing it on the frontend.
-4. Frontend search labels and term-code environment variables remain manually managed.
-   They cannot authorize a term rejected by the backend. No scheduled term transition or
-   automatic initialization changes service state.
+4. Run [20260909_default_term.sql](../../migrations/20260909_default_term.sql) before deploying
+   the default-term backend. It adds `is_default` with FALSE as its initial value and preserves
+   existing values on rerun. It does not guess which term to select. In a database transaction,
+   clear the old flag and set exactly one non-EXPIRED term as default. The script includes an example.
+5. The frontend obtains codes, labels and defaults through authenticated `GET /api/tasks/terms`.
+   It lists all non-EXPIRED terms and initially selects the unique default. No/multiple defaults
+   require manual selection; loading errors allow retry and never fall back to a hardcoded term.
+   A user's valid manual choice survives a list refresh. Switching terms clears search results
+   and prevents pending responses for the old term from replacing the new results.
+6. Remove `FALL_2026` / `SUMMER_2026` from Vercel configuration. Set only
+   `MONITOR_SERVICE_MODE=RUNNING` or `OFFSEASON` for the monitor presentation and redeploy the
+   frontend after changing it. Missing/invalid mode is a configuration error, not an implicit
+   term selection or a guessed service state. OFFSEASON renders a break notice without the
+   monitor client/search overlay or task fetches. It does not change backend term states:
+   use the admin expiry operation to disable subscriptions and stop monitoring.
+
+The `is_default` flag only affects initial selection. Expiring a default term excludes it from
+the user list without selecting a replacement or changing any default flags. During a break,
+no default is needed when no terms are available. Operators may edit `label` directly (nonblank,
+at most 80 characters); business checks use code/status, and the frontend displays the new label
+on its next terms fetch. Use the admin API for EXPIRED transitions so bulk disabling also runs.
 
 ## Admin API
 
 All endpoints require an authenticated ADMIN, checked in `AdminService`. Responses use the
 existing `{code, msg, data}` envelope.
 
-- `GET /api/admin/terms`: returns `[{code, label, status}]`, newest code first.
+- `GET /api/admin/terms`: returns `[{code, label, status, isDefault}]`, newest code first.
 - `POST /api/admin/terms`, body `{"code":"1272","label":"Fall 2026"}`: creates an UPCOMING
   term. Codes must be four digits, labels 1–80 characters, and duplicate codes are rejected.
 - `PATCH /api/admin/terms/{termCode}`, body `{"status":"EXPIRED"}`: returns
-  `{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED"},"disabledSubscriptions":12}`.
+  `{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED","isDefault":false},"disabledSubscriptions":12}`.
   ACTIVE / UPCOMING never modify subscriptions. EXPIRED updates the term and disables its
   subscriptions in one transaction. Repeated expiry succeeds with zero newly disabled rows.
 

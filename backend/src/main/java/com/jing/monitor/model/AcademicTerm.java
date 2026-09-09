@@ -21,6 +21,10 @@ public class AcademicTerm {
     @Column(nullable = false, length = 80)
     private String label;
 
+    @Column(name = "is_default", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonProperty("isDefault")
+    private boolean defaultTerm;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private TermStatus status = TermStatus.UPCOMING;

@@ -19,15 +19,19 @@
 1. 备份数据库，并在部署此后端**之前**针对现有 MySQL 数据库执行 `backend/migrations/20260907_terms.sql`。仓库使用 Hibernate schema 更新，而不是自动迁移运行器；这条 SQL 是明确的部署步骤。
 2. 脚本会创建 `terms`，并将现有课程的学期代码导入为 ACTIVE，以保留现有监控。重复运行时不会覆盖状态。检查导入的列表；部署后通过管理 API/UI 将过时的学期设为过期。解决最终查询报告的所有无效代码。如果数据库中没有课程，请通过管理 UI 创建所需学期，并在准备好后明确将其激活。
 3. 部署后端，然后部署前端。在 `/admin` 中使用 **Terms**，将学期添加为 UPCOMING、激活监控、将其暂停为 UPCOMING，或将其设为过期。在前端公开任何尚无课程记录但可搜索的学期之前，先为其完成配置。
-4. 前端搜索标签和学期代码环境变量仍由人工管理。它们不能授权后端拒绝的学期。不会进行定时学期状态转换，也不会自动初始化改变服务状态。
+4. 部署默认学期后端之前运行 [20260909_default_term.sql](../../migrations/20260909_default_term.sql)。它会添加 `is_default`，初始值为 FALSE，并在重复运行时保留现有值。它不会猜测应选择哪个学期。在数据库事务中，清除旧标志，并将恰好一个非 EXPIRED 学期设为默认值。脚本包含示例。
+5. 前端通过经过身份验证的 `GET /api/tasks/terms` 获取代码、标签和默认值。该接口列出所有非 EXPIRED 学期，并在初始加载时选择唯一的默认学期。没有默认值或存在多个默认值时需要手动选择；加载错误允许重试，绝不会回退到硬编码学期。用户有效的手动选择会在列表刷新后保留。切换学期会清除搜索结果，并阻止旧学期的待处理响应替换新结果。
+6. 从 Vercel 配置中移除 `FALL_2026` / `SUMMER_2026`。只设置 `MONITOR_SERVICE_MODE=RUNNING` 或 `OFFSEASON` 来控制监控页面展示；修改后重新部署前端。缺失/无效模式属于配置错误，不表示隐式学期选择或猜测服务状态。OFFSEASON 会显示休息提示，不显示监控客户端/搜索覆盖层，也不执行任务获取。它不会改变后端学期状态；请使用管理端过期操作禁用订阅并停止监控。
+
+`is_default` 标志只影响初始选择。将默认学期设为过期会在用户列表中排除该学期，不会选择替代学期，也不会改变其他默认标志。休息期间没有可用学期时不需要默认值。操作员可以直接编辑 `label`（非空，最多 80 个字符）；业务检查使用代码/状态，前端会在下一次获取学期时显示新标签。请使用管理 API 执行 EXPIRED 状态转换，以便同时运行批量禁用。
 
 ## 管理 API
 
 所有端点都要求经过身份验证的 ADMIN，身份验证由 `AdminService` 完成。响应使用现有的 `{code, msg, data}` 封装。
 
-- `GET /api/admin/terms`：返回 `[{code, label, status}]`，按代码从新到旧排列。
+- `GET /api/admin/terms`：返回 `[{code, label, status, isDefault}]`，按代码从新到旧排列。
 - `POST /api/admin/terms`，请求体 `{"code":"1272","label":"Fall 2026"}`：创建一个 UPCOMING 学期。代码必须为四位数字，标签长度为 1–80 个字符，重复代码会被拒绝。
-- `PATCH /api/admin/terms/{termCode}`，请求体 `{"status":"EXPIRED"}`：返回 `{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED"},"disabledSubscriptions":12}`。ACTIVE / UPCOMING 不会修改订阅。EXPIRED 会在一个事务中更新学期并禁用其订阅。重复执行过期操作也会成功，新禁用的行数为零。
+- `PATCH /api/admin/terms/{termCode}`，请求体 `{"status":"EXPIRED"}`：返回 `{"term":{"code":"1272","label":"Fall 2026","status":"EXPIRED","isDefault":false},"disabledSubscriptions":12}`。ACTIVE / UPCOMING 不会修改订阅。EXPIRED 会在一个事务中更新学期并禁用其订阅。重复执行过期操作也会成功，新禁用的行数为零。
 
 ## 并发与排队工作
 

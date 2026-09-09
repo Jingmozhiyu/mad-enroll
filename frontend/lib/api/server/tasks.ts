@@ -1,7 +1,11 @@
 import 'server-only'
 
 import {backendRequest} from '@/lib/api/server/http'
-import type {SearchCourseHit, Task} from '@/lib/course/types'
+import type {SearchCourseHit, SearchTerm, Task} from '@/lib/course/types'
+
+export async function backendFetchSearchTerms(token: string) {
+    return backendRequest<SearchTerm[]>('/api/tasks/terms', {method: 'GET'}, token)
+}
 
 export async function backendFetchTasks(token: string) {
     return backendRequest<Task[]>('/api/tasks', {method: 'GET'}, token)
@@ -31,10 +35,6 @@ export async function backendSearchSections(
         `&subjectId=${encodeURIComponent(subjectId)}` +
         `&courseId=${encodeURIComponent(courseId)}`
     return backendRequest<Task[]>(path, {method: 'GET'}, token)
-}
-
-export async function backendSearchCourse(token: string, courseName: string) {
-    return backendSearchCourses(token, courseName, '1272', 1)
 }
 
 export async function backendAddTask(token: string, docId: string) {

@@ -9,15 +9,17 @@ import {
     getOpenSeatsSummary,
     getWaitlistSeatsSummary,
 } from '@/lib/course/format'
-import type {TaskSearchTermKey} from '@/lib/course/task-search-terms'
-import type {SearchCourseHit, Task} from '@/lib/course/types'
+import type {SearchCourseHit, SearchTerm, Task} from '@/lib/course/types'
 
 type SearchOverlayProps = {
     open: boolean
     searchStage: 'courses' | 'sections'
     searchValue: string
-    selectedTermKey: TaskSearchTermKey
-    termOptions: ReadonlyArray<{ key: TaskSearchTermKey; label: string }>
+    selectedTermId: string
+    termOptions: SearchTerm[]
+    termsLoading: boolean
+    termsError: string
+    onRetryTerms: () => void
     searchMessage: string
     courseResults: SearchCourseHit[]
     coursePage: number
@@ -29,7 +31,7 @@ type SearchOverlayProps = {
     isTransitioning: boolean
     addingDocId: string | null
     onSearchValueChange: (value: string) => void
-    onTermChange: (termKey: TaskSearchTermKey) => void
+    onTermChange: (termId: string) => void
     onSubmit: () => void
     onClose: () => void
     onCoursePageChange: (page: number) => void
@@ -42,8 +44,11 @@ export function SearchOverlay({
                                   open,
                                   searchStage,
                                   searchValue,
-                                  selectedTermKey,
+                                  selectedTermId,
                                   termOptions,
+                                  termsLoading,
+                                  termsError,
+                                  onRetryTerms,
                                   searchMessage,
                                   courseResults,
                                   coursePage,
@@ -140,13 +145,20 @@ export function SearchOverlay({
                         <div className="flex flex-col items-stretch justify-end">
                             <button
                                 className="button-primary w-full min-w-[140px]"
-                                disabled={isSearchingCourses || isLoadingSections}
+                                disabled={isSearchingCourses || isLoadingSections || termsLoading || !!termsError || !selectedTermId || !!addingDocId}
                                 type="submit"
                             >
                                 {isSearchingCourses ? 'Searching...' : 'Search'}
                             </button>
                         </div>
                     </form>
+
+                    {termsLoading ? <p role="status" className="text-sm text-[var(--color-ink-soft)]">Loading available terms…</p>
+                        : termsError ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-ink)]">
+                            <span>{termsError}</span><button className="button-secondary" type="button" onClick={onRetryTerms}>Retry terms</button>
+                        </div>
+                            : termOptions.length === 0 ? <p className="text-sm text-[var(--color-ink-soft)]">No terms are currently open for subscriptions.</p>
+                                : !selectedTermId ? <p role="status" className="text-sm text-[var(--color-ink)]">Choose a term below before searching.</p> : null}
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm text-[var(--color-ink-soft)]">{searchMessage}</p>
@@ -155,10 +167,10 @@ export function SearchOverlay({
                                 <span className="font-medium">Term</span>
                                 <div className="flex flex-wrap items-center gap-2">
                                     {termOptions.map((term, index) => {
-                                        const isActive = term.key === selectedTermKey
+                                        const isActive = term.code === selectedTermId
 
                                         return (
-                                            <div key={term.key} className="flex items-center gap-2">
+                                            <div key={term.code} className="flex items-center gap-2">
                                                 {index > 0 ? <span aria-hidden="true"
                                                                    className="text-[var(--inline-muted)]">/</span> : null}
                                                 <button
@@ -168,7 +180,9 @@ export function SearchOverlay({
                                                             ? 'font-semibold text-[var(--color-deep-teal)] underline underline-offset-4'
                                                             : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]',
                                                     ].join(' ')}
-                                                    onClick={() => onTermChange(term.key)}
+                                                    onClick={() => onTermChange(term.code)}
+                                                    disabled={termsLoading || !!termsError || !!addingDocId}
+                                                    aria-pressed={isActive}
                                                     type="button"
                                                 >
                                                     {term.label}
