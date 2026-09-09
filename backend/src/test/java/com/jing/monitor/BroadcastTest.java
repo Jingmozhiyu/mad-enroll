@@ -243,7 +243,8 @@ class BroadcastTest {
 
     @Test
     void testEmailUsesExactDraftContentAndNeverChangesAudienceOrCounters() throws Exception {
-        View draft = service.create(allUsers());
+        // Compare persisted snapshots: database timestamp precision can differ from the OS clock.
+        View draft = service.get(service.create(allUsers()).id());
         UUID id = service.testEmail(draft.id(), new TestEmail(" test@example.com "));
         BroadcastEvent event = published().getFirst();
         assertThat(event.deliveryId()).isEqualTo(id);
