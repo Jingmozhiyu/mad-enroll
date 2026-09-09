@@ -146,14 +146,18 @@ public class AdminService {
      * @param enabled target enabled state
      * @return updated admin-facing subscription DTO
      */
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public AdminSectionSubRespDto updateSubscriptionEnabled(UUID subscriptionId, boolean enabled) {
         requireAdmin();
+        if (enabled) {
+            var owner = subscriptionRepository.findOwner(subscriptionId)
+                    .orElseThrow(() -> new RuntimeException("Subscription not found: " + subscriptionId));
+            termService.lockSubscribableTerm(owner.getTermCode());
+            userRepository.lockById(owner.getUserId()).orElseThrow(() -> new RuntimeException("User not found."));
+        }
+        // Load mutable subscription state only after waiting for both guards.
         UserSectionSubscription sub = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found: " + subscriptionId));
-        if (enabled) {
-            termService.lockSubscribableTerm(sub.getSection().getCourse().getTermCode());
-        }
         ensureSectionSubscriptionCapacity(sub, enabled);
         sub.setEnabled(enabled);
         UserSectionSubscription savedSub = subscriptionRepository.save(sub);

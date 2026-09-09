@@ -18,6 +18,13 @@ import java.util.UUID;
  */
 @Repository
 public interface UserSectionSubscriptionRepository extends JpaRepository<UserSectionSubscription, UUID> {
+    interface SubscriptionOwner {
+        UUID getUserId();
+        String getTermCode();
+    }
+
+    @Query("select s.user.id as userId, s.section.course.termCode as termCode from UserSectionSubscription s where s.id = :id")
+    Optional<SubscriptionOwner> findOwner(@Param("id") UUID id);
 
     @Override
     @EntityGraph(attributePaths = {"user", "section", "section.course"})

@@ -1,6 +1,27 @@
 import 'server-only'
+import type {Broadcast, BroadcastDraft, BroadcastDelivery} from '@/lib/admin/types'
 
 import {backendRequest} from '@/lib/api/server/http'
+
+export function backendFetchBroadcasts(token: string, page: number) {
+    return backendRequest<PageResponse<Broadcast>>(`/api/admin/broadcasts?page=${page}`, {}, token)
+}
+export function backendCreateBroadcast(token: string, payload: BroadcastDraft) {
+    return backendRequest<Broadcast>('/api/admin/broadcasts', {method: 'POST', body: JSON.stringify(payload)}, token)
+}
+export function backendFetchBroadcast(token: string, id: string) {
+    return backendRequest<Broadcast>(`/api/admin/broadcasts/${encodeURIComponent(id)}`, {}, token)
+}
+export function backendBroadcastRecipients(token: string, id: string, page: number) {
+    return backendRequest<PageResponse<BroadcastDelivery>>(`/api/admin/broadcasts/${encodeURIComponent(id)}/recipients?page=${page}`, {}, token)
+}
+export function backendSendBroadcast(token: string, id: string) {
+    return backendRequest<Broadcast>(`/api/admin/broadcasts/${encodeURIComponent(id)}/send`, {method: 'POST'}, token)
+}
+export function backendBroadcastTestEmail(token: string, id: string, recipientEmail: string) {
+    return backendRequest<string>(`/api/admin/broadcasts/${encodeURIComponent(id)}/test-email`,
+        {method: 'POST', body: JSON.stringify({recipientEmail})}, token)
+}
 import type {
     AcademicTerm,
     TermStatus,

@@ -32,6 +32,10 @@ Frontend：
 
 Subscribe courses after registering by email address. Users will receive email alerts when seats become available.
 
+### Docs
+
+API contracts: [Backend — English](backend/docs/en-us/api-reference.md) / [后端 — 简体中文](backend/docs/zh-cn/api-reference.md)
+
 ### Future
 
 - Dockerfile Deployment

@@ -36,9 +36,9 @@ public class MailService {
      * Sends an email alert when a section becomes OPEN.
      *
      * @param recipientEmail recipient mailbox
-     * @param section section id
-     * @param courseInfo course display text
-     * @param termId UW term id used to build the enroll search URL
+     * @param section        section id
+     * @param courseInfo     course display text
+     * @param termId         UW term id used to build the enroll search URL
      */
     public void sendCourseOpenAlert(String recipientEmail, String section, String courseInfo, String termId) {
         log.info("[Mail] Preparing to send OPEN alert for section {} to {}", section, recipientEmail);
@@ -79,9 +79,9 @@ public class MailService {
      * Sends an email alert when a section becomes WAITLISTED.
      *
      * @param recipientEmail recipient mailbox
-     * @param section section id
-     * @param courseInfo course display text
-     * @param termId UW term id used to build the enroll search URL
+     * @param section        section id
+     * @param courseInfo     course display text
+     * @param termId         UW term id used to build the enroll search URL
      */
     public void sendCourseWaitlistedAlert(String recipientEmail, String section, String courseInfo, String termId) {
         log.info("[Mail] Preparing to send WAITLIST alert for section {} to {}", section, recipientEmail);
@@ -155,8 +155,8 @@ public class MailService {
      * Sends one forwarded feedback email to the project maintainer.
      *
      * @param recipientEmail fixed feedback recipient mailbox
-     * @param senderEmail authenticated user email
-     * @param feedbackText raw feedback text
+     * @param senderEmail    authenticated user email
+     * @param feedbackText   raw feedback text
      */
     public void sendFeedbackEmail(String recipientEmail, String senderEmail, String feedbackText) {
         log.info("[Mail] Preparing to send feedback email from {} to {}", senderEmail, recipientEmail);
@@ -189,6 +189,16 @@ public class MailService {
             throw new IllegalArgumentException("Recipient email is required.");
         }
         return Objects.requireNonNull(recipientEmail).trim().toLowerCase();
+    }
+
+    // Broadcasts have their own delivery ledger and never update course-alert counters.
+    public void sendBroadcast(String recipientEmail, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(requireRecipientEmail(recipientEmail));
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
     }
 
     private String requireFeedbackText(String feedbackText) {

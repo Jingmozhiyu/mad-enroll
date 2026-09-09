@@ -1,4 +1,27 @@
 import {ADMIN_REQUEST_TIMEOUT, clientApi} from '@/lib/api/client/http'
+import type {Broadcast, BroadcastDraft, BroadcastDelivery} from '@/lib/admin/types'
+
+export async function fetchBroadcasts(page = 1) {
+    return (await clientApi.get<PageResponse<Broadcast>>('/api/admin/broadcasts', {params: {page}, timeout: ADMIN_REQUEST_TIMEOUT})).data
+}
+export async function createBroadcast(payload: BroadcastDraft) {
+    return (await clientApi.post<Broadcast>('/api/admin/broadcasts', payload, {timeout: ADMIN_REQUEST_TIMEOUT})).data
+}
+export async function fetchBroadcast(id: string) {
+    return (await clientApi.get<Broadcast>(`/api/admin/broadcasts/${encodeURIComponent(id)}`, {timeout: ADMIN_REQUEST_TIMEOUT})).data
+}
+export async function fetchBroadcastRecipients(id: string, page = 1) {
+    return (await clientApi.get<PageResponse<BroadcastDelivery>>(`/api/admin/broadcasts/${encodeURIComponent(id)}/recipients`,
+        {params: {page}, timeout: ADMIN_REQUEST_TIMEOUT})).data
+}
+export async function sendBroadcast(id: string) {
+    return (await clientApi.post<Broadcast>(`/api/admin/broadcasts/${encodeURIComponent(id)}/send`, null,
+        {timeout: ADMIN_REQUEST_TIMEOUT})).data
+}
+export async function sendBroadcastTestEmail(id: string, recipientEmail: string) {
+    return (await clientApi.post<string>(`/api/admin/broadcasts/${encodeURIComponent(id)}/test-email`, {recipientEmail},
+        {timeout: ADMIN_REQUEST_TIMEOUT})).data
+}
 import type {
     AcademicTerm,
     TermStatus,

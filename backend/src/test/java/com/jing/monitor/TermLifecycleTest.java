@@ -65,6 +65,8 @@ class TermLifecycleTest {
     @Autowired AlertPublisherService publisher;
     @Autowired StringRedisTemplate redis;
     @Autowired PlatformTransactionManager transactionManager;
+    @Autowired MailSendClaimService sendClaims;
+    @Autowired MailSendClaimRepository claims;
 
     private User user;
 
@@ -76,6 +78,7 @@ class TermLifecycleTest {
         terms.deleteAll();
         users.deleteAll();
         deliveries.deleteAll();
+        claims.deleteAll();
         reset(auth, crawler, publisher, redis);
         user = new User("admin@example.com", "unused-password-hash");
         user.setRole(UserRole.ADMIN);
@@ -157,7 +160,7 @@ class TermLifecycleTest {
         MailService mail = mock(MailService.class);
         when(redis.opsForValue()).thenReturn(mock(ValueOperations.class));
         AlertConsumerService consumer = new AlertConsumerService(mail, deadLetters, deliveries,
-                mock(MailCounterService.class), redis, subscriptions);
+                mock(MailCounterService.class), sendClaims, subscriptions);
         ReflectionTestUtils.setField(consumer, "alertQueueName", "test.alerts");
         AlertEvent event = new AlertEvent();
         event.setEventId(UUID.randomUUID());
@@ -179,6 +182,7 @@ class TermLifecycleTest {
         verifyNoInteractions(mail);
         verify(channel, times(2)).basicAck(1L, false);
         event.setManualTest(true);
+        event.setEventId(UUID.randomUUID());
         event.setSubscriptionId(null);
         consumer.consumeAlert(event, message, channel);
         verify(mail).sendCourseOpenAlert(user.getEmail(), "66400", "COMP SCI 240", "1272");
@@ -254,6 +258,90 @@ class TermLifecycleTest {
     @Test
     void addingFirstMakesExpiryWaitAndDisableTheNewSubscription() throws Exception {
         assertConcurrentExpiry(false);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"false,false", "false,true", "true,true"})
+    void concurrentCrossTermEnablesCannotExceedFifteen(boolean firstAdmin, boolean secondAdmin) throws Exception {
+        for (int i = 0; i < 14; i++) tasks.addSection(section("1272", "seed" + i).getDocId());
+        CourseSection fall = section("1272", "candidate-fall");
+        CourseSection spring = section("1274", "candidate-spring");
+        UserSectionSubscription fallSub = new UserSectionSubscription();
+        fallSub.setUser(user); fallSub.setSection(fall); fallSub.setEnabled(false);
+        UUID fallId = subscriptions.save(fallSub).getId();
+        UserSectionSubscription springSub = new UserSectionSubscription();
+        springSub.setUser(user); springSub.setSection(spring); springSub.setEnabled(false);
+        UUID springId = subscriptions.save(springSub).getId();
+        CountDownLatch firstEnabled = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var first = executor.submit(() -> {
+                var transaction = new TransactionTemplate(transactionManager);
+                transaction.setIsolationLevel(org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED);
+                transaction.executeWithoutResult(tx -> {
+                    if (firstAdmin) admin.updateSubscriptionEnabled(fallId, true);
+                    else tasks.addSection(fall.getDocId());
+                    firstEnabled.countDown(); await(release);
+                });
+            });
+            assertThat(firstEnabled.await(5, TimeUnit.SECONDS)).isTrue();
+            var second = executor.submit(() -> {
+                if (secondAdmin) admin.updateSubscriptionEnabled(springId, true);
+                else tasks.addSection(spring.getDocId());
+            });
+            // Different term rows: H2's exclusive emulation of shared locks cannot hide a missing user guard.
+            assertThatThrownBy(() -> second.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+            release.countDown(); first.get(5, TimeUnit.SECONDS);
+            assertThatThrownBy(() -> second.get(5, TimeUnit.SECONDS)).hasStackTraceContaining("at most 15");
+            assertThat(subscriptions.countByUser_IdAndEnabledTrue(user.getId())).isEqualTo(15);
+            assertThat(enabled(springId)).isFalse();
+        } finally { release.countDown(); executor.shutdownNow(); executor.awaitTermination(5, TimeUnit.SECONDS); }
+    }
+
+    @Test
+    void durableClaimAllowsOnlyOneConcurrentAttempt() throws Exception {
+        UUID id = UUID.randomUUID();
+        var executor = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            var first = executor.submit(() -> { await(start); return sendClaims.claim(id); });
+            var second = executor.submit(() -> { await(start); return sendClaims.claim(id); });
+            start.countDown();
+            assertThat(List.of(first.get(5, TimeUnit.SECONDS), second.get(5, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(true, false);
+            assertThat(sendClaims.claim(id)).isFalse();
+        } finally { executor.shutdownNow(); executor.awaitTermination(5, TimeUnit.SECONDS); }
+    }
+
+    @Test
+    void smtpFailureAndLostAckCannotResendCourseMail() throws Exception {
+        UUID sub = tasks.addSection(section("1272", "mail").getDocId()).getId();
+        MailService mail = mock(MailService.class);
+        var consumer = new AlertConsumerService(mail, deadLetters, deliveries,
+                mock(MailCounterService.class), sendClaims, subscriptions);
+        ReflectionTestUtils.setField(consumer, "alertQueueName", "test.alerts");
+        AlertEvent event = new AlertEvent();
+        event.setEventId(UUID.randomUUID()); event.setSubscriptionId(sub); event.setAlertType(AlertType.OPEN);
+        event.setRecipientEmail(user.getEmail()); event.setSectionId("66400");
+        event.setCourseDisplayName("CS 240"); event.setTermId("1272");
+        var properties = new MessageProperties(); properties.setDeliveryTag(1L);
+        var message = new Message(new byte[0], properties);
+        Channel broken = mock(Channel.class);
+        doThrow(new java.io.IOException("ACK lost")).when(broken).basicAck(1L, false);
+        consumer.consumeAlert(event, message, broken);
+        consumer.consumeAlert(event, message, mock(Channel.class));
+        verify(mail, times(1)).sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
+
+        event.setEventId(UUID.randomUUID());
+        doThrow(new org.springframework.mail.MailSendException("timeout")).when(mail)
+                .sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
+        Channel rejected = mock(Channel.class);
+        consumer.consumeAlert(event, message, rejected);
+        consumer.consumeAlert(event, message, rejected);
+        verify(mail, times(2)).sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
+        verify(rejected).basicReject(1L, false);
+        verify(rejected).basicAck(1L, false);
     }
 
     @Test
@@ -345,7 +433,7 @@ class TermLifecycleTest {
     @EnableAutoConfiguration
     @AutoConfigurationPackage
     @EnableJpaRepositories("com.jing.monitor.repository")
-    @Import({TaskService.class, TermService.class, AdminService.class})
+    @Import({TaskService.class, TermService.class, AdminService.class, MailSendClaimService.class})
     static class TestApplication {
         @Bean CourseCrawler crawler() { return mock(CourseCrawler.class); }
         @Bean AuthContextService authContextService() { return mock(AuthContextService.class); }

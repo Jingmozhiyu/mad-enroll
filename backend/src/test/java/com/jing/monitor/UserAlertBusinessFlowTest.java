@@ -55,6 +55,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -178,11 +179,16 @@ class UserAlertBusinessFlowTest {
                 alertDeadLetterRepository,
                 alertDeliveryLogRepository,
                 mailCounterService,
-                redisTemplate,
+                mockClaims(),
                 subscriptionRepository
         );
         ReflectionTestUtils.setField(alertConsumerService, "alertQueueName", "test.alert.queue");
-        ReflectionTestUtils.setField(alertConsumerService, "consumedEventIdTtlSeconds", 60L);
+    }
+
+    private com.jing.monitor.service.MailSendClaimService mockClaims() {
+        var claims = mock(com.jing.monitor.service.MailSendClaimService.class);
+        when(claims.claim(any())).thenReturn(true);
+        return claims;
     }
 
     @Test

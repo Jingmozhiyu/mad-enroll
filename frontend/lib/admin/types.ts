@@ -18,6 +18,24 @@ export type AdminSubscription = {
 
 export type TermStatus = 'UPCOMING' | 'ACTIVE' | 'EXPIRED'
 
+export type BroadcastAudience = 'ALL_USERS' | 'TERM_SUBSCRIBERS'
+export type BroadcastDraft = {subject: string; body: string; audience: BroadcastAudience; termCode?: string}
+export type Broadcast = BroadcastDraft & {
+    id: string
+    status: 'DRAFT' | 'QUEUED' | 'COMPLETED'
+    createdAt: string
+    recipientCount: number
+    counts: {pending: number; sending: number; sent: number; failed: number; unknown: number}
+}
+export type BroadcastDelivery = {
+    id: string
+    email: string
+    status: 'PENDING' | 'SENDING' | 'SENT' | 'FAILED' | 'UNKNOWN'
+    attempts: number
+    sentAt: string | null
+    lastError: string | null
+}
+
 export type AcademicTerm = {
     code: string
     label: string

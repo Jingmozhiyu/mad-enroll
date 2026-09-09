@@ -146,13 +146,15 @@ public class TaskService {
      * @param docId validated section doc id from the frontend
      * @return the persisted section subscription DTO
      */
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public TaskRespDto addSection(String docId) {
         requireValidDocId(docId);
         UUID userId = authContextService.currentUserId();
         CourseSection section = courseSectionRepository.findByDocId(docId)
                 .orElseThrow(() -> new RuntimeException("Section not found. Search before adding: " + docId));
         termService.lockSubscribableTerm(section.getCourse().getTermCode());
+        // Across all terms, only one enable operation may count/write this user's subscriptions.
+        userRepository.lockById(userId).orElseThrow(() -> new RuntimeException("User not found."));
 
         UserSectionSubscription existingSub = subscriptionRepository.findByUser_IdAndSection_DocId(userId, docId)
                 .orElse(null);

@@ -2,6 +2,7 @@
 
 import {Fragment} from 'react'
 import {AdminTermsPanel} from '@/components/admin/admin-terms-panel'
+import {AdminBroadcastsPanel} from '@/components/admin/admin-broadcasts-panel'
 import {EmptyState} from '@/components/empty-state'
 import {ProgressLink} from '@/components/navigation-progress'
 import {
@@ -120,6 +121,8 @@ export function AdminDashboardPage() {
                     <AdminTermsPanel onChanged={() => loadDashboard(undefined, {
                         usersPage, emailHistoryPage, preserveClientPagination: true,
                     })} />
+
+                    <AdminBroadcastsPanel />
 
                     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <SummaryMetric

@@ -27,6 +27,12 @@ import java.util.Map;
 @Configuration
 @Slf4j
 public class RabbitMqConfig {
+    @Bean
+    public Declarables broadcastQueueTopology(@Value("${app.rabbitmq.broadcast-queue:madenroll.broadcasts}") String name) {
+        return new Declarables(new Queue(name, true, false, false,
+                Map.of("x-dead-letter-exchange", "", "x-dead-letter-routing-key", name + ".dlq")),
+                new Queue(name + ".dlq", true));
+    }
 
     @Bean
     public Declarables alertQueueTopology(

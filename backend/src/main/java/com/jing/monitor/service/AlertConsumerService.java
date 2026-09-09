@@ -13,12 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -30,20 +28,15 @@ import java.util.Map;
 @Slf4j
 public class AlertConsumerService {
 
-    private static final String CONSUMED_EVENT_KEY_PREFIX = "rabbit:consume:event:";
-
     private final MailService mailService;
     private final AlertDeadLetterRepository alertDeadLetterRepository;
     private final AlertDeliveryLogRepository alertDeliveryLogRepository;
     private final MailCounterService mailCounterService;
-    private final StringRedisTemplate redisTemplate;
+    private final MailSendClaimService sendClaims;
     private final UserSectionSubscriptionRepository subscriptionRepository;
 
     @Value("${app.rabbitmq.queue}")
     private String alertQueueName;
-
-    @Value("${app.rabbitmq.event-id-consume-ttl-seconds:604800}")
-    private long consumedEventIdTtlSeconds;
 
     /**
      * Delivers one queued alert email. Failures are rejected and routed into the DLQ.
@@ -53,17 +46,14 @@ public class AlertConsumerService {
     @RabbitListener(queues = "${app.rabbitmq.queue}")
     public void consumeAlert(AlertEvent event, Message message, Channel channel) throws IOException {
         long deliveryTag = message.getMessageProperties().getDeliveryTag();
-        String eventId = resolveEventId(event, message);
-        if (isAlreadyConsumed(eventId)) {
-            log.warn("[AlertConsumer] Skipping duplicate delivery for eventId={}.", eventId);
-            channel.basicAck(deliveryTag, false);
-            return;
-        }
         try {
+            if (!sendClaims.claim(event.getEventId())) {
+                channel.basicAck(deliveryTag, false);
+                return;
+            }
             if (isDisabledCourseAlert(event)) {
                 log.warn("[AlertConsumer] Skipping stale alert event {} because subscription {} is disabled or its term is not active.",
                         event.getEventId(), event.getSubscriptionId());
-                markConsumed(eventId);
                 channel.basicAck(deliveryTag, false);
                 return;
             }
@@ -92,7 +82,6 @@ public class AlertConsumerService {
 
             saveDeliveryLogQuietly(event);
             mailCounterService.recordSuccessfulSend(event);
-            markConsumed(eventId);
             channel.basicAck(deliveryTag, false);
             log.info("[AlertConsumer] ACKed alert event {} on queue {}", event.getEventId(), alertQueueName);
         } catch (Exception e) {
@@ -198,32 +187,4 @@ public class AlertConsumerService {
                 || !subscriptionRepository.existsEnabledInActiveTerm(event.getSubscriptionId());
     }
 
-    private String resolveEventId(AlertEvent event, Message message) {
-        String messageId = message.getMessageProperties().getMessageId();
-        if (messageId != null && !messageId.isBlank()) {
-            return messageId;
-        }
-        return event.getEventId().toString();
-    }
-
-    private boolean isAlreadyConsumed(String eventId) {
-        try {
-            return Boolean.TRUE.equals(redisTemplate.hasKey(CONSUMED_EVENT_KEY_PREFIX + eventId));
-        } catch (Exception e) {
-            log.error("[AlertConsumer] Redis consume de-dup lookup failed for eventId={}. Continuing without de-dup.", eventId, e);
-            return false;
-        }
-    }
-
-    private void markConsumed(String eventId) {
-        try {
-            redisTemplate.opsForValue().set(
-                    CONSUMED_EVENT_KEY_PREFIX + eventId,
-                    "1",
-                    Duration.ofSeconds(Math.max(consumedEventIdTtlSeconds, 1))
-            );
-        } catch (Exception e) {
-            log.error("[AlertConsumer] Failed to persist consumed eventId={} into Redis.", eventId, e);
-        }
-    }
 }
