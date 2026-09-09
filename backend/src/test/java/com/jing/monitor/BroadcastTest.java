@@ -30,7 +30,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.url=jdbc:h2:mem:broadcast-test;MODE=MySQL;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000",
         "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
         "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.show-sql=false"
+        "spring.jpa.show-sql=false",
+        "spring.config.import=optional:classpath:/isolated-test.properties",
+        "app.mail.from=noreply@example.com",
+        "spring.rabbitmq.host=localhost", "spring.rabbitmq.port=5672",
+        "spring.rabbitmq.username=guest", "spring.rabbitmq.password=guest",
+        "spring.rabbitmq.listener.simple.auto-startup=false",
+        "spring.rabbitmq.listener.direct.auto-startup=false",
+        "spring.data.redis.host=localhost", "spring.data.redis.port=6379"
 })
 class BroadcastTest {
     @Autowired BroadcastService service;
