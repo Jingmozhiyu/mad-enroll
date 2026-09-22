@@ -37,6 +37,7 @@ const initialAuthForm = {
 export type MonitorClientPageProps = {
     initialTasks?: Task[]
     initialStatusMessage?: string
+    serviceMode?: string
 }
 
 type SearchStage = 'courses' | 'sections'
