@@ -556,7 +556,7 @@ public class SchedulerService {
      * @return interval in seconds
      */
     private int applyExponentialBackoff(int baseSeconds, int maxSeconds, int unchangedPollCount) {
-        long interval = (long) baseSeconds << unchangedPollCount;
+        long interval = (long) baseSeconds << Math.min(32,Math.max(0,unchangedPollCount));
         return (int) Math.min(interval, maxSeconds);
     }
 
