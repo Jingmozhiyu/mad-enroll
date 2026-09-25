@@ -82,10 +82,6 @@ function CourseResultCard({course}: { course: MadgradesCourse }) {
                     <h3 className="text-xl font-semibold text-[var(--color-ink)]">{course.name}</h3>
                     <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{getCourseDisplayLine(course)}</p>
                 </div>
-
-                <div className="flex items-center justify-between gap-4 md:min-w-[180px] md:flex-col md:items-end">
-                    <span className="font-semibold text-[var(--color-deep-teal)]">Open</span>
-                </div>
             </div>
         </button>
     )

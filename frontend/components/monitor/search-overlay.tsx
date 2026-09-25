@@ -157,8 +157,7 @@ export function SearchOverlay({
                         : termsError ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-ink)]">
                             <span>{termsError}</span><button className="button-secondary" type="button" onClick={onRetryTerms}>Retry terms</button>
                         </div>
-                            : termOptions.length === 0 ? <p className="text-sm text-[var(--color-ink-soft)]">No terms are currently open for subscriptions.</p>
-                                : !selectedTermId ? <p role="status" className="text-sm text-[var(--color-ink)]">Choose a term below before searching.</p> : null}
+                            : termOptions.length > 0 && !selectedTermId ? <p role="status" className="text-sm text-[var(--color-ink)]">Choose a term below before searching.</p> : null}
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm text-[var(--color-ink-soft)]">{searchMessage}</p>

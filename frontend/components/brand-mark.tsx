@@ -16,18 +16,6 @@ const colorfulBrandLetters = [
     {letter: 'l', color: 'var(--color-airi)'},
 ] as const
 
-const defaultBrandLetters = [
-    {letter: 'M', color: 'currentColor'},
-    {letter: 'a', color: 'currentColor'},
-    {letter: 'd', color: 'currentColor'},
-    {letter: 'E', color: 'var(--color-miku)'},
-    {letter: 'n', color: 'var(--color-miku)'},
-    {letter: 'r', color: 'var(--color-miku)'},
-    {letter: 'o', color: 'var(--color-miku)'},
-    {letter: 'l', color: 'var(--color-miku)'},
-    {letter: 'l', color: 'var(--color-miku)'},
-] as const
-
 export function BrandMark({
                               className,
                               variant = 'default',
@@ -42,11 +30,18 @@ export function BrandMark({
         )
     }
 
-    const letters = variant === 'colorful' ? colorfulBrandLetters : defaultBrandLetters
+    if (variant === 'default') {
+        return (
+            <span aria-label="MadEnroll" className={className} {...props}>
+                <span className="brand-mark-letter">Mad</span>
+                <span className="brand-accent-gradient">Enroll</span>
+            </span>
+        )
+    }
 
     return (
         <span aria-label="MadEnroll" className={className} {...props}>
-      {letters.map(({letter, color}, index) => (
+      {colorfulBrandLetters.map(({letter, color}, index) => (
           <span key={`${letter}-${index}`} className="brand-mark-letter" style={{color}}>
           {letter}
         </span>

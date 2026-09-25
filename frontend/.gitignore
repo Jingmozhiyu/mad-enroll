@@ -28,6 +28,7 @@ out
 .env.example
 .env.local
 .codex
+tsconfig.tsbuildinfo
 README-zh_cn.md
 README.md
 next-env.d.ts

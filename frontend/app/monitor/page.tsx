@@ -1,5 +1,4 @@
 import {MonitorClientPage} from '@/components/monitor/monitor-client-page'
-import Link from 'next/link'
 import {backendFetchTasks} from '@/lib/api/server/tasks'
 import {getServerSession} from '@/lib/auth/session.server'
 
@@ -24,6 +23,7 @@ export default async function MonitorPage({searchParams}: MonitorPageProps) {
             <MonitorClientPage
                 initialStatusMessage={initialStatusMessage}
                 initialTasks={[]}
+                serviceMode={serviceMode}
             />
         )
     }

@@ -177,13 +177,9 @@ export function CourseQueryInput({
                     <span className="block text-sm font-semibold text-[var(--color-ink)]">
                       {suggestion.name}
                     </span>
-                    <span className="block text-xs text-[var(--color-ink-soft)]">
+                    <span className="block text-xs font-bold text-[var(--color-ink-soft)]">
                       {suggestion.displayLine}
                     </span>
-                  </span>
-                                    <span
-                                        className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-deep-teal)]">
-                    Search
                   </span>
                                 </button>
                             )

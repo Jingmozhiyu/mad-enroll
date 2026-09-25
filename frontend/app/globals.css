@@ -19,8 +19,8 @@
     --color-line: #e3ece9;
     --color-primary-soft: #eaf9f6;
 
-    --page-background: #fffefb;
-    --page-background-solid: #fffefb;
+    --page-background: #ffffff;
+    --page-background-solid: #ffffff;
     --page-band-background: #f3fffc;
     --surface-background: #ffffff;
     --surface-background-strong: #ffffff;
@@ -112,6 +112,7 @@
 
 html {
     scroll-behavior: auto;
+    scrollbar-gutter: stable;
     background: var(--page-background-solid);
 }
 
@@ -166,28 +167,6 @@ strong,
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-@keyframes hero-band-enter {
-    from {
-        clip-path: inset(0 48% 0 48%);
-    }
-
-    to {
-        clip-path: inset(0 0 0 0);
-    }
-}
-
-@keyframes hero-shapes-enter {
-    from {
-        opacity: 0;
-        transform: translateX(1.25rem);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
     }
 }
 
@@ -246,10 +225,7 @@ button {
     }
 
     .skeleton-block::after,
-    .page-fade-enter,
-    .welcome-hero-band,
-    .welcome-hero-band::before,
-    .welcome-hero-band::after {
+    .page-fade-enter {
         animation: none;
     }
 }
@@ -357,248 +333,6 @@ button {
 
 .nav-link-idle:hover {
     background: var(--nav-link-hover);
-}
-
-.welcome-hero {
-    --welcome-hero-headline: #113e3b;
-    --welcome-hero-body: var(--color-ink-soft);
-    --welcome-hero-accent: var(--color-miku);
-    display: grid;
-    grid-template-rows: minmax(22rem, 2fr) minmax(9.5rem, 1fr);
-    min-height: calc(100svh - 9.5rem);
-    margin-inline: calc(50% - 50vw);
-    margin-top: -0.4rem;
-}
-
-.welcome-hero-band {
-    position: relative;
-    display: grid;
-    align-items: center;
-    min-height: 22rem;
-    overflow: hidden;
-    border-top: 1px solid #159889;
-    border-bottom: 2px solid #159889;
-    background-color: var(--color-miku);
-    animation: hero-band-enter 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.welcome-hero-band::before,
-.welcome-hero-band::after {
-    content: "";
-    position: absolute;
-    pointer-events: none;
-}
-
-.welcome-hero-band::before {
-    inset: 0;
-    background: linear-gradient(118deg, transparent 0 11%, rgba(255, 255, 255, 0.28) 11.1% 28%, transparent 28.1%),
-    linear-gradient(118deg, transparent 0 56%, rgba(17, 62, 59, 0.13) 56.1% 73%, transparent 73.1%),
-    linear-gradient(118deg, rgba(17, 62, 59, 0.12) 0 18%, transparent 18.1% 100%),
-    linear-gradient(118deg, transparent 0 78%, rgba(154, 238, 222, 0.5) 78.1% 100%);
-    animation: hero-shapes-enter 880ms 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.welcome-hero-band::after {
-    inset: 1.35rem;
-    animation: hero-shapes-enter 880ms 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.welcome-hero-inner,
-.welcome-hero-note-inner {
-    width: min(100% - 2rem, 1200px);
-    margin-inline: auto;
-}
-
-.welcome-hero-inner {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    min-height: inherit;
-    align-items: center;
-    padding-block: 3rem;
-}
-
-.welcome-hero-copy {
-    display: grid;
-    justify-items: center;
-    gap: 3rem;
-    text-align: center;
-}
-
-.welcome-hero-headline,
-.welcome-hero-body,
-.welcome-hero-accent {
-    transition: color 320ms cubic-bezier(0.22, 1, 0.36, 1);
-    letter-spacing: 0;
-}
-
-.welcome-hero-headline {
-    max-width: 14ch;
-    color: var(--welcome-hero-headline);
-    font-family: var(--font-geist-sans), Arial, sans-serif;
-    font-size: 3.6rem;
-    font-weight: 700;
-    line-height: 0.98;
-}
-
-.welcome-hero-body {
-    max-width: 68rem;
-    color: var(--welcome-hero-body);
-    font-size: 1.5rem;
-    line-height: 1.8;
-}
-
-.welcome-hero-accent {
-    color: var(--welcome-hero-accent);
-    font-weight: 600;
-}
-
-.welcome-hero-stat {
-    color: hsl(120, 50%, 99%)
-}
-
-.welcome-hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.85rem;
-}
-
-.welcome-hero-primary-button,
-.welcome-hero-secondary-button {
-    display: inline-flex;
-    min-width: 10.75rem;
-    min-height: 3.25rem;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    padding: 0.85rem 1.35rem;
-    font-size: 1rem;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: 0;
-    transition: transform 180ms ease,
-    background-color 180ms ease,
-    border-color 180ms ease,
-    color 180ms ease;
-}
-
-.welcome-hero-primary-button {
-    border: 1px solid rgba(17, 62, 59, 0.26);
-    background: #fffefb;
-    color: #113e3b;
-}
-
-.welcome-hero-secondary-button {
-    border: 1px solid rgba(17, 62, 59, 0.34);
-    background: rgba(17, 62, 59, 0.12);
-    color: #113e3b;
-}
-
-.welcome-hero-primary-button:hover,
-.welcome-hero-secondary-button:hover {
-    transform: translateY(-1px);
-}
-
-.welcome-hero-primary-button:hover {
-    background: #f2fffc;
-}
-
-.welcome-hero-secondary-button:hover {
-    background: rgba(17, 62, 59, 0.18);
-}
-
-.welcome-hero-note {
-    display: grid;
-    align-items: center;
-    background: var(--page-background);
-}
-
-.welcome-hero-note-inner {
-    display: grid;
-    justify-items: center;
-    gap: 1rem;
-    padding-block: 1.5rem 4rem;
-    text-align: center;
-}
-
-.welcome-hero-note-rule {
-    width: min(100%, 48rem);
-    height: 2px;
-    transform-origin: center;
-    background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(51, 204, 187, 0.28) 14%,
-            var(--color-miku) 50%,
-            rgba(51, 204, 187, 0.28) 86%,
-            transparent
-    );
-}
-
-@media (min-width: 768px) {
-    .welcome-hero {
-        min-height: calc(100svh - 8.25rem);
-    }
-
-    .welcome-hero-headline {
-        font-size: 5rem;
-    }
-}
-
-@media (min-width: 1280px) {
-    .welcome-hero {
-        min-height: calc(100svh - 8.75rem);
-    }
-
-    .welcome-hero-headline {
-        font-size: 5.6rem;
-    }
-}
-
-@media (min-width: 1280px) and (min-aspect-ratio: 3 / 2) and (max-aspect-ratio: 7 / 4) {
-    .welcome-hero-headline {
-        font-size: 5rem;
-    }
-}
-
-@media (max-width: 767px) {
-    .welcome-hero {
-        grid-template-rows: auto auto;
-        min-height: auto;
-        margin-top: 0;
-    }
-
-    .welcome-hero-band {
-        min-height: 24rem;
-    }
-
-    .welcome-hero-band::after {
-        inset: 0.8rem;
-    }
-
-    .welcome-hero-inner {
-        padding-block: 3.75rem;
-    }
-
-    .welcome-hero-headline {
-        max-width: 12ch;
-        font-size: 3.05rem;
-    }
-
-    .welcome-hero-body {
-        font-size: 1.05rem;
-        line-height: 1.75;
-    }
-
-    .welcome-hero-primary-button,
-    .welcome-hero-secondary-button {
-        width: min(100%, 18rem);
-    }
-
-    .welcome-hero-note-inner {
-        padding-block: 1.35rem 1.8rem;
-    }
 }
 
 .hover-elevated:hover {
@@ -895,11 +629,21 @@ button {
     text-shadow: none;
 }
 
-.monitor-auth-card {
-    width: 100%;
-    border-color: var(--surface-border);
-    background: #ffffff;
-    box-shadow: var(--surface-shadow);
+.monitor-auth-dialog {
+    width: min(calc(100% - 2rem), 29rem);
+    max-height: min(90dvh, 42rem);
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 14px;
+    background: var(--surface-background);
+    color: var(--color-ink);
+    box-shadow: 0 18px 48px rgba(23, 49, 60, 0.22);
+}
+
+.monitor-auth-dialog::backdrop {
+    background: rgba(23, 49, 60, 0.42);
 }
 
 .monitor-auth-stack {
@@ -955,13 +699,15 @@ button {
     min-height: auto;
     padding: 0;
     background: transparent;
-    color: var(--logout-link-color);
+    color: var(--color-ink-soft);
     font-size: 0.96rem;
     font-weight: 500;
     line-height: 2;
     text-decoration: underline;
+    text-decoration-color: var(--color-ink-soft);
     text-decoration-thickness: 1px;
     text-underline-offset: 0.18em;
+    opacity: 0.85;
     box-shadow: none;
     transition: color 0.2s ease,
     opacity 0.2s ease,
@@ -979,6 +725,38 @@ button {
 .logout-text-link:focus-visible {
     outline: none;
     color: var(--logout-link-hover);
+}
+
+.login-text-link {
+    align-self: flex-end;
+    min-height: auto;
+    padding: 0;
+    background: transparent;
+    color: var(--color-miku);
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 2;
+    text-decoration: underline;
+    text-decoration-color: var(--color-shizuku);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    box-shadow: none;
+    transition: color 0.2s ease,
+    opacity 0.2s ease,
+    text-underline-offset 0.2s ease;
+}
+
+.login-text-link:hover {
+    color: var(--color-deep-teal);
+    opacity: 0.92;
+    text-underline-offset: 0.24em;
+    box-shadow: none;
+}
+
+.login-text-link:focus,
+.login-text-link:focus-visible {
+    outline: none;
+    color: var(--color-deep-teal);
 }
 
 .about-copy {
@@ -1028,6 +806,21 @@ button {
 .about-brand-letter {
     display: inline-block;
     line-height: inherit;
+}
+
+.brand-accent-gradient {
+    display: inline-block;
+    color: var(--color-miku);
+}
+
+@supports (background-clip: text) {
+    .brand-accent-gradient {
+        background-image: linear-gradient(300deg, var(--color-miku) 0%, var(--color-miku) 60%, var(--color-shizuku) 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+    }
 }
 
 .about-placeholder {

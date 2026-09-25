@@ -68,6 +68,7 @@ export function useMonitorClientPage({
     const activeInitialTasks = getActiveTasks(initialTasks)
     const searchTriggerRef = useRef<HTMLButtonElement | null>(null)
     const hasInitializedSearchFocus = useRef(false)
+    const pendingSearchFocus = useRef(false)
     const hasConsumedInitialStatusMessage = useRef(!initialStatusMessage)
     const previousLoggedIn = useRef(isLoggedIn)
     const previousSearchOpen = useRef(false)
@@ -99,6 +100,7 @@ export function useMonitorClientPage({
     const [sectionResults, setSectionResults] = useState<Task[]>([])
     const [isSearchStageTransitioning, setIsSearchStageTransitioning] = useState(false)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [isAuthOpen, setIsAuthOpen] = useState(Boolean(initialStatusMessage))
     const [busyAction, setBusyAction] = useState<string | null>(null)
     const [addingDocId, setAddingDocId] = useState<string | null>(null)
     const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
@@ -258,25 +260,28 @@ export function useMonitorClientPage({
         }
     }, [initialTasks.length, isLoggedIn, loadTasks, ready])
 
-    useEffect(() => {
-        if (!ready || !isLoggedIn || isSearchOpen) {
-            previousLoggedIn.current = isLoggedIn
-            previousSearchOpen.current = isSearchOpen
-            return
-        }
+    const searchDisabled = isLoggedIn && (termsLoading || !!termsError || termOptions.length === 0)
 
+    useEffect(() => {
         const shouldFocusInitially = !hasInitializedSearchFocus.current
         const justLoggedIn = !previousLoggedIn.current && isLoggedIn
         const justClosedSearch = previousSearchOpen.current && !isSearchOpen
 
-        if (shouldFocusInitially || justLoggedIn || justClosedSearch) {
-            focusSearchTrigger()
-            hasInitializedSearchFocus.current = true
+        if (ready && isLoggedIn && (shouldFocusInitially || justLoggedIn || justClosedSearch)) {
+            pendingSearchFocus.current = true
         }
 
         previousLoggedIn.current = isLoggedIn
         previousSearchOpen.current = isSearchOpen
-    }, [focusSearchTrigger, isLoggedIn, isSearchOpen, ready])
+
+        if (!ready || !isLoggedIn || isSearchOpen || searchDisabled || !pendingSearchFocus.current) {
+            return
+        }
+
+        focusSearchTrigger()
+        pendingSearchFocus.current = false
+        hasInitializedSearchFocus.current = true
+    }, [focusSearchTrigger, isLoggedIn, isSearchOpen, ready, searchDisabled])
 
     function updateAuthField(name: 'email' | 'password', value: string) {
         setAuthForm((current) => ({
@@ -314,6 +319,7 @@ export function useMonitorClientPage({
             const payload = getValidatedAuthForm()
             setBusyAction('login')
             const nextSession = await login(payload)
+            setIsAuthOpen(false)
             const nextTasks = await fetchTasks()
             applyTasks(nextTasks, `Welcome back, ${nextSession.email}.`)
         } catch (error) {
@@ -329,6 +335,7 @@ export function useMonitorClientPage({
         setTasks([])
         resetSearchFlow()
         setIsSearchOpen(false)
+        setIsAuthOpen(false)
         setStatusMessage(DEFAULT_SIGN_IN_STATUS_MESSAGE)
     }
 
@@ -547,15 +554,19 @@ export function useMonitorClientPage({
             onRegister: () => void handleRegister(),
             statusMessage,
         },
+        authOverlayProps: {
+            open: isAuthOpen && ready && !isLoggedIn,
+            onClose: () => setIsAuthOpen(false),
+        },
         headerProps: {
             isLoggedIn,
+            onOpenAuth: () => setIsAuthOpen(true),
             onLogout: () => void handleLogout(),
             onOpenSearch: () => { setIsSearchOpen(true); setTermRefreshVersion(value => value + 1) },
-            searchDisabled: termsLoading || !!termsError || termOptions.length === 0,
+            searchDisabled,
             ready,
             searchTriggerRef,
             sessionEmail: session?.email,
-            statusMessage,
         },
         searchOverlayProps: {
             addingDocId,
@@ -589,13 +600,13 @@ export function useMonitorClientPage({
             termsError,
             onRetryTerms: () => setTermRefreshVersion(value => value + 1),
         },
-        termStatus: {loading: termsLoading, error: termsError, empty: termOptions.length === 0,
+        termStatus: {error: termsError,
             retry: () => setTermRefreshVersion(value => value + 1)},
-        showAuth: ready && !isLoggedIn,
-        showTrackedSections: ready && isLoggedIn,
         taskListProps: {
             canSearch: !termsLoading && !termsError && termOptions.length > 0,
             deletingDocId,
+            isLoggedIn,
+            termsLoading,
             onDelete: (docId: string, sectionId: string) => void handleDelete(docId, sectionId),
             tasks,
         },

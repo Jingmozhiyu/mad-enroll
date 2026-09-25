@@ -1,0 +1,304 @@
+.home {
+    --home-teal: #116d63;
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    margin: 0;
+}
+
+.cloverBackground {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 50%;
+    width: 100vw;
+    height: max(100%, 650px);
+    transform: translateX(-50%);
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+    mask-image: linear-gradient(to bottom, #000 85%, transparent);
+}
+
+.cloverSide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: clamp(90px, 16vw, 270px);
+}
+
+.cloverLeft {
+    left: 0;
+    mask-image: linear-gradient(to right, #000 45%, transparent);
+}
+
+.cloverRight {
+    right: 0;
+    mask-image: linear-gradient(to left, #000 45%, transparent);
+}
+
+.clover {
+    position: absolute;
+    top: var(--clover-top);
+    width: var(--clover-size);
+    height: var(--clover-size);
+    opacity: var(--clover-opacity);
+    background: url('/shamrock_6ccb20.svg') center / contain no-repeat;
+    transform: rotate(var(--clover-angle));
+    animation: clover-drift var(--clover-duration) ease-in-out var(--clover-delay) infinite alternate;
+}
+
+.cloverLeft .clover {
+    left: var(--clover-inset);
+}
+
+.cloverRight .clover {
+    right: var(--clover-inset);
+    animation-direction: alternate-reverse;
+}
+
+@keyframes clover-drift {
+    from {
+        transform: translate3d(0, 8px, 0) rotate(var(--clover-angle));
+    }
+    to {
+        transform: translate3d(6px, -12px, 0) rotate(calc(var(--clover-angle) + 12deg));
+    }
+}
+
+.hero {
+    display: flex;
+    justify-content: center;
+    padding: 24px 0 40px;
+}
+
+.copy {
+    width: 100%;
+    max-width: 960px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding-bottom: 0;
+    animation: copy-arrive 850ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.copy h1 {
+    font-weight: 700;
+    font-size: clamp(38px, 4.6vw, 62px);
+    line-height: 1.09;
+    letter-spacing: -.02em;
+    margin: 0;
+    text-wrap: balance;
+}
+
+.enhance {
+    background-image: linear-gradient(300deg, var(--color-miku) 0%, var(--color-miku) 60%, var(--color-shizuku) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.description {
+    max-width: 100ch;
+    margin: 26px auto;
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--color-ink-soft);
+    text-wrap: pretty;
+}
+
+.actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.primary, .secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    min-height: 50px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background 180ms, transform 180ms;
+}
+
+.primary {
+    background: color-mix(in srgb, #39c5bb, #164e49 10%);
+    color: #fff;
+    padding: 0 21px;
+    border-radius: 9px;
+}
+
+.primary:hover {
+    background: var(--home-teal);
+    transform: translateY(-2px);
+}
+
+.secondary {
+    color: #28534e;
+}
+
+.secondary svg {
+    transition: transform 200ms;
+}
+
+.secondary:hover svg {
+    transform: translateX(3px);
+}
+
+.proof {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 32px;
+    justify-content: center;
+    max-width: 6000px;
+}
+
+.proofMark {
+    display: grid;
+    place-items: center;
+    color: #116d63;
+    background: #d9f5eb;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 23px;
+    flex-shrink: 0;
+}
+
+.proof p {
+    font-size: 15px;
+    color: var(--color-ink-soft);
+    margin: 0;
+    line-height: 1.7;
+}
+
+.proof strong {
+    color: var(--color-ink);
+    font-weight: 700;
+}
+
+.news {
+    text-align: center;
+    border-top: 1px solid var(--surface-border);
+    padding: 24px 0;
+}
+
+.news h2 {
+    margin: 0 0 8px;
+    color: var(--color-ink);
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.news p {
+    margin: 0;
+    color: var(--color-ink-soft);
+    font-size: 18px;
+}
+
+.home a:focus-visible, .home button:focus-visible {
+    outline: 3px solid var(--home-teal);
+    outline-offset: 5px;
+}
+
+.compl {
+    text-align: center;
+    padding: 48px 0;
+}
+
+.compl p {
+    color: var(--color-ink-muted);
+    font-size: 14px;
+}
+
+.compl span {
+    color: var(--color-airi);
+    margin-right: 1px;
+    font-size: 16px;
+}
+
+
+@keyframes copy-arrive {
+    from {
+        transform: translateY(18px);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 800px) {
+    .cloverSide {
+        width: 90px;
+        opacity: 0.6;
+    }
+
+    .clover {
+        width: calc(var(--clover-size) * 0.7);
+        height: calc(var(--clover-size) * 0.7);
+    }
+
+    .hero {
+        padding-top: 10px;
+    }
+
+    .copy {
+        padding: 0;
+    }
+
+    .copy h1 {
+        font-size: clamp(40px, 7.5vw, 58px);
+    }
+
+    .description {
+        max-width: 46ch;
+    }
+
+    .proof {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .proof p {
+        flex: 1;
+        line-height: 1.8;
+    }
+
+
+}
+
+@media (max-width: 540px) {
+    .description {
+        font-size: 15px;
+        margin-block: 22px;
+    }
+
+    .actions {
+        gap: 16px;
+    }
+
+    .primary, .secondary {
+        font-size: 12px;
+        gap: 9px;
+    }
+
+    .primary {
+        padding-inline: 16px;
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home *, .home *::before, .home *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}

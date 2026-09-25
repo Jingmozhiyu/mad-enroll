@@ -20,18 +20,20 @@ type MonitorAuthCardProps = {
 
 type MonitorPageHeaderProps = {
     isLoggedIn: boolean
+    onOpenAuth: () => void
     onLogout: () => void
     onOpenSearch: () => void
     searchDisabled: boolean
     ready: boolean
     searchTriggerRef: RefObject<HTMLButtonElement | null>
     sessionEmail?: string
-    statusMessage: string
 }
 
 type MonitorTaskListProps = {
     canSearch: boolean
     deletingDocId: string | null
+    isLoggedIn: boolean
+    termsLoading: boolean
     onDelete: (docId: string, sectionId: string) => void
     tasks: Task[]
 }
@@ -114,18 +116,8 @@ export function MonitorAuthCard({
                                     statusMessage,
                                 }: MonitorAuthCardProps) {
     return (
-        <div className="mx-auto grid w-full max-w-[540px] gap-6 pt-4 text-center md:pt-8">
-            <div className="flex flex-col gap-3">
-                <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
-                    Seat Alerts
-                </h1>
-                <p className="text-sm leading-7 text-[var(--color-ink-soft)] md:text-base">
-                    {statusMessage}
-                </p>
-            </div>
-
-            <div className="surface-panel monitor-auth-card grid gap-4 rounded-[16px] p-5 md:p-6">
-                <div className="monitor-auth-stack">
+        <div className="monitor-auth-stack">
+            <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); onLogin() }}>
                     <input
                         autoComplete="email"
                         aria-label="Email"
@@ -161,8 +153,7 @@ export function MonitorAuthCard({
                         <button
                             className="button-primary h-11 w-full"
                             disabled={busyAction !== null}
-                            onClick={onLogin}
-                            type="button"
+                            type="submit"
                         >
                             {busyAction === 'login' ? 'Logging in...' : 'Login'}
                         </button>
@@ -185,48 +176,42 @@ export function MonitorAuthCard({
                             {busyAction === 'google-login' ? 'Redirecting to Google...' : 'Continue with Google'}
                         </span>
                     </button>
-                </div>
-
-                <p className="text-center text-sm leading-6 text-[var(--color-ink-soft)]">
-                    Google login only requests your verified email address.
-                </p>
-            </div>
+            </form>
+            {statusMessage !== 'Sign in to view and manage your seat alerts.' ? (
+                <p className="text-sm leading-6 text-[var(--color-ink-soft)]" role="status">{statusMessage}</p>
+            ) : null}
+            <p className="text-xs text-center leading-5 text-[var(--color-ink-soft)]">
+                Google sign-in requests your email address only.
+            </p>
         </div>
     )
 }
 
 export function MonitorPageHeader({
                                       isLoggedIn,
+                                      onOpenAuth,
                                       onLogout,
                                       onOpenSearch,
                                       searchDisabled,
                                       ready,
                                       searchTriggerRef,
                                       sessionEmail,
-                                      statusMessage,
                                   }: MonitorPageHeaderProps) {
     return (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
-            <div className="flex flex-col gap-3">
-                <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
-                    Seat Alerts
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)_minmax(0,1fr)]">
+            <div className="col-start-1 row-start-1 lg:col-auto lg:row-auto mb-3">
+                <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-ink)] md:text-4xl">
+                    Seat <span className="brand-accent-gradient">Alerts</span>
                 </h1>
-                {ready && isLoggedIn ? (
-                    <p className="text-sm font-[var(--font-weight-body-bold)] tracking-[0.04em] text-[var(--color-ink-soft)] md:text-base">
-                        Track courses and sections by email.
-                    </p>
-                ) : (
-                    <p className="text-sm leading-7 text-[var(--color-ink-soft)]">{statusMessage}</p>
-                )}
             </div>
 
-            <div className="flex flex-col items-center justify-start gap-2 lg:-mt-3">
-                {ready && isLoggedIn ? (
+            <div className="col-span-2 row-start-2 min-w-0 lg:col-auto lg:row-auto flex justify-center">
+                {ready ? (
                     <button
                         aria-haspopup="dialog"
                         ref={searchTriggerRef}
-                        className="search-trigger-shell w-full min-w-[320px] max-w-[420px]"
-                        onClick={onOpenSearch}
+                        className="search-trigger-shell w-4/5"
+                        onClick={isLoggedIn ? onOpenSearch : onOpenAuth}
                         disabled={searchDisabled}
                         type="button"
                     >
@@ -243,23 +228,28 @@ export function MonitorPageHeader({
                 ) : null}
             </div>
 
-            <div className="lg:min-w-[340px]">
+            <div className="col-start-2 row-start-1 justify-self-end lg:col-auto lg:row-auto lg:justify-self-end">
                 {!ready ? (
-                    <p className="text-sm leading-7 text-[var(--color-ink-soft)] lg:text-right">
+                    <p className="text-sm leading-7 text-[var(--color-ink-soft)] md:text-right">
                         Loading session...
                     </p>
                 ) : isLoggedIn ? (
                     <div className="flex flex-col items-end gap-0.5 text-right">
-                        <span className="monitor-email-label">{sessionEmail}</span>
-                        <button
-                            className="logout-text-link"
-                            onClick={onLogout}
-                            type="button"
-                        >
+                        <span className="monitor-email-label max-w-[42vw] truncate md:max-w-none">{sessionEmail}</span>
+                        <button className="logout-text-link" onClick={onLogout} type="button">
                             Logout
                         </button>
                     </div>
-                ) : null}
+                ) : (
+                    <div className="flex flex-col items-end gap-0.5 text-right">
+                        <span className="monitor-email-label max-w-[42vw] text-right md:max-w-none">
+                            You have not logged in yet.
+                        </span>
+                        <button className="login-text-link" onClick={onOpenAuth} type="button">
+                            Login...
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -268,13 +258,30 @@ export function MonitorPageHeader({
 export function MonitorTaskList({
                                     canSearch,
                                     deletingDocId,
+                                    isLoggedIn,
+                                    termsLoading,
                                     onDelete,
                                     tasks,
                                 }: MonitorTaskListProps) {
     if (tasks.length === 0) {
+        if (!isLoggedIn) {
+            return (
+                <div className="px-5 py-10 text-center">
+                    <h2 className="text-2xl font-semibold text-[var(--color-ink)]">No alerts yet</h2>
+                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+                        Log in to view your alerts or add a section to track.
+                    </p>
+                </div>
+            )
+        }
         return (
             <EmptyState
-                description={canSearch ? 'Search for a course or section to start tracking seat openings.' : 'New alerts are currently unavailable. See the term status above.'}
+                bordered={false}
+                description={termsLoading
+                    ? 'Your tracked sections will appear here.'
+                    : canSearch
+                        ? 'Search for a course or section to start tracking seat openings.'
+                        : 'New alerts are unavailable right now.'}
                 title="No alerts yet"
             />
         )
