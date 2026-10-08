@@ -1,0 +1,14 @@
+SET SESSION TRANSACTION READ ONLY;
+START TRANSACTION WITH CONSISTENT SNAPSHOT;
+SELECT 'terms',term_code,label,status FROM terms;
+SELECT 'mail_groups',COALESCE(term_id,'NULL'),alert_type,manual_test+0,COUNT(*),MIN(sent_at),MAX(sent_at) FROM alert_delivery_logs GROUP BY term_id,alert_type,manual_test;
+SELECT 'subscriptions',c.term_code,COUNT(*),SUM(s.enabled+0),COUNT(DISTINCT c.course_uuid),COUNT(DISTINCT CASE WHEN s.enabled THEN c.course_uuid END) FROM user_section_subscriptions s JOIN course_sections cs USING(section_uuid) JOIN courses c USING(course_uuid) GROUP BY c.term_code;
+SELECT 'course_users',CONCAT(COALESCE(c.subject_short_name,c.subject_code),' ',c.catalog_number),COUNT(DISTINCT s.user_id) FROM user_section_subscriptions s JOIN course_sections cs USING(section_uuid) JOIN courses c USING(course_uuid) WHERE c.term_code='1272' GROUP BY c.course_uuid ORDER BY COUNT(DISTINCT s.user_id) DESC,CONCAT(COALESCE(c.subject_short_name,c.subject_code),' ',c.catalog_number) LIMIT 10;
+SELECT 'subject_courses',COALESCE(c.subject_short_name,c.subject_code),COUNT(DISTINCT s.user_id,c.course_uuid) FROM user_section_subscriptions s JOIN course_sections cs USING(section_uuid) JOIN courses c USING(course_uuid) WHERE c.term_code='1272' GROUP BY COALESCE(c.subject_short_name,c.subject_code) ORDER BY COUNT(DISTINCT s.user_id,c.course_uuid) DESC,COALESCE(c.subject_short_name,c.subject_code) LIMIT 10;
+SELECT 'mail_hours',COALESCE(term_id,'NULL'),alert_type,HOUR(DATE_SUB(sent_at,INTERVAL 5 HOUR)),COUNT(*) FROM alert_delivery_logs WHERE manual_test=0 GROUP BY term_id,alert_type,HOUR(DATE_SUB(sent_at,INTERVAL 5 HOUR));
+SELECT 'mail_days',COALESCE(term_id,'NULL'),alert_type,DATE(DATE_SUB(sent_at,INTERVAL 5 HOUR)),COUNT(*) FROM alert_delivery_logs WHERE manual_test=0 GROUP BY term_id,alert_type,DATE(DATE_SUB(sent_at,INTERVAL 5 HOUR)) ORDER BY DATE(DATE_SUB(sent_at,INTERVAL 5 HOUR));
+SELECT 'daily_emails',DATE(DATE_SUB(sent_at,INTERVAL 5 HOUR)),COUNT(*) FROM alert_delivery_logs GROUP BY DATE(DATE_SUB(sent_at,INTERVAL 5 HOUR)) ORDER BY DATE(DATE_SUB(sent_at,INTERVAL 5 HOUR));
+SELECT 'welcome_coverage',(SELECT COUNT(*) FROM users),COUNT(DISTINCT recipient_email),COUNT(*) FROM alert_delivery_logs WHERE alert_type='WELCOME' AND manual_test=0;
+SELECT 'welcome_first_days',DATE(DATE_SUB(first_sent,INTERVAL 5 HOUR)),COUNT(*) FROM (SELECT MIN(sent_at) first_sent FROM alert_delivery_logs WHERE alert_type='WELCOME' AND manual_test=0 GROUP BY recipient_email) r GROUP BY DATE(DATE_SUB(first_sent,INTERVAL 5 HOUR)) ORDER BY 2;
+SELECT 'dead_groups',COALESCE(term_id,'NULL'),alert_type,COUNT(*) FROM alert_dead_letters GROUP BY term_id,alert_type;
+COMMIT;

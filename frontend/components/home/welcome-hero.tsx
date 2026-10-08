@@ -2,6 +2,8 @@
 
 import type {CSSProperties} from 'react'
 import {ProgressLink} from '@/components/navigation-progress'
+import {ReportEntry} from './report-entry'
+import {Arrow} from './arrow'
 import styles from './welcome-hero.module.css'
 
 const clovers = [
@@ -43,13 +45,6 @@ function CloverBackground() {
     )
 }
 
-function Arrow() {
-    return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 12h16m-6-6 6 6-6 6"/>
-    </svg>
-}
-
 export function WelcomeHero() {
     return (
         <div className={`welcome-hero ${styles.home}`}>
@@ -77,8 +72,8 @@ export function WelcomeHero() {
 
             </section>
             <section className={styles.news} aria-labelledby="home-news-title">
-                <h2 id="home-news-title">News</h2>
-                <p>Fall 2026 enrollment report coming soon.</p>
+                <h2 id="home-news-title">News!</h2>
+                <ReportEntry href="/news/fall-2026-report" title="MadEnroll Semester Report (FA26)"/>
             </section>
 
             <section className={styles.compl}>

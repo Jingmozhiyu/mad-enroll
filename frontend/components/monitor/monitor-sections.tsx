@@ -280,7 +280,7 @@ export function MonitorTaskList({
                 description={termsLoading
                     ? 'Your tracked sections will appear here.'
                     : canSearch
-                        ? 'Search for a course or section to start tracking seat openings.'
+                        ? 'Search to start tracking seat openings.'
                         : 'New alerts are unavailable right now.'}
                 title="No alerts yet"
             />

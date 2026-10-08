@@ -99,6 +99,9 @@ export function AdminDashboardPage() {
                         <p role="status" className="text-sm text-[var(--color-ink-soft)]">{statusMessage}</p>
                         <div className="flex items-center gap-4">
                             <p className="text-sm text-[var(--color-ink-soft)]">{sessionEmail}</p>
+                            <ProgressLink className="button-secondary" href="/admin/framework">
+                                Framework preview
+                            </ProgressLink>
                             <button
                                 className="button-secondary min-w-[108px]"
                                 disabled={loading}

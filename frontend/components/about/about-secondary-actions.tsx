@@ -21,24 +21,6 @@ function useHasMounted() {
     )
 }
 
-const developerLogEntries = [
-    {
-        title: 'Interface and API cleanup',
-        date: 'June 21, 2026',
-        body: [
-            'MadEnroll now has a much clearer UI than before.',
-            'The frontend API layer and CSS structure were reorganized so future changes are easier to make safely.',
-        ],
-    },
-    {
-        title: 'MadEnroll is released!',
-        date: 'April 5, 2026',
-        body: [
-            'Welcome to MadEnroll. Snipe popular courses as you wish.',
-        ],
-    }
-]
-
 
 const faqItems: FaqItem[] = [
     {
@@ -240,41 +222,10 @@ export function AboutSecondaryActions({
     return (
         <>
             <div className="flex flex-wrap items-center justify-center gap-0 pt-4 text-center">
-                <InlineAction label="📖 Developer Log" onClick={() => setActivePanel('developer-log')}/>
-                <span className="px-3 text-[var(--inline-muted)]">|</span>
                 <InlineAction label="❓ FAQ" onClick={() => setActivePanel('faq')}/>
                 <span className="px-3 text-[var(--inline-muted)]">|</span>
                 <InlineAction label="💡 Send Feedback" onClick={() => setActivePanel('feedback')}/>
             </div>
-
-            {activePanel === 'developer-log' ? (
-                <ModalShell onClose={closePanel} title="Developer Log">
-                    <div className="grid border-y border-[var(--surface-divider)]">
-                        {developerLogEntries.map((entry) => (
-                            <article
-                                className="border-b border-[var(--surface-divider)] py-5 last:border-b-0"
-                                key={entry.title}
-                            >
-                                <div className="flex flex-wrap items-baseline justify-between gap-3">
-                                    <h3 className="text-lg font-semibold text-[var(--color-ink)]">
-                                        {entry.title}
-                                    </h3>
-                                    <p className="text-sm font-semibold text-[var(--color-deep-teal)]">
-                                        {entry.date}
-                                    </p>
-                                </div>
-                                <div className="mt-3 grid gap-3">
-                                    {entry.body.map((paragraph) => (
-                                        <p key={paragraph} className="text-base leading-8 text-[var(--color-ink-soft)]">
-                                            {paragraph}
-                                        </p>
-                                    ))}
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-                </ModalShell>
-            ) : null}
 
             {activePanel === 'faq' ? (
                 <ModalShell onClose={closePanel} title="Frequently asked questions">

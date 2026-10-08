@@ -1,0 +1,1747 @@
+{
+  "timezone": "UTC-05:00 (fixed; not DST conversion)",
+  "extracted_at_utc": "2026-10-01",
+  "term": "1272",
+  "all_subscription_records": 606,
+  "fall_subscription_records": 603,
+  "fall_unique_courses": 137,
+  "currently_enabled_fall_subscriptions": 0,
+  "all_successful_mail_records": 1883,
+  "fall_course_emails": 1759,
+  "fall_open_emails": 1200,
+  "fall_waitlist_emails": 559,
+  "add_drop_window_emails": 445,
+  "add_drop_share_percent": 25.3,
+  "peak_email_day": "2026-09-02",
+  "peak_email_day_count": 93,
+  "peak_hour_utc_minus_5": 8,
+  "peak_hour_emails": 193,
+  "performance_coverage_start": "2026-09-22T14:41:21.699000-05:00",
+  "performance_coverage_end": "2026-09-25T19:51:00.626000-05:00",
+  "performance_observed_courses": 1,
+  "performance": [
+    {
+      "period_utc_minus_5": "08:00–18:00",
+      "queue_event_samples": 14668,
+      "queue_mean_event_sampled": 1,
+      "queue_min": 1,
+      "queue_max": 1,
+      "observed_check_intervals": 14662,
+      "median_check_interval_seconds": 6.082
+    },
+    {
+      "period_utc_minus_5": "18:00–01:00",
+      "queue_event_samples": 10645,
+      "queue_mean_event_sampled": 1,
+      "queue_min": 1,
+      "queue_max": 1,
+      "observed_check_intervals": 10640,
+      "median_check_interval_seconds": 6.083
+    },
+    {
+      "period_utc_minus_5": "01:00–08:00",
+      "queue_event_samples": 8398,
+      "queue_mean_event_sampled": 1,
+      "queue_min": 1,
+      "queue_max": 1,
+      "observed_check_intervals": 8397,
+      "median_check_interval_seconds": 6.086
+    }
+  ],
+  "top_courses": [
+    {
+      "name": "BIOCHEM 104",
+      "subscriptions": 7
+    },
+    {
+      "name": "CHEM 343",
+      "subscriptions": 5
+    },
+    {
+      "name": "COMP SCI 640",
+      "subscriptions": 5
+    },
+    {
+      "name": "E M A 307",
+      "subscriptions": 5
+    },
+    {
+      "name": "MATH 320",
+      "subscriptions": 5
+    },
+    {
+      "name": "COMP SCI 252",
+      "subscriptions": 4
+    },
+    {
+      "name": "COMP SCI 354",
+      "subscriptions": 4
+    },
+    {
+      "name": "COMP SCI 571",
+      "subscriptions": 4
+    },
+    {
+      "name": "L I S 202",
+      "subscriptions": 4
+    },
+    {
+      "name": "CLASSICS 320",
+      "subscriptions": 3
+    }
+  ],
+  "top_subjects": [
+    {
+      "name": "COMP SCI",
+      "subscriptions": 48
+    },
+    {
+      "name": "MATH",
+      "subscriptions": 19
+    },
+    {
+      "name": "ECON",
+      "subscriptions": 11
+    },
+    {
+      "name": "GEN BUS",
+      "subscriptions": 11
+    },
+    {
+      "name": "CHEM",
+      "subscriptions": 9
+    },
+    {
+      "name": "CNSR SCI",
+      "subscriptions": 9
+    },
+    {
+      "name": "BIOCHEM",
+      "subscriptions": 7
+    },
+    {
+      "name": "E M A",
+      "subscriptions": 7
+    },
+    {
+      "name": "L I S",
+      "subscriptions": 7
+    },
+    {
+      "name": "POLI SCI",
+      "subscriptions": 7
+    }
+  ],
+  "hourly_emails": {
+    "OPEN": [
+      20,
+      11,
+      7,
+      5,
+      13,
+      6,
+      11,
+      11,
+      148,
+      73,
+      119,
+      82,
+      76,
+      93,
+      91,
+      70,
+      61,
+      75,
+      44,
+      31,
+      47,
+      42,
+      36,
+      28
+    ],
+    "WAITLIST": [
+      6,
+      3,
+      5,
+      1,
+      10,
+      2,
+      24,
+      13,
+      45,
+      44,
+      53,
+      36,
+      54,
+      38,
+      46,
+      43,
+      38,
+      28,
+      21,
+      7,
+      17,
+      15,
+      4,
+      6
+    ]
+  },
+  "operations": [
+    {
+      "date": "2026-04-05",
+      "course_emails": 0,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-06",
+      "course_emails": 0,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-07",
+      "course_emails": 0,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-08",
+      "course_emails": 1,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-09",
+      "course_emails": 3,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-10",
+      "course_emails": 22,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-11",
+      "course_emails": 1,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-12",
+      "course_emails": 0,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-13",
+      "course_emails": 2,
+      "cumulative_user_index": 0.0
+    },
+    {
+      "date": "2026-04-14",
+      "course_emails": 2,
+      "cumulative_user_index": 0.9346
+    },
+    {
+      "date": "2026-04-15",
+      "course_emails": 6,
+      "cumulative_user_index": 13.0841
+    },
+    {
+      "date": "2026-04-16",
+      "course_emails": 14,
+      "cumulative_user_index": 27.1028
+    },
+    {
+      "date": "2026-04-17",
+      "course_emails": 47,
+      "cumulative_user_index": 34.5794
+    },
+    {
+      "date": "2026-04-18",
+      "course_emails": 2,
+      "cumulative_user_index": 35.514
+    },
+    {
+      "date": "2026-04-19",
+      "course_emails": 0,
+      "cumulative_user_index": 37.3832
+    },
+    {
+      "date": "2026-04-20",
+      "course_emails": 23,
+      "cumulative_user_index": 44.8598
+    },
+    {
+      "date": "2026-04-21",
+      "course_emails": 17,
+      "cumulative_user_index": 45.7944
+    },
+    {
+      "date": "2026-04-22",
+      "course_emails": 9,
+      "cumulative_user_index": 47.6636
+    },
+    {
+      "date": "2026-04-23",
+      "course_emails": 9,
+      "cumulative_user_index": 48.5981
+    },
+    {
+      "date": "2026-04-24",
+      "course_emails": 11,
+      "cumulative_user_index": 48.5981
+    },
+    {
+      "date": "2026-04-25",
+      "course_emails": 3,
+      "cumulative_user_index": 49.5327
+    },
+    {
+      "date": "2026-04-26",
+      "course_emails": 3,
+      "cumulative_user_index": 49.5327
+    },
+    {
+      "date": "2026-04-27",
+      "course_emails": 13,
+      "cumulative_user_index": 50.4673
+    },
+    {
+      "date": "2026-04-28",
+      "course_emails": 10,
+      "cumulative_user_index": 51.4019
+    },
+    {
+      "date": "2026-04-29",
+      "course_emails": 1,
+      "cumulative_user_index": 52.3364
+    },
+    {
+      "date": "2026-04-30",
+      "course_emails": 11,
+      "cumulative_user_index": 54.2056
+    },
+    {
+      "date": "2026-05-01",
+      "course_emails": 19,
+      "cumulative_user_index": 55.1402
+    },
+    {
+      "date": "2026-05-02",
+      "course_emails": 0,
+      "cumulative_user_index": 55.1402
+    },
+    {
+      "date": "2026-05-03",
+      "course_emails": 3,
+      "cumulative_user_index": 55.1402
+    },
+    {
+      "date": "2026-05-04",
+      "course_emails": 6,
+      "cumulative_user_index": 55.1402
+    },
+    {
+      "date": "2026-05-05",
+      "course_emails": 3,
+      "cumulative_user_index": 56.0748
+    },
+    {
+      "date": "2026-05-06",
+      "course_emails": 10,
+      "cumulative_user_index": 56.0748
+    },
+    {
+      "date": "2026-05-07",
+      "course_emails": 3,
+      "cumulative_user_index": 56.0748
+    },
+    {
+      "date": "2026-05-08",
+      "course_emails": 2,
+      "cumulative_user_index": 56.0748
+    },
+    {
+      "date": "2026-05-09",
+      "course_emails": 2,
+      "cumulative_user_index": 56.0748
+    },
+    {
+      "date": "2026-05-10",
+      "course_emails": 1,
+      "cumulative_user_index": 56.0748
+    },
+    {
+      "date": "2026-05-11",
+      "course_emails": 13,
+      "cumulative_user_index": 57.0093
+    },
+    {
+      "date": "2026-05-12",
+      "course_emails": 3,
+      "cumulative_user_index": 57.0093
+    },
+    {
+      "date": "2026-05-13",
+      "course_emails": 6,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-14",
+      "course_emails": 6,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-15",
+      "course_emails": 4,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-16",
+      "course_emails": 1,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-17",
+      "course_emails": 0,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-18",
+      "course_emails": 3,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-19",
+      "course_emails": 10,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-20",
+      "course_emails": 5,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-21",
+      "course_emails": 7,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-22",
+      "course_emails": 1,
+      "cumulative_user_index": 57.9439
+    },
+    {
+      "date": "2026-05-23",
+      "course_emails": 0,
+      "cumulative_user_index": 59.8131
+    },
+    {
+      "date": "2026-05-24",
+      "course_emails": 0,
+      "cumulative_user_index": 59.8131
+    },
+    {
+      "date": "2026-05-25",
+      "course_emails": 1,
+      "cumulative_user_index": 59.8131
+    },
+    {
+      "date": "2026-05-26",
+      "course_emails": 2,
+      "cumulative_user_index": 59.8131
+    },
+    {
+      "date": "2026-05-27",
+      "course_emails": 19,
+      "cumulative_user_index": 60.7477
+    },
+    {
+      "date": "2026-05-28",
+      "course_emails": 3,
+      "cumulative_user_index": 60.7477
+    },
+    {
+      "date": "2026-05-29",
+      "course_emails": 5,
+      "cumulative_user_index": 61.6822
+    },
+    {
+      "date": "2026-05-30",
+      "course_emails": 1,
+      "cumulative_user_index": 61.6822
+    },
+    {
+      "date": "2026-05-31",
+      "course_emails": 3,
+      "cumulative_user_index": 61.6822
+    },
+    {
+      "date": "2026-06-01",
+      "course_emails": 13,
+      "cumulative_user_index": 62.6168
+    },
+    {
+      "date": "2026-06-02",
+      "course_emails": 4,
+      "cumulative_user_index": 62.6168
+    },
+    {
+      "date": "2026-06-03",
+      "course_emails": 6,
+      "cumulative_user_index": 62.6168
+    },
+    {
+      "date": "2026-06-04",
+      "course_emails": 6,
+      "cumulative_user_index": 62.6168
+    },
+    {
+      "date": "2026-06-05",
+      "course_emails": 1,
+      "cumulative_user_index": 62.6168
+    },
+    {
+      "date": "2026-06-06",
+      "course_emails": 0,
+      "cumulative_user_index": 62.6168
+    },
+    {
+      "date": "2026-06-07",
+      "course_emails": 0,
+      "cumulative_user_index": 62.6168
+    },
+    {
+      "date": "2026-06-08",
+      "course_emails": 7,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-09",
+      "course_emails": 2,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-10",
+      "course_emails": 4,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-11",
+      "course_emails": 6,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-12",
+      "course_emails": 7,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-13",
+      "course_emails": 4,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-14",
+      "course_emails": 3,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-15",
+      "course_emails": 8,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-16",
+      "course_emails": 3,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-17",
+      "course_emails": 0,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-18",
+      "course_emails": 0,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-19",
+      "course_emails": 8,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-20",
+      "course_emails": 2,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-21",
+      "course_emails": 3,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-22",
+      "course_emails": 12,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-23",
+      "course_emails": 3,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-24",
+      "course_emails": 5,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-25",
+      "course_emails": 4,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-26",
+      "course_emails": 2,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-27",
+      "course_emails": 4,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-28",
+      "course_emails": 1,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-29",
+      "course_emails": 4,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-06-30",
+      "course_emails": 10,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-07-01",
+      "course_emails": 6,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-07-02",
+      "course_emails": 6,
+      "cumulative_user_index": 63.5514
+    },
+    {
+      "date": "2026-07-03",
+      "course_emails": 7,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-04",
+      "course_emails": 2,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-05",
+      "course_emails": 2,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-06",
+      "course_emails": 28,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-07",
+      "course_emails": 7,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-08",
+      "course_emails": 2,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-09",
+      "course_emails": 3,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-10",
+      "course_emails": 3,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-11",
+      "course_emails": 0,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-12",
+      "course_emails": 4,
+      "cumulative_user_index": 64.486
+    },
+    {
+      "date": "2026-07-13",
+      "course_emails": 8,
+      "cumulative_user_index": 65.4206
+    },
+    {
+      "date": "2026-07-14",
+      "course_emails": 20,
+      "cumulative_user_index": 65.4206
+    },
+    {
+      "date": "2026-07-15",
+      "course_emails": 14,
+      "cumulative_user_index": 65.4206
+    },
+    {
+      "date": "2026-07-16",
+      "course_emails": 14,
+      "cumulative_user_index": 65.4206
+    },
+    {
+      "date": "2026-07-17",
+      "course_emails": 9,
+      "cumulative_user_index": 66.3551
+    },
+    {
+      "date": "2026-07-18",
+      "course_emails": 4,
+      "cumulative_user_index": 66.3551
+    },
+    {
+      "date": "2026-07-19",
+      "course_emails": 0,
+      "cumulative_user_index": 66.3551
+    },
+    {
+      "date": "2026-07-20",
+      "course_emails": 10,
+      "cumulative_user_index": 67.2897
+    },
+    {
+      "date": "2026-07-21",
+      "course_emails": 14,
+      "cumulative_user_index": 68.2243
+    },
+    {
+      "date": "2026-07-22",
+      "course_emails": 13,
+      "cumulative_user_index": 68.2243
+    },
+    {
+      "date": "2026-07-23",
+      "course_emails": 11,
+      "cumulative_user_index": 68.2243
+    },
+    {
+      "date": "2026-07-24",
+      "course_emails": 10,
+      "cumulative_user_index": 69.1589
+    },
+    {
+      "date": "2026-07-25",
+      "course_emails": 1,
+      "cumulative_user_index": 70.0935
+    },
+    {
+      "date": "2026-07-26",
+      "course_emails": 4,
+      "cumulative_user_index": 70.0935
+    },
+    {
+      "date": "2026-07-27",
+      "course_emails": 11,
+      "cumulative_user_index": 70.0935
+    },
+    {
+      "date": "2026-07-28",
+      "course_emails": 7,
+      "cumulative_user_index": 70.0935
+    },
+    {
+      "date": "2026-07-29",
+      "course_emails": 12,
+      "cumulative_user_index": 71.028
+    },
+    {
+      "date": "2026-07-30",
+      "course_emails": 10,
+      "cumulative_user_index": 71.9626
+    },
+    {
+      "date": "2026-07-31",
+      "course_emails": 13,
+      "cumulative_user_index": 71.9626
+    },
+    {
+      "date": "2026-08-01",
+      "course_emails": 3,
+      "cumulative_user_index": 71.9626
+    },
+    {
+      "date": "2026-08-02",
+      "course_emails": 3,
+      "cumulative_user_index": 71.9626
+    },
+    {
+      "date": "2026-08-03",
+      "course_emails": 13,
+      "cumulative_user_index": 71.9626
+    },
+    {
+      "date": "2026-08-04",
+      "course_emails": 20,
+      "cumulative_user_index": 72.8972
+    },
+    {
+      "date": "2026-08-05",
+      "course_emails": 28,
+      "cumulative_user_index": 73.8318
+    },
+    {
+      "date": "2026-08-06",
+      "course_emails": 16,
+      "cumulative_user_index": 74.7664
+    },
+    {
+      "date": "2026-08-07",
+      "course_emails": 27,
+      "cumulative_user_index": 74.7664
+    },
+    {
+      "date": "2026-08-08",
+      "course_emails": 9,
+      "cumulative_user_index": 77.5701
+    },
+    {
+      "date": "2026-08-09",
+      "course_emails": 7,
+      "cumulative_user_index": 77.5701
+    },
+    {
+      "date": "2026-08-10",
+      "course_emails": 14,
+      "cumulative_user_index": 78.5047
+    },
+    {
+      "date": "2026-08-11",
+      "course_emails": 18,
+      "cumulative_user_index": 79.4393
+    },
+    {
+      "date": "2026-08-12",
+      "course_emails": 17,
+      "cumulative_user_index": 80.3738
+    },
+    {
+      "date": "2026-08-13",
+      "course_emails": 20,
+      "cumulative_user_index": 80.3738
+    },
+    {
+      "date": "2026-08-14",
+      "course_emails": 6,
+      "cumulative_user_index": 81.3084
+    },
+    {
+      "date": "2026-08-15",
+      "course_emails": 7,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-16",
+      "course_emails": 5,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-17",
+      "course_emails": 20,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-18",
+      "course_emails": 23,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-19",
+      "course_emails": 15,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-20",
+      "course_emails": 17,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-21",
+      "course_emails": 21,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-22",
+      "course_emails": 6,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-23",
+      "course_emails": 8,
+      "cumulative_user_index": 82.243
+    },
+    {
+      "date": "2026-08-24",
+      "course_emails": 21,
+      "cumulative_user_index": 83.1776
+    },
+    {
+      "date": "2026-08-25",
+      "course_emails": 24,
+      "cumulative_user_index": 83.1776
+    },
+    {
+      "date": "2026-08-26",
+      "course_emails": 26,
+      "cumulative_user_index": 84.1121
+    },
+    {
+      "date": "2026-08-27",
+      "course_emails": 24,
+      "cumulative_user_index": 85.9813
+    },
+    {
+      "date": "2026-08-28",
+      "course_emails": 27,
+      "cumulative_user_index": 86.9159
+    },
+    {
+      "date": "2026-08-29",
+      "course_emails": 7,
+      "cumulative_user_index": 87.8505
+    },
+    {
+      "date": "2026-08-30",
+      "course_emails": 14,
+      "cumulative_user_index": 88.785
+    },
+    {
+      "date": "2026-08-31",
+      "course_emails": 28,
+      "cumulative_user_index": 88.785
+    },
+    {
+      "date": "2026-09-01",
+      "course_emails": 81,
+      "cumulative_user_index": 88.785
+    },
+    {
+      "date": "2026-09-02",
+      "course_emails": 93,
+      "cumulative_user_index": 90.6542
+    },
+    {
+      "date": "2026-09-03",
+      "course_emails": 93,
+      "cumulative_user_index": 95.3271
+    },
+    {
+      "date": "2026-09-04",
+      "course_emails": 61,
+      "cumulative_user_index": 96.2617
+    },
+    {
+      "date": "2026-09-05",
+      "course_emails": 14,
+      "cumulative_user_index": 98.1308
+    },
+    {
+      "date": "2026-09-06",
+      "course_emails": 24,
+      "cumulative_user_index": 98.1308
+    },
+    {
+      "date": "2026-09-07",
+      "course_emails": 23,
+      "cumulative_user_index": 98.1308
+    },
+    {
+      "date": "2026-09-08",
+      "course_emails": 66,
+      "cumulative_user_index": 98.1308
+    },
+    {
+      "date": "2026-09-09",
+      "course_emails": 49,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-10",
+      "course_emails": 15,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-11",
+      "course_emails": 7,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-12",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-13",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-14",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-15",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-16",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-17",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-18",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-19",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-20",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-21",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-22",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-23",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-24",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-25",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-26",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-27",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-28",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-29",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    },
+    {
+      "date": "2026-09-30",
+      "course_emails": 0,
+      "cumulative_user_index": 100.0
+    }
+  ],
+  "user_growth_basis": "First successful non-test WELCOME per recipient; normalized to 100. No user totals exported. Registration coverage incomplete. Not DAU.",
+  "subscription_chart_basis": "One subscription per user-course pair; subject totals sum those pairs.",
+  "daily_notification_basis": "All recorded emails, including course, welcome and other emails.",
+  "daily_notifications": [
+    {
+      "date": "2026-04-01",
+      "emails": 0
+    },
+    {
+      "date": "2026-04-02",
+      "emails": 0
+    },
+    {
+      "date": "2026-04-03",
+      "emails": 0
+    },
+    {
+      "date": "2026-04-04",
+      "emails": 1
+    },
+    {
+      "date": "2026-04-05",
+      "emails": 0
+    },
+    {
+      "date": "2026-04-06",
+      "emails": 0
+    },
+    {
+      "date": "2026-04-07",
+      "emails": 4
+    },
+    {
+      "date": "2026-04-08",
+      "emails": 1
+    },
+    {
+      "date": "2026-04-09",
+      "emails": 3
+    },
+    {
+      "date": "2026-04-10",
+      "emails": 22
+    },
+    {
+      "date": "2026-04-11",
+      "emails": 1
+    },
+    {
+      "date": "2026-04-12",
+      "emails": 0
+    },
+    {
+      "date": "2026-04-13",
+      "emails": 2
+    },
+    {
+      "date": "2026-04-14",
+      "emails": 3
+    },
+    {
+      "date": "2026-04-15",
+      "emails": 19
+    },
+    {
+      "date": "2026-04-16",
+      "emails": 29
+    },
+    {
+      "date": "2026-04-17",
+      "emails": 55
+    },
+    {
+      "date": "2026-04-18",
+      "emails": 4
+    },
+    {
+      "date": "2026-04-19",
+      "emails": 2
+    },
+    {
+      "date": "2026-04-20",
+      "emails": 31
+    },
+    {
+      "date": "2026-04-21",
+      "emails": 18
+    },
+    {
+      "date": "2026-04-22",
+      "emails": 11
+    },
+    {
+      "date": "2026-04-23",
+      "emails": 10
+    },
+    {
+      "date": "2026-04-24",
+      "emails": 11
+    },
+    {
+      "date": "2026-04-25",
+      "emails": 4
+    },
+    {
+      "date": "2026-04-26",
+      "emails": 3
+    },
+    {
+      "date": "2026-04-27",
+      "emails": 20
+    },
+    {
+      "date": "2026-04-28",
+      "emails": 11
+    },
+    {
+      "date": "2026-04-29",
+      "emails": 2
+    },
+    {
+      "date": "2026-04-30",
+      "emails": 13
+    },
+    {
+      "date": "2026-05-01",
+      "emails": 20
+    },
+    {
+      "date": "2026-05-02",
+      "emails": 0
+    },
+    {
+      "date": "2026-05-03",
+      "emails": 3
+    },
+    {
+      "date": "2026-05-04",
+      "emails": 6
+    },
+    {
+      "date": "2026-05-05",
+      "emails": 4
+    },
+    {
+      "date": "2026-05-06",
+      "emails": 10
+    },
+    {
+      "date": "2026-05-07",
+      "emails": 3
+    },
+    {
+      "date": "2026-05-08",
+      "emails": 2
+    },
+    {
+      "date": "2026-05-09",
+      "emails": 2
+    },
+    {
+      "date": "2026-05-10",
+      "emails": 1
+    },
+    {
+      "date": "2026-05-11",
+      "emails": 14
+    },
+    {
+      "date": "2026-05-12",
+      "emails": 3
+    },
+    {
+      "date": "2026-05-13",
+      "emails": 7
+    },
+    {
+      "date": "2026-05-14",
+      "emails": 6
+    },
+    {
+      "date": "2026-05-15",
+      "emails": 4
+    },
+    {
+      "date": "2026-05-16",
+      "emails": 1
+    },
+    {
+      "date": "2026-05-17",
+      "emails": 0
+    },
+    {
+      "date": "2026-05-18",
+      "emails": 3
+    },
+    {
+      "date": "2026-05-19",
+      "emails": 10
+    },
+    {
+      "date": "2026-05-20",
+      "emails": 5
+    },
+    {
+      "date": "2026-05-21",
+      "emails": 7
+    },
+    {
+      "date": "2026-05-22",
+      "emails": 1
+    },
+    {
+      "date": "2026-05-23",
+      "emails": 2
+    },
+    {
+      "date": "2026-05-24",
+      "emails": 0
+    },
+    {
+      "date": "2026-05-25",
+      "emails": 1
+    },
+    {
+      "date": "2026-05-26",
+      "emails": 2
+    },
+    {
+      "date": "2026-05-27",
+      "emails": 20
+    },
+    {
+      "date": "2026-05-28",
+      "emails": 3
+    },
+    {
+      "date": "2026-05-29",
+      "emails": 6
+    },
+    {
+      "date": "2026-05-30",
+      "emails": 1
+    },
+    {
+      "date": "2026-05-31",
+      "emails": 3
+    },
+    {
+      "date": "2026-06-01",
+      "emails": 14
+    },
+    {
+      "date": "2026-06-02",
+      "emails": 4
+    },
+    {
+      "date": "2026-06-03",
+      "emails": 6
+    },
+    {
+      "date": "2026-06-04",
+      "emails": 6
+    },
+    {
+      "date": "2026-06-05",
+      "emails": 1
+    },
+    {
+      "date": "2026-06-06",
+      "emails": 0
+    },
+    {
+      "date": "2026-06-07",
+      "emails": 0
+    },
+    {
+      "date": "2026-06-08",
+      "emails": 8
+    },
+    {
+      "date": "2026-06-09",
+      "emails": 2
+    },
+    {
+      "date": "2026-06-10",
+      "emails": 4
+    },
+    {
+      "date": "2026-06-11",
+      "emails": 6
+    },
+    {
+      "date": "2026-06-12",
+      "emails": 7
+    },
+    {
+      "date": "2026-06-13",
+      "emails": 4
+    },
+    {
+      "date": "2026-06-14",
+      "emails": 3
+    },
+    {
+      "date": "2026-06-15",
+      "emails": 8
+    },
+    {
+      "date": "2026-06-16",
+      "emails": 3
+    },
+    {
+      "date": "2026-06-17",
+      "emails": 0
+    },
+    {
+      "date": "2026-06-18",
+      "emails": 0
+    },
+    {
+      "date": "2026-06-19",
+      "emails": 9
+    },
+    {
+      "date": "2026-06-20",
+      "emails": 2
+    },
+    {
+      "date": "2026-06-21",
+      "emails": 3
+    },
+    {
+      "date": "2026-06-22",
+      "emails": 12
+    },
+    {
+      "date": "2026-06-23",
+      "emails": 3
+    },
+    {
+      "date": "2026-06-24",
+      "emails": 6
+    },
+    {
+      "date": "2026-06-25",
+      "emails": 4
+    },
+    {
+      "date": "2026-06-26",
+      "emails": 2
+    },
+    {
+      "date": "2026-06-27",
+      "emails": 4
+    },
+    {
+      "date": "2026-06-28",
+      "emails": 1
+    },
+    {
+      "date": "2026-06-29",
+      "emails": 4
+    },
+    {
+      "date": "2026-06-30",
+      "emails": 10
+    },
+    {
+      "date": "2026-07-01",
+      "emails": 6
+    },
+    {
+      "date": "2026-07-02",
+      "emails": 7
+    },
+    {
+      "date": "2026-07-03",
+      "emails": 8
+    },
+    {
+      "date": "2026-07-04",
+      "emails": 2
+    },
+    {
+      "date": "2026-07-05",
+      "emails": 2
+    },
+    {
+      "date": "2026-07-06",
+      "emails": 30
+    },
+    {
+      "date": "2026-07-07",
+      "emails": 7
+    },
+    {
+      "date": "2026-07-08",
+      "emails": 2
+    },
+    {
+      "date": "2026-07-09",
+      "emails": 3
+    },
+    {
+      "date": "2026-07-10",
+      "emails": 3
+    },
+    {
+      "date": "2026-07-11",
+      "emails": 0
+    },
+    {
+      "date": "2026-07-12",
+      "emails": 4
+    },
+    {
+      "date": "2026-07-13",
+      "emails": 9
+    },
+    {
+      "date": "2026-07-14",
+      "emails": 20
+    },
+    {
+      "date": "2026-07-15",
+      "emails": 14
+    },
+    {
+      "date": "2026-07-16",
+      "emails": 14
+    },
+    {
+      "date": "2026-07-17",
+      "emails": 10
+    },
+    {
+      "date": "2026-07-18",
+      "emails": 4
+    },
+    {
+      "date": "2026-07-19",
+      "emails": 0
+    },
+    {
+      "date": "2026-07-20",
+      "emails": 11
+    },
+    {
+      "date": "2026-07-21",
+      "emails": 15
+    },
+    {
+      "date": "2026-07-22",
+      "emails": 13
+    },
+    {
+      "date": "2026-07-23",
+      "emails": 11
+    },
+    {
+      "date": "2026-07-24",
+      "emails": 11
+    },
+    {
+      "date": "2026-07-25",
+      "emails": 2
+    },
+    {
+      "date": "2026-07-26",
+      "emails": 4
+    },
+    {
+      "date": "2026-07-27",
+      "emails": 11
+    },
+    {
+      "date": "2026-07-28",
+      "emails": 7
+    },
+    {
+      "date": "2026-07-29",
+      "emails": 13
+    },
+    {
+      "date": "2026-07-30",
+      "emails": 11
+    },
+    {
+      "date": "2026-07-31",
+      "emails": 13
+    },
+    {
+      "date": "2026-08-01",
+      "emails": 3
+    },
+    {
+      "date": "2026-08-02",
+      "emails": 3
+    },
+    {
+      "date": "2026-08-03",
+      "emails": 13
+    },
+    {
+      "date": "2026-08-04",
+      "emails": 21
+    },
+    {
+      "date": "2026-08-05",
+      "emails": 29
+    },
+    {
+      "date": "2026-08-06",
+      "emails": 17
+    },
+    {
+      "date": "2026-08-07",
+      "emails": 27
+    },
+    {
+      "date": "2026-08-08",
+      "emails": 12
+    },
+    {
+      "date": "2026-08-09",
+      "emails": 7
+    },
+    {
+      "date": "2026-08-10",
+      "emails": 15
+    },
+    {
+      "date": "2026-08-11",
+      "emails": 19
+    },
+    {
+      "date": "2026-08-12",
+      "emails": 18
+    },
+    {
+      "date": "2026-08-13",
+      "emails": 20
+    },
+    {
+      "date": "2026-08-14",
+      "emails": 7
+    },
+    {
+      "date": "2026-08-15",
+      "emails": 8
+    },
+    {
+      "date": "2026-08-16",
+      "emails": 5
+    },
+    {
+      "date": "2026-08-17",
+      "emails": 20
+    },
+    {
+      "date": "2026-08-18",
+      "emails": 23
+    },
+    {
+      "date": "2026-08-19",
+      "emails": 15
+    },
+    {
+      "date": "2026-08-20",
+      "emails": 17
+    },
+    {
+      "date": "2026-08-21",
+      "emails": 21
+    },
+    {
+      "date": "2026-08-22",
+      "emails": 6
+    },
+    {
+      "date": "2026-08-23",
+      "emails": 8
+    },
+    {
+      "date": "2026-08-24",
+      "emails": 22
+    },
+    {
+      "date": "2026-08-25",
+      "emails": 24
+    },
+    {
+      "date": "2026-08-26",
+      "emails": 27
+    },
+    {
+      "date": "2026-08-27",
+      "emails": 26
+    },
+    {
+      "date": "2026-08-28",
+      "emails": 28
+    },
+    {
+      "date": "2026-08-29",
+      "emails": 8
+    },
+    {
+      "date": "2026-08-30",
+      "emails": 15
+    },
+    {
+      "date": "2026-08-31",
+      "emails": 28
+    },
+    {
+      "date": "2026-09-01",
+      "emails": 81
+    },
+    {
+      "date": "2026-09-02",
+      "emails": 95
+    },
+    {
+      "date": "2026-09-03",
+      "emails": 98
+    },
+    {
+      "date": "2026-09-04",
+      "emails": 62
+    },
+    {
+      "date": "2026-09-05",
+      "emails": 16
+    },
+    {
+      "date": "2026-09-06",
+      "emails": 24
+    },
+    {
+      "date": "2026-09-07",
+      "emails": 23
+    },
+    {
+      "date": "2026-09-08",
+      "emails": 66
+    },
+    {
+      "date": "2026-09-09",
+      "emails": 51
+    },
+    {
+      "date": "2026-09-10",
+      "emails": 15
+    },
+    {
+      "date": "2026-09-11",
+      "emails": 7
+    }
+  ]
+}

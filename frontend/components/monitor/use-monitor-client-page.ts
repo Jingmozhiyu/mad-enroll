@@ -201,7 +201,7 @@ export function useMonitorClientPage({
         setStatusMessage(
             message ??
             (sortedTasks.length === 0
-                ? 'No alerts yet. Search for a course or section to start tracking seat openings.'
+                ? 'No alerts yet. Search to start tracking seat openings.'
                 : `Loaded ${sortedTasks.length} monitored section${sortedTasks.length > 1 ? 's' : ''}.`),
         )
     }
