@@ -56,7 +56,10 @@ export function WelcomeHero() {
                         email for course seats by using Mad<span className={styles.enhance}>Enroll</span>.
                     </h1>
 
-                    <p className={styles.description}>Full class? Keep your plans open. We are tracking seats availability.</p>
+                    <aside className={styles.proof} aria-label="Enrollment update">
+                        <div className={styles.proofMark} aria-hidden="true">↗</div>
+                        <p>We have sent <strong>1,800+ email alerts</strong> during Fall 2026 enrollment.</p>
+                    </aside>
 
 
                     <div className={styles.actions}>
@@ -64,10 +67,6 @@ export function WelcomeHero() {
                         <ProgressLink className={styles.secondary} href="/search">Browse Courses <Arrow/></ProgressLink>
                     </div>
 
-                    <aside className={styles.proof} aria-label="Enrollment update">
-                        <div className={styles.proofMark} aria-hidden="true">↗</div>
-                        <p>We have sent <strong>1,800+ email alerts</strong> during Fall 2026 enrollment.</p>
-                    </aside>
                 </div>
 
             </section>
