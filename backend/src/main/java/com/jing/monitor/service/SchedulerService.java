@@ -30,6 +30,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -51,15 +52,20 @@ public class SchedulerService {
     private static final int MULTI_SEAT_OPEN_MAX_INTERVAL_SECONDS = 320;
     private static final int FETCH_FAILURE_RETRY_SECONDS = 10;
     private static final ZoneId MADISON_ZONE = ZoneId.of("America/Chicago");
+    private static final String ALERT_CRAWLER_FAILURES = "crawler-failures";
+    private static final String ALERT_SCHEDULER_STALLED = "scheduler-stalled";
 
     private final CourseCrawler crawler;
     private final AlertPublisherService alertPublisherService;
     private final CourseRepository courseRepository;
     private final CourseSectionRepository courseSectionRepository;
     private final UserSectionSubscriptionRepository subscriptionRepository;
+    private final OpsAlertService opsAlertService;
 
     private final Queue<QueuedCourse> dueCourseQueue = new ArrayDeque<>();
     private final Set<String> reportedVanishedDocIds = ConcurrentHashMap.newKeySet();
+    private final AtomicInteger consecutiveFetchFailures = new AtomicInteger();
+    private final LocalDateTime serviceStartedAt = LocalDateTime.now();
     private final Set<String> queuedCourseIds = new HashSet<>();
     private volatile LocalDateTime lastHeartbeatAt;
     private volatile LocalDateTime lastFetchStartedAt;
@@ -82,6 +88,12 @@ public class SchedulerService {
 
     @Value("${monitor.scheduler-slow-task-warn-ms:20000}")
     private long slowTaskWarnMs;
+
+    @Value("${monitor.alert.crawler-failure-threshold:20}")
+    private int crawlerFailureThreshold;
+
+    @Value("${monitor.alert.stall-minutes:2}")
+    private long stallMinutes;
 
     enum AlertAction { NONE, SEND_OPEN_EMAIL, SEND_WAITLIST_EMAIL }
 
@@ -153,6 +165,7 @@ public class SchedulerService {
         } catch (Exception e) {
             scheduleAfterFailureSafely(resolveCourseById(q.courseUuid()), startedAt, termCode + ":" + courseId);
             log.error("[Scheduler] Unhandled error while consuming queued course {}:{}", termCode, courseId, e);
+            recordFetchFailure(termCode + ":" + courseId);
         } finally {
             lastFetchFinishedAt = LocalDateTime.now();
             lastFetchFinishedAtMillis = System.currentTimeMillis();
@@ -180,6 +193,7 @@ public class SchedulerService {
             if (infos == null || infos.isEmpty()) {
                 log.warn("[Scheduler] Fetch failed or returned empty data for course {}", courseId);
                 scheduleAfterFailure(course, polledAt);
+                recordFetchFailure(termCode + ":" + courseId);
                 return;
             }
             if (infos.stream().anyMatch(info -> !termCode.equals(info.getTermCode()) || !courseId.equals(info.getCourseId()))) {
@@ -254,9 +268,65 @@ public class SchedulerService {
             }
 
             updateNextPoll(course, infos, subsByDocId, relevantStateChanged, polledAt);
+            recordFetchSuccess();
         } catch (Exception e) {
             scheduleAfterFailure(course, polledAt);
             log.error("[Scheduler] Error processing course {}", courseId, e);
+            recordFetchFailure(termCode + ":" + courseId);
+        }
+    }
+
+    /**
+     * Watchdog on its own scheduler thread: alerts when polling has stopped for {@code stallMinutes}
+     * while there is work to do, and pushes a recovery notice once it runs again.
+     */
+    @Scheduled(fixedDelayString = "${monitor.alert.watchdog-ms:30000}", initialDelayString = "${monitor.alert.watchdog-ms:30000}")
+    public void checkForStall() {
+        try {
+            String reason = findStallReason(LocalDateTime.now().minusMinutes(stallMinutes));
+            if (reason == null) {
+                opsAlertService.resolve(ALERT_SCHEDULER_STALLED, "MadEnroll: scheduler recovered", "Course polling is running again.");
+            } else {
+                opsAlertService.alert(ALERT_SCHEDULER_STALLED, "MadEnroll: scheduler stalled", reason);
+            }
+        } catch (Exception e) {
+            log.error("[Scheduler] Stall watchdog failed.", e);
+        }
+    }
+
+    /**
+     * Detects a stalled scheduler: the heartbeat stopped, or courses are overdue while the fetch worker
+     * has not started any fetch. A busy worker that falls behind is not a stall.
+     *
+     * @param cutoff now minus the stall threshold
+     * @return human-readable reason, or null when polling is healthy or idle
+     */
+    private String findStallReason(LocalDateTime cutoff) {
+        LocalDateTime heartbeat = lastHeartbeatAt;
+        if (heartbeat != null && heartbeat.isBefore(cutoff)) {
+            return "No scheduler heartbeat since " + heartbeat + " (server time).";
+        }
+        LocalDateTime lastStart = lastFetchStartedAt == null ? serviceStartedAt : lastFetchStartedAt;
+        if (lastStart.isBefore(cutoff) && courseRepository.countDueForPolling(cutoff) > 0) {
+            return "Courses are overdue but no fetch has started since " + lastStart + " (server time).";
+        }
+        return null;
+    }
+
+    private void recordFetchFailure(String courseKey) {
+        int failures = consecutiveFetchFailures.incrementAndGet();
+        if (failures >= crawlerFailureThreshold) {
+            opsAlertService.alert(ALERT_CRAWLER_FAILURES, "MadEnroll: crawler failing",
+                    failures + " consecutive course fetches failed. Last: " + courseKey
+                            + " (" + crawler.getLastFailure() + ").");
+        }
+    }
+
+    private void recordFetchSuccess() {
+        int failures = consecutiveFetchFailures.getAndSet(0);
+        if (failures >= crawlerFailureThreshold) {
+            opsAlertService.resolve(ALERT_CRAWLER_FAILURES, "MadEnroll: crawler recovered",
+                    "Fetching works again after " + failures + " consecutive failures.");
         }
     }
 

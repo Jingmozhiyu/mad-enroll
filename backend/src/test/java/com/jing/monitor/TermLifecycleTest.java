@@ -456,7 +456,7 @@ class TermLifecycleTest {
     }
 
     private SchedulerService scheduler() {
-        return new SchedulerService(crawler, publisher, courses, sections, subscriptions);
+        return new SchedulerService(crawler, publisher, courses, sections, subscriptions, mock(OpsAlertService.class));
     }
 
     @SpringBootConfiguration

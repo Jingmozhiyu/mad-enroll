@@ -4,6 +4,7 @@ import com.jing.monitor.model.UserRole;
 import com.jing.monitor.security.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
@@ -11,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,8 +91,15 @@ public class RateLimitService {
             return {allowed, remaining_tokens, retry_after_ms}
             """, List.class);
 
+    private static final String CLIENT_IP_HEADER = "X-Client-IP";
+    private static final String BFF_SECRET_HEADER = "X-BFF-Secret";
+
     private final StringRedisTemplate redisTemplate;
     private final Map<String, RateLimitRule> rulesByEndpoint = buildRules();
+
+    // Shared with the Next.js BFF. Blank disables the trusted client-IP header.
+    @Value("${app.bff.shared-secret:}")
+    private String bffSharedSecret;
 
     public RateLimitService(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -234,6 +244,13 @@ public class RateLimitService {
     }
 
     private String extractClientIp(HttpServletRequest request) {
+        // Requests proxied by the BFF all come from Vercel's egress IPs; the BFF forwards the
+        // browser's IP instead. Trust it only with the shared secret, so direct callers cannot spoof it.
+        String clientIp = request.getHeader(CLIENT_IP_HEADER);
+        if (clientIp != null && !clientIp.isBlank() && isTrustedBff(request)) {
+            return clientIp.trim();
+        }
+
         String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isBlank()) {
             return forwardedFor.split(",")[0].trim();
@@ -245,6 +262,16 @@ public class RateLimitService {
         }
 
         return Objects.toString(request.getRemoteAddr(), "unknown");
+    }
+
+    private boolean isTrustedBff(HttpServletRequest request) {
+        String presented = request.getHeader(BFF_SECRET_HEADER);
+        if (bffSharedSecret == null || bffSharedSecret.isBlank() || presented == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                bffSharedSecret.getBytes(StandardCharsets.UTF_8),
+                presented.getBytes(StandardCharsets.UTF_8));
     }
 
     private long toLong(Object value) {

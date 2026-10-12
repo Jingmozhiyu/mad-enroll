@@ -22,7 +22,8 @@ class SchedulerServiceTest {
                 mock(AlertPublisherService.class),
                 mock(CourseRepository.class),
                 mock(CourseSectionRepository.class),
-                mock(UserSectionSubscriptionRepository.class)
+                mock(UserSectionSubscriptionRepository.class),
+                mock(OpsAlertService.class)
         );
         ReflectionTestUtils.setField(schedulerService, "fetchIntervalHighMs", 1000L);
         ReflectionTestUtils.setField(schedulerService, "fetchIntervalMidMs", 2000L);

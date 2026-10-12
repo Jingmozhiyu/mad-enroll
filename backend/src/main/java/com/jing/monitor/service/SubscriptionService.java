@@ -87,7 +87,11 @@ public class SubscriptionService {
         }
 
         JsonNode root = crawler.searchCourse(courseName, termCode, page);
-        if (root == null || root.path("found").asInt() == 0) {
+        if (root == null) {
+            // Upstream failure, not a miss: never cache it, or a valid query would look missing for minutes.
+            throw new RuntimeException("Course search is temporarily unavailable. Please try again.");
+        }
+        if (root.path("found").asInt() == 0) {
             rememberSearchMiss(normalizedQuery, termCode, page);
             throw new RuntimeException("Course not found: " + courseName);
         }

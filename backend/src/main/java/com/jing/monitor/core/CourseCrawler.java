@@ -34,6 +34,9 @@ public class CourseCrawler {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
+    // Short description of the most recent failed course fetch, for operator alerts.
+    private volatile String lastFailure = "none";
+
     /**
      * Fetches the real-time status of ALL sections for a specific course ID.
      *
@@ -62,6 +65,8 @@ public class CourseCrawler {
                     .header("Connection", "keep-alive")
                     .method(Connection.Method.GET)
                     .timeout(15000)
+                    // Large courses can exceed jsoup's 2 MB default and would be silently truncated.
+                    .maxBodySize(0)
                     .ignoreHttpErrors(true);
 
             Connection.Response response = conn.execute();
@@ -92,20 +97,24 @@ public class CourseCrawler {
                 }
 
                 log.warn("[Crawler] API 200 but returned unexpected format for course: {}", courseId);
+                lastFailure = "unexpected JSON format for " + termCode + ":" + courseId;
                 return null;
             }
 
             // Handle WAF or Rate Limiting
             if (statusCode == 202 || statusCode == 403 || statusCode == 429) {
                 log.warn("[Crawler] API status {} (blocked/rate limited). Skipping cycle.", statusCode);
+                lastFailure = "HTTP " + statusCode + " (blocked/rate limited) for " + termCode + ":" + courseId;
                 return null;
             }
 
             log.error("[Crawler] API error: {} | body: {}", statusCode, response.body());
+            lastFailure = "HTTP " + statusCode + " for " + termCode + ":" + courseId;
             return null;
 
         } catch (IOException e) {
             log.error("[Crawler] Network error while fetching course {}", courseId, e);
+            lastFailure = "network error for " + termCode + ":" + courseId + ": " + e.getMessage();
         }
 
         return null;
@@ -214,6 +223,15 @@ public class CourseCrawler {
     }
 
     /**
+     * Describes the most recent failed course fetch, e.g. "HTTP 403 (blocked/rate limited) for 1272:015594".
+     *
+     * @return last failure description, or "none"
+     */
+    public String getLastFailure() {
+        return lastFailure;
+    }
+
+    /**
      * Executes keyword search against the UW enrollment search endpoint.
      *
      * @param userQueryString user input query such as "COMP SCI 577"
@@ -265,6 +283,7 @@ public class CourseCrawler {
                     .header("Connection", "keep-alive")
                     .ignoreContentType(true)
                     .timeout(10000)
+                    .maxBodySize(0)
                     .method(Connection.Method.POST)
                     .requestBody(jsonPayload)       // Put JSON into request body
                     .execute();

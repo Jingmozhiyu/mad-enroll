@@ -26,6 +26,7 @@ import com.jing.monitor.service.AlertPublisherService;
 import com.jing.monitor.service.AuthContextService;
 import com.jing.monitor.service.AuthService;
 import com.jing.monitor.service.MailService;
+import com.jing.monitor.service.OpsAlertService;
 import com.jing.monitor.service.SchedulerService;
 import com.jing.monitor.service.SubscriptionService;
 import com.rabbitmq.client.Channel;
@@ -166,7 +167,8 @@ class UserAlertBusinessFlowTest {
                 alertPublisherService,
                 courseRepository,
                 courseSectionRepository,
-                subscriptionRepository
+                subscriptionRepository,
+                mock(OpsAlertService.class)
         );
         alertConsumerService = new AlertConsumerService(
                 mailService,

@@ -68,6 +68,8 @@ services:
       FETCH_INTERVAL_HIGH: ${FETCH_INTERVAL_HIGH:-1000}
       FETCH_INTERVAL_MID: ${FETCH_INTERVAL_MID:-2000}
       FETCH_INTERVAL_LOW: ${FETCH_INTERVAL_LOW:-5000}
+      BARK_URL: ${BARK_URL:-}
+      BFF_SHARED_SECRET: ${BFF_SHARED_SECRET:-}
     working_dir: /app
     volumes:
       - ./app.jar:/app.jar:ro
