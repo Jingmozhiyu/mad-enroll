@@ -10,7 +10,6 @@ import com.jing.monitor.model.UserSectionSubscription;
 import com.jing.monitor.model.dto.SchedulerStatusRespDto;
 import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.CourseSectionRepository;
-import com.jing.monitor.repository.FileRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,17 +17,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -49,15 +50,16 @@ public class SchedulerService {
     private static final int MULTI_SEAT_WAITLIST_MAX_INTERVAL_SECONDS = 160;
     private static final int MULTI_SEAT_OPEN_MAX_INTERVAL_SECONDS = 320;
     private static final int FETCH_FAILURE_RETRY_SECONDS = 10;
+    private static final ZoneId MADISON_ZONE = ZoneId.of("America/Chicago");
 
     private final CourseCrawler crawler;
     private final AlertPublisherService alertPublisherService;
-    private final FileRepository fileRepository;
     private final CourseRepository courseRepository;
     private final CourseSectionRepository courseSectionRepository;
     private final UserSectionSubscriptionRepository subscriptionRepository;
 
     private final Queue<QueuedCourse> dueCourseQueue = new ArrayDeque<>();
+    private final Set<String> reportedVanishedDocIds = ConcurrentHashMap.newKeySet();
     private final Set<String> queuedCourseIds = new HashSet<>();
     private volatile LocalDateTime lastHeartbeatAt;
     private volatile LocalDateTime lastFetchStartedAt;
@@ -102,7 +104,7 @@ public class SchedulerService {
 
             int enqueuedCount = 0;
             for (Course course : dueCourses) {
-                if (enqueueCourseIfAbsent(course.getId(), course.getCourseId(), course.getTermCode(), course.getSubjectCode())) {
+                if (enqueueCourseIfAbsent(course.getId(), course.getCourseId(), course.getTermCode(), course.getSubjectId())) {
                     enqueuedCount++;
                 }
             }
@@ -133,7 +135,7 @@ public class SchedulerService {
             return;
         }
         String courseId = q.courseId();
-        String subjectCode = q.subjectCode();
+        String subjectId = q.subjectId();
         String termCode = q.termCode();
         LocalDateTime startedAt = LocalDateTime.now();
         lastFetchStartedAt = startedAt;
@@ -147,7 +149,7 @@ public class SchedulerService {
                 return;
             }
 
-            processSingleCourse(termCode, subjectCode, courseId, subs, startedAt);
+            processSingleCourse(termCode, subjectId, courseId, subs, startedAt);
         } catch (Exception e) {
             scheduleAfterFailureSafely(resolveCourseById(q.courseUuid()), startedAt, termCode + ":" + courseId);
             log.error("[Scheduler] Unhandled error while consuming queued course {}:{}", termCode, courseId, e);
@@ -188,18 +190,16 @@ public class SchedulerService {
             course = upsertCourse(course, infos.get(0));
 
             // existingSectionsByDocId: section doc id -> previously persisted section snapshot.
+            // Sections are matched by doc id only: one class number (e.g. a lab) can belong to several packages.
             Map<String, CourseSection> existingSectionsByDocId =
                     courseSectionRepository.findAllByCourse_Id(course.getId()).stream()
                             .filter(section -> section.getDocId() != null && !section.getDocId().isBlank())
                             .collect(Collectors.toMap(CourseSection::getDocId, section -> section, (left, right) -> left, HashMap::new));
 
-            Map<String, List<CourseSection>> existingSectionsBySectionId =
-                    courseSectionRepository.findAllByCourse_Id(course.getId()).stream()
-                            .collect(Collectors.groupingBy(CourseSection::getSectionId, HashMap::new, Collectors.toList()));
-
             // subsByDocId: section doc id -> enabled subs targeting that section.
             Map<String, List<UserSectionSubscription>> subsByDocId =
                     subs.stream().collect(Collectors.groupingBy(sub -> sub.getSection().getDocId(), HashMap::new, Collectors.toList()));
+            reportVanishedSubscribedSections(termCode + ":" + courseId, infos, subsByDocId);
 
             // relevantStateChanged: whether any enabled section changed in status/openSeats/waitlistSeats this round.
             boolean relevantStateChanged = false;
@@ -210,12 +210,6 @@ public class SchedulerService {
                 String sectionId = info.getSectionId();
                 StatusMapping currentStatus = info.getStatus();
                 CourseSection section = existingSectionsByDocId.get(docId);
-                if (section == null) {
-                    List<CourseSection> sameSectionId = existingSectionsBySectionId.getOrDefault(sectionId, List.of());
-                    if (sameSectionId.size() == 1) {
-                        section = sameSectionId.get(0);
-                    }
-                }
                 StatusMapping previousStatus = section == null ? null : section.getLastStatus();
                 Integer previousOpenSeats = section == null ? null : section.getOpenSeats();
                 Integer previousWaitlistSeats = section == null ? null : section.getWaitlistSeats();
@@ -247,8 +241,6 @@ public class SchedulerService {
                     if (previousStatus != null) {
                         log.info("[Scheduler] State changed: {} -> {} for {}", previousStatus, currentStatus, sectionId);
                     }
-                    fileRepository.save(info);
-
                     AlertAction action = determineAction(previousStatus, currentStatus);
                     for (UserSectionSubscription sub : subsByDocId.getOrDefault(docId, List.of())) {
                         String recipientEmail = sub.getUser().getEmail();
@@ -266,6 +258,29 @@ public class SchedulerService {
             scheduleAfterFailure(course, polledAt);
             log.error("[Scheduler] Error processing course {}", courseId, e);
         }
+    }
+
+    /**
+     * Logs once per doc id when enabled subscriptions point at a section that UW no longer returns,
+     * because the package was cancelled or its doc id was re-issued. Those subscriptions cannot
+     * receive alerts. This is the signal for deciding whether doc id changes need handling.
+     *
+     * @param courseKey term and course id, for the log line
+     * @param infos latest section snapshots for the course
+     * @param subsByDocId enabled subscriptions grouped by doc id
+     */
+    private void reportVanishedSubscribedSections(
+            String courseKey,
+            List<SectionInfo> infos,
+            Map<String, List<UserSectionSubscription>> subsByDocId
+    ) {
+        Set<String> freshDocIds = infos.stream().map(SectionInfo::getDocId).collect(Collectors.toSet());
+        subsByDocId.forEach((docId, docSubs) -> {
+            if (!freshDocIds.contains(docId) && reportedVanishedDocIds.add(docId)) {
+                log.warn("[Scheduler] Vanished section docId={} in course {}: no longer returned by UW, "
+                        + "{} enabled subscription(s) cannot receive alerts.", docId, courseKey, docSubs.size());
+            }
+        });
     }
 
     /**
@@ -334,7 +349,7 @@ public class SchedulerService {
                 .orElseGet(() -> new Course(info.getTermCode(), info.getCourseId()))
                 : course;
         targetCourse.setTermCode(info.getTermCode());
-        targetCourse.setSubjectCode(info.getSubjectCode());
+        targetCourse.setSubjectId(info.getSubjectId());
         targetCourse.setSubjectShortName(info.getSubjectShortName());
         targetCourse.setCatalogNumber(info.getCatalogNumber());
         return courseRepository.save(targetCourse);
@@ -346,9 +361,9 @@ public class SchedulerService {
      * @param courseId UW 6-digit course id
      * @return true when the course was newly enqueued
      */
-    private synchronized boolean enqueueCourseIfAbsent(UUID courseUuid, String courseId, String termCode, String subjectCode) {
+    private synchronized boolean enqueueCourseIfAbsent(UUID courseUuid, String courseId, String termCode, String subjectId) {
         String queueKey = termCode + ":" + courseId;
-        QueuedCourse q = new QueuedCourse(courseUuid, courseId, termCode, subjectCode);
+        QueuedCourse q = new QueuedCourse(courseUuid, courseId, termCode, subjectId);
         if (!queuedCourseIds.add(queueKey)) {
             return false;
         }
@@ -403,8 +418,8 @@ public class SchedulerService {
             SectionInfo latestInfo
     ) {
         return previousStatus != latestInfo.getStatus()
-                || !java.util.Objects.equals(previousOpenSeats, latestInfo.getOpenSeats())
-                || !java.util.Objects.equals(previousWaitlistSeats, latestInfo.getWaitlistSeats());
+                || !Objects.equals(previousOpenSeats, latestInfo.getOpenSeats())
+                || !Objects.equals(previousWaitlistSeats, latestInfo.getWaitlistSeats());
     }
 
     /**
@@ -581,15 +596,22 @@ public class SchedulerService {
     }
 
     private long refreshCurrentFetchIntervalMs() {
-        currentFetchIntervalMs = determineFetchIntervalMs(LocalTime.now(Clock.systemUTC()).getHour());
+        currentFetchIntervalMs = determineFetchIntervalMs(LocalTime.now(MADISON_ZONE).getHour());
         return currentFetchIntervalMs;
     }
 
-    long determineFetchIntervalMs(int utcHour) {
-        if (utcHour >= 13 && utcHour < 23) {
+    /**
+     * Picks the global fetch interval for an hour of the day in Madison (DST-aware):
+     * 08:00-18:00 high, 01:00-08:00 low, otherwise mid.
+     *
+     * @param madisonHour hour of day in America/Chicago, 0-23
+     * @return fetch interval in milliseconds
+     */
+    long determineFetchIntervalMs(int madisonHour) {
+        if (madisonHour >= 8 && madisonHour < 18) {
             return fetchIntervalHighMs;
         }
-        if (utcHour >= 6 && utcHour < 13) {
+        if (madisonHour >= 1 && madisonHour < 8) {
             return fetchIntervalLowMs;
         }
         return fetchIntervalMidMs;
@@ -619,6 +641,7 @@ public class SchedulerService {
         return dto;
     }
 
-    public record QueuedCourse(UUID courseUuid, String courseId, String termCode, String subjectCode){}
+    public record QueuedCourse(UUID courseUuid, String courseId, String termCode, String subjectId) {
+    }
 
 }

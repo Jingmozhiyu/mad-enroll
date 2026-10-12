@@ -9,7 +9,7 @@ import java.util.UUID;
  * Response DTO returned to task UI clients.
  */
 @Data
-public class TaskRespDto {
+public class SubscriptionRespDto {
     private UUID id;
     private String docId;
     private String sectionId;

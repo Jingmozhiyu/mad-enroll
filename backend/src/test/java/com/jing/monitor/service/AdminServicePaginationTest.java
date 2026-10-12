@@ -12,7 +12,6 @@ import com.jing.monitor.model.dto.AlertDeliveryLogRespDto;
 import com.jing.monitor.model.dto.PageRespDto;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
-import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.UserRepository;
 import com.jing.monitor.repository.TermRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
@@ -58,9 +57,8 @@ class AdminServicePaginationTest {
                 subscriptionRepository,
                 alertDeadLetterRepository,
                 alertDeliveryLogRepository,
-                mock(CourseRepository.class),
+                mock(SubscriptionService.class),
                 mock(AlertPublisherService.class),
-                mock(MailCounterService.class),
                 mock(SchedulerService.class),
                 authContextService,
                 mock(TermService.class),
@@ -171,7 +169,7 @@ class AdminServicePaginationTest {
         Course course = new Course();
         course.setId(UUID.randomUUID());
         course.setCourseId("123456");
-        course.setSubjectCode("266");
+        course.setSubjectId("266");
         course.setSubjectShortName("COMP SCI");
         course.setCatalogNumber("300");
 

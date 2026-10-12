@@ -39,7 +39,7 @@ public class Course {
     private String termCode;
 
     @Column(name = "subject_code", nullable = false)
-    private String subjectCode;
+    private String subjectId;
 
     @Column(name = "subject_short_name")
     private String subjectShortName;
@@ -60,5 +60,38 @@ public class Course {
         this.termCode = termCode;
         this.courseId = courseId;
         this.unchangedPollCount = 0;
+    }
+
+    /**
+     * Human-readable course name such as "COMP SCI 240", shared by the UI and alert emails.
+     *
+     * @return display name of this course
+     */
+    public String displayName() {
+        return displayName(subjectShortName, subjectId, catalogNumber);
+    }
+
+    /**
+     * Builds a course display name: the subject short name (or the subject id when it is missing)
+     * followed by the catalog number. Blank parts are left out.
+     *
+     * @param subjectShortName subject short name, e.g. "COMP SCI"
+     * @param subjectId UW subject id, e.g. "266"
+     * @param catalogNumber catalog number, e.g. "240"
+     * @return display name
+     */
+    public static String displayName(String subjectShortName, String subjectId, String catalogNumber) {
+        String subject = isBlank(subjectShortName) ? subjectId : subjectShortName;
+        if (isBlank(subject)) {
+            return catalogNumber;
+        }
+        if (isBlank(catalogNumber)) {
+            return subject;
+        }
+        return subject + " " + catalogNumber;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

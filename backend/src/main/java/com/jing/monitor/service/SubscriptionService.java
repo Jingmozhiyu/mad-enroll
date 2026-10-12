@@ -8,7 +8,8 @@ import com.jing.monitor.model.SectionInfo;
 import com.jing.monitor.model.User;
 import com.jing.monitor.model.UserSectionSubscription;
 import com.jing.monitor.model.dto.SearchCourseRespDto;
-import com.jing.monitor.model.dto.TaskRespDto;
+import com.jing.monitor.model.dto.SearchTermRespDto;
+import com.jing.monitor.model.dto.SubscriptionRespDto;
 import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.CourseSectionRepository;
 import com.jing.monitor.repository.UserRepository;
@@ -17,28 +18,33 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.Locale;
 
 /**
  * Application service for authenticated section search and subscription management.
+ * <p>
+ * Also owns the subscription rules shared with admin operations: the per-user cap and
+ * arming a course for immediate polling.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TaskService {
+public class SubscriptionService {
 
-    private static final long MAX_ENABLED_SECTION_SUBSCRIPTIONS = 15;
+    static final long MAX_ENABLED_SECTION_SUBSCRIPTIONS = 15;
     private static final Duration SEARCH_MISS_TTL = Duration.ofMinutes(2);
 
     private final CourseCrawler crawler;
@@ -56,7 +62,7 @@ public class TaskService {
      * @return list of section subscription DTOs
      */
     @Transactional(readOnly = true)
-    public List<TaskRespDto> getAllTasks() {
+    public List<SubscriptionRespDto> getAllSubscriptions() {
         UUID userId = authContextService.currentUserId();
         return subscriptionRepository.findAllByUser_Id(userId).stream()
                 .sorted(Comparator.comparing(sub -> sub.getSection().getSectionId()))
@@ -68,28 +74,27 @@ public class TaskService {
      * Searches course-level hits only, without crawling section details.
      *
      * @param courseName user-provided course query
-     * @param termId selected UW term id
+     * @param termCode selected UW term code
      * @param page requested result page, 1-based
      * @return matching course search hits for the frontend
      */
-    public List<SearchCourseRespDto> searchCourse(String courseName, String termId, int page) {
-        requireValidTermId(termId);
-        termService.requireSearchable(termId);
+    public List<SearchCourseRespDto> searchCourse(String courseName, String termCode, int page) {
+        termService.requireSearchable(termCode);
         requireValidSearchPage(page);
         String normalizedQuery = normalizeCourseQuery(courseName);
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(buildSearchMissKey(normalizedQuery, termId, page)))) {
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(buildSearchMissKey(normalizedQuery, termCode, page)))) {
             throw new RuntimeException("Course not found: " + courseName);
         }
 
-        JsonNode root = crawler.searchCourse(courseName, termId, page);
+        JsonNode root = crawler.searchCourse(courseName, termCode, page);
         if (root == null || root.path("found").asInt() == 0) {
-            rememberSearchMiss(normalizedQuery, termId, page);
+            rememberSearchMiss(normalizedQuery, termCode, page);
             throw new RuntimeException("Course not found: " + courseName);
         }
 
         JsonNode hits = root.path("hits");
         if (!hits.isArray() || hits.isEmpty()) {
-            rememberSearchMiss(normalizedQuery, termId, page);
+            rememberSearchMiss(normalizedQuery, termCode, page);
             throw new RuntimeException("Course not found: " + courseName);
         }
 
@@ -109,34 +114,36 @@ public class TaskService {
     /**
      * Crawls one concrete course and returns its section rows to the frontend.
      *
-     * @param termId selected UW term id
+     * @param termCode selected UW term code
      * @param subjectId subject code chosen from a search hit
      * @param courseId course id chosen from a search hit
-     * @return synced section DTOs, enriched with the current user's existing sub state when present
+     * @return live section DTOs, enriched with the current user's existing sub state when present
      */
     @Transactional
-    public List<TaskRespDto> searchSections(String termId, String subjectId, String courseId) {
-        requireValidTermId(termId);
-        termService.requireSearchable(termId);
+    public List<SubscriptionRespDto> searchSections(String termCode, String subjectId, String courseId) {
+        termService.requireSearchable(termCode);
         requireNonBlank(subjectId, "subjectId is required.");
         requireNonBlank(courseId, "courseId is required.");
-        List<SectionInfo> infos = crawler.fetchCourseStatus(termId, subjectId, courseId);
+        List<SectionInfo> infos = crawler.fetchCourseStatus(termCode, subjectId, courseId);
         if (infos == null || infos.isEmpty()) {
             throw new RuntimeException("Course details unavailable: " + courseId);
         }
 
-        if (infos.stream().anyMatch(info -> !termId.equals(info.getTermCode()) || !courseId.equals(info.getCourseId()))) {
+        if (infos.stream().anyMatch(info -> !termCode.equals(info.getTermCode()) || !courseId.equals(info.getCourseId()))) {
             throw new IllegalArgumentException("Course details do not match the requested term and course.");
         }
-        Map<String, CourseSection> sectionsByDocId = syncSections(infos);
+        Map<String, SectionInfo> infosByDocId = infos.stream()
+                .collect(Collectors.toMap(SectionInfo::getDocId, info -> info, (left, right) -> right, LinkedHashMap::new));
+        Map<String, CourseSection> sectionsByDocId = insertMissingSections(List.copyOf(infosByDocId.values()));
         UUID userId = authContextService.currentUserId();
         Map<String, UserSectionSubscription> subsByDocId =
                 subscriptionRepository.findAllBySection_DocIdInAndUser_Id(sectionsByDocId.keySet(), userId).stream()
                         .collect(Collectors.toMap(sub -> sub.getSection().getDocId(), sub -> sub));
 
-        return sectionsByDocId.values().stream()
-                .sorted(Comparator.comparing(CourseSection::getSectionId))
-                .map(section -> toSearchResp(section, subsByDocId.get(section.getDocId())))
+        return infosByDocId.values().stream()
+                .sorted(Comparator.comparing(SectionInfo::getSectionId))
+                .map(info -> toSearchResp(
+                        sectionsByDocId.get(info.getDocId()), info, subsByDocId.get(info.getDocId())))
                 .collect(Collectors.toList());
     }
 
@@ -146,8 +153,8 @@ public class TaskService {
      * @param docId validated section doc id from the frontend
      * @return the persisted section subscription DTO
      */
-    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
-    public TaskRespDto addSection(String docId) {
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public SubscriptionRespDto addSubscription(String docId) {
         requireValidDocId(docId);
         UUID userId = authContextService.currentUserId();
         CourseSection section = courseSectionRepository.findByDocId(docId)
@@ -182,7 +189,7 @@ public class TaskService {
      * @param docId validated section doc id from the frontend
      */
     @Transactional
-    public void deleteTask(String docId) {
+    public void deleteSubscription(String docId) {
         requireValidDocId(docId);
         UUID userId = authContextService.currentUserId();
         UserSectionSubscription sub = subscriptionRepository.findByUser_IdAndSection_DocId(userId, docId)
@@ -192,72 +199,61 @@ public class TaskService {
     }
 
     /**
-     * Syncs canonical course and section rows from crawler snapshots.
+     * Makes sure the searched course and its sections exist so they can be subscribed to.
+     * <p>
+     * Only missing rows are inserted. Existing rows keep their stored status and seat counts:
+     * those values are the scheduler's baseline for detecting transitions, and overwriting them
+     * here would swallow alerts for other subscribers of the same section.
      *
-     * @param infos fresh section snapshots returned by the crawler
-     * @return map of persisted sections keyed by unique doc id
+     * @param infos fresh section snapshots returned by the crawler, at most one per doc id
+     * @return persisted sections keyed by doc id
      */
-    @Transactional
-    protected Map<String, CourseSection> syncSections(List<SectionInfo> infos) {
-        if (infos == null || infos.isEmpty()) {
-            return Map.of();
-        }
-
-        // Persist or refresh the canonical course row shared by all section snapshots.
+    private Map<String, CourseSection> insertMissingSections(List<SectionInfo> infos) {
         SectionInfo firstInfo = infos.get(0);
         Course course = courseRepository.findByTermCodeAndCourseId(firstInfo.getTermCode(), firstInfo.getCourseId())
-                .orElseGet(() -> new Course(firstInfo.getTermCode(), firstInfo.getCourseId()));
-        course.setTermCode(firstInfo.getTermCode());
-        course.setSubjectCode(firstInfo.getSubjectCode());
-        course.setSubjectShortName(firstInfo.getSubjectShortName());
-        course.setCatalogNumber(firstInfo.getCatalogNumber());
-        Course savedCourse = courseRepository.save(course);
+                .orElseGet(() -> courseRepository.save(newCourse(firstInfo)));
 
-        // existingSectionsByDocId: doc id -> existing persisted section row.
-        Map<String, CourseSection> existingSectionsByDocId =
-                courseSectionRepository.findAllByCourse_Id(savedCourse.getId()).stream()
-                        .filter(section -> section.getDocId() != null && !section.getDocId().isBlank())
-                        .collect(Collectors.toMap(CourseSection::getDocId, section -> section));
+        // Sections are matched by doc id only: one class number (e.g. a lab) can belong to several packages.
+        Map<String, CourseSection> existingSectionsByDocId = courseSectionRepository.findAllByCourse_Id(course.getId()).stream()
+                .filter(section -> section.getDocId() != null && !section.getDocId().isBlank())
+                .collect(Collectors.toMap(CourseSection::getDocId, section -> section, (left, right) -> left, HashMap::new));
 
-        Map<String, List<CourseSection>> existingSectionsBySectionId =
-                courseSectionRepository.findAllByCourse_Id(savedCourse.getId()).stream()
-                        .collect(Collectors.groupingBy(CourseSection::getSectionId));
-
-        // savedSectionsByDocId: doc id -> freshly saved section row.
-        Map<String, CourseSection> savedSectionsByDocId = new LinkedHashMap<>();
-
-        // Apply each crawler snapshot onto its matching section row and keep seat/status metadata current.
+        Map<String, CourseSection> sectionsByDocId = new LinkedHashMap<>();
         for (SectionInfo info : infos) {
             CourseSection section = existingSectionsByDocId.get(info.getDocId());
             if (section == null) {
-                List<CourseSection> sameSectionId = existingSectionsBySectionId.getOrDefault(info.getSectionId(), List.of());
-                if (sameSectionId.size() == 1) {
-                    section = sameSectionId.get(0);
-                }
+                section = courseSectionRepository.save(newSection(course, info));
             }
-            if (section == null) {
-                section = new CourseSection();
-            }
-            section.setDocId(info.getDocId());
-            section.setSectionId(info.getSectionId());
-            section.setCourse(savedCourse);
-            section.setLastStatus(info.getStatus());
-            section.setOpenSeats(info.getOpenSeats());
-            section.setCapacity(info.getCapacity());
-            section.setWaitlistSeats(info.getWaitlistSeats());
-            section.setWaitlistCapacity(info.getWaitlistCapacity());
-            section.setOnlineOnly(info.isOnlineOnly());
-            section.setMeetingInfo(info.getMeetingInfo());
-
-            CourseSection savedSection = courseSectionRepository.save(section);
-            savedSectionsByDocId.put(savedSection.getDocId(), savedSection);
+            sectionsByDocId.put(info.getDocId(), section);
         }
+        return sectionsByDocId;
+    }
 
-        return savedSectionsByDocId;
+    private Course newCourse(SectionInfo info) {
+        Course course = new Course(info.getTermCode(), info.getCourseId());
+        course.setSubjectId(info.getSubjectId());
+        course.setSubjectShortName(info.getSubjectShortName());
+        course.setCatalogNumber(info.getCatalogNumber());
+        return course;
+    }
+
+    private CourseSection newSection(Course course, SectionInfo info) {
+        CourseSection section = new CourseSection();
+        section.setDocId(info.getDocId());
+        section.setSectionId(info.getSectionId());
+        section.setCourse(course);
+        section.setLastStatus(info.getStatus());
+        section.setOpenSeats(info.getOpenSeats());
+        section.setCapacity(info.getCapacity());
+        section.setWaitlistSeats(info.getWaitlistSeats());
+        section.setWaitlistCapacity(info.getWaitlistCapacity());
+        section.setOnlineOnly(info.isOnlineOnly());
+        section.setMeetingInfo(info.getMeetingInfo());
+        return section;
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<com.jing.monitor.model.dto.SearchTermRespDto> getSearchTerms() {
+    public List<SearchTermRespDto> getSearchTerms() {
         return termService.getSearchTerms();
     }
 
@@ -267,20 +263,29 @@ public class TaskService {
      * @param sub persisted section subscription
      * @return frontend-ready DTO
      */
-    private TaskRespDto toSubscribedResp(UserSectionSubscription sub) {
+    private SubscriptionRespDto toSubscribedResp(UserSectionSubscription sub) {
         return toResp(sub.getSection(), sub);
     }
 
     /**
-     * Builds a response DTO for a search result section, optionally enriched with
-     * the current user's existing sub state.
+     * Builds a response DTO for a search result section from the live crawler snapshot,
+     * optionally enriched with the current user's existing sub state.
      *
-     * @param section canonical section row
+     * @param section persisted section row, used for identity and course metadata
+     * @param info live crawler snapshot, used for status, seats and meetings
      * @param sub optional existing subscription for the current user
      * @return frontend-ready DTO
      */
-    private TaskRespDto toSearchResp(CourseSection section, UserSectionSubscription sub) {
-        return toResp(section, sub);
+    private SubscriptionRespDto toSearchResp(CourseSection section, SectionInfo info, UserSectionSubscription sub) {
+        SubscriptionRespDto resp = toResp(section, sub);
+        resp.setStatus(info.getStatus());
+        resp.setOpenSeats(info.getOpenSeats());
+        resp.setCapacity(info.getCapacity());
+        resp.setWaitlistSeats(info.getWaitlistSeats());
+        resp.setWaitlistCapacity(info.getWaitlistCapacity());
+        resp.setOnlineOnly(info.isOnlineOnly());
+        resp.setMeetingInfo(info.getMeetingInfo());
+        return resp;
     }
 
     /**
@@ -290,16 +295,16 @@ public class TaskService {
      * @param sub optional subscription row for the current user
      * @return frontend-ready DTO
      */
-    private TaskRespDto toResp(CourseSection section, UserSectionSubscription sub) {
+    private SubscriptionRespDto toResp(CourseSection section, UserSectionSubscription sub) {
         Course course = section.getCourse();
-        TaskRespDto resp = new TaskRespDto();
+        SubscriptionRespDto resp = new SubscriptionRespDto();
         resp.setId(sub == null ? null : sub.getId());
         resp.setDocId(section.getDocId());
         resp.setSectionId(section.getSectionId());
         resp.setCourseId(course.getCourseId());
-        resp.setSubjectCode(course.getSubjectCode());
+        resp.setSubjectCode(course.getSubjectId());
         resp.setCatalogNumber(course.getCatalogNumber());
-        resp.setCourseDisplayName(buildCourseDisplayName(course));
+        resp.setCourseDisplayName(course.displayName());
         resp.setOpenSeats(section.getOpenSeats());
         resp.setCapacity(section.getCapacity());
         resp.setWaitlistSeats(section.getWaitlistSeats());
@@ -309,19 +314,6 @@ public class TaskService {
         resp.setStatus(section.getLastStatus());
         resp.setEnabled(sub != null && sub.isEnabled());
         return resp;
-    }
-
-    /**
-     * Builds the display name expected by the current frontend.
-     *
-     * @param course canonical course row
-     * @return human-readable course display name
-     */
-    private String buildCourseDisplayName(Course course) {
-        String subject = (course.getSubjectShortName() == null || course.getSubjectShortName().isBlank())
-                ? course.getSubjectCode()
-                : course.getSubjectShortName();
-        return subject + " " + course.getCatalogNumber();
     }
 
     /**
@@ -335,19 +327,18 @@ public class TaskService {
         }
     }
 
-    private void requireValidTermId(String termId) {
-        if (termId == null || !termId.matches("\\d{4}")) {
-            throw new RuntimeException("termId must be a 4-digit number.");
-        }
-    }
-
     private void requireValidSearchPage(int page) {
         if (page < 1) {
             throw new RuntimeException("page must be greater than or equal to 1.");
         }
     }
 
-    private void armCourseForImmediatePolling(Course course) {
+    /**
+     * Makes the scheduler poll this course on its next heartbeat and resets its backoff.
+     *
+     * @param course course whose subscription was just enabled
+     */
+    void armCourseForImmediatePolling(Course course) {
         if (course == null) {
             return;
         }
@@ -362,13 +353,13 @@ public class TaskService {
      * @param userId owner of the subscription
      * @param alreadyEnabled whether the target subscription is already enabled
      */
-    private void ensureSectionSubscriptionCapacity(UUID userId, boolean alreadyEnabled) {
+    void ensureSectionSubscriptionCapacity(UUID userId, boolean alreadyEnabled) {
         if (alreadyEnabled) {
             return;
         }
         long enabledCount = subscriptionRepository.countByUser_IdAndEnabledTrue(userId);
         if (enabledCount >= MAX_ENABLED_SECTION_SUBSCRIPTIONS) {
-            throw new RuntimeException("You can monitor at most 15 sections at the same time.");
+            throw new RuntimeException("Each user can monitor at most " + MAX_ENABLED_SECTION_SUBSCRIPTIONS + " sections at the same time.");
         }
     }
 
@@ -377,12 +368,12 @@ public class TaskService {
      *
      * @param normalizedQuery normalized user query
      */
-    private void rememberSearchMiss(String normalizedQuery, String termId, int page) {
-        redisTemplate.opsForValue().set(buildSearchMissKey(normalizedQuery, termId, page), "1", SEARCH_MISS_TTL);
+    private void rememberSearchMiss(String normalizedQuery, String termCode, int page) {
+        redisTemplate.opsForValue().set(buildSearchMissKey(normalizedQuery, termCode, page), "1", SEARCH_MISS_TTL);
     }
 
-    private String buildSearchMissKey(String normalizedQuery, String termId, int page) {
-        return "search:miss:" + termId + ":" + page + ":" + normalizedQuery;
+    private String buildSearchMissKey(String normalizedQuery, String termCode, int page) {
+        return "search:miss:" + termCode + ":" + page + ":" + normalizedQuery;
     }
 
     private String normalizeCourseQuery(String courseName) {

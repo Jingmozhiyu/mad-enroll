@@ -64,7 +64,7 @@ class TermLifecycleTest {
     @Autowired UserRepository users;
     @Autowired AlertDeadLetterRepository deadLetters;
     @Autowired AlertDeliveryLogRepository deliveries;
-    @Autowired TaskService tasks;
+    @Autowired SubscriptionService tasks;
     @Autowired AdminService admin;
     @Autowired TermService termService;
     @Autowired AuthContextService auth;
@@ -100,10 +100,10 @@ class TermLifecycleTest {
         CourseSection fall = section("1272", "011630");
         CourseSection spring = section("1274", "011630");
         CourseSection cancelled = section("1274", "011631");
-        UUID fallSub = tasks.addSection(fall.getDocId()).getId();
-        UUID springSub = tasks.addSection(spring.getDocId()).getId();
-        UUID cancelledSub = tasks.addSection(cancelled.getDocId()).getId();
-        tasks.deleteTask(cancelled.getDocId());
+        UUID fallSub = tasks.addSubscription(fall.getDocId()).getId();
+        UUID springSub = tasks.addSubscription(spring.getDocId()).getId();
+        UUID cancelledSub = tasks.addSubscription(cancelled.getDocId()).getId();
+        tasks.deleteSubscription(cancelled.getDocId());
 
         admin.updateTermStatus("1274", TermStatus.ACTIVE);
         assertThat(enabled(springSub)).isTrue();
@@ -116,7 +116,7 @@ class TermLifecycleTest {
         assertThat(enabled(fallSub)).isFalse();
         assertThat(enabled(springSub)).isTrue();
         assertThat(admin.updateTermStatus("1272", TermStatus.EXPIRED).disabledSubscriptions()).isZero();
-        tasks.deleteTask(fall.getDocId()); // Repeated disable is allowed even in an expired term.
+        tasks.deleteSubscription(fall.getDocId()); // Repeated disable is allowed even in an expired term.
         admin.updateTermStatus("1272", TermStatus.ACTIVE);
         assertThat(enabled(fallSub)).isFalse();
     }
@@ -124,15 +124,15 @@ class TermLifecycleTest {
     @Test
     void unknownAndExpiredTermsRejectSearchAddAndAdminEnable() {
         CourseSection fall = section("1272", "011630");
-        UUID subscription = tasks.addSection(fall.getDocId()).getId();
+        UUID subscription = tasks.addSubscription(fall.getDocId()).getId();
         admin.updateTermStatus("1272", TermStatus.EXPIRED);
-        assertThatThrownBy(() -> tasks.addSection(fall.getDocId())).hasMessageContaining("expired");
+        assertThatThrownBy(() -> tasks.addSubscription(fall.getDocId())).hasMessageContaining("expired");
         assertThatThrownBy(() -> admin.updateSubscriptionEnabled(subscription, true)).hasMessageContaining("expired");
         assertThatThrownBy(() -> tasks.searchCourse("CS 240", "1272", 1)).hasMessageContaining("expired");
         assertThatThrownBy(() -> tasks.searchSections("1272", "266", "011630")).hasMessageContaining("expired");
         assertThatThrownBy(() -> tasks.searchSections("9999", "266", "011630")).hasMessageContaining("not configured");
         CourseSection unconfigured = section("9999", "011630");
-        assertThatThrownBy(() -> tasks.addSection(unconfigured.getDocId())).hasMessageContaining("not configured");
+        assertThatThrownBy(() -> tasks.addSubscription(unconfigured.getDocId())).hasMessageContaining("not configured");
         verifyNoInteractions(crawler);
         assertThat(enabled(subscription)).isFalse();
     }
@@ -144,7 +144,7 @@ class TermLifecycleTest {
         var expired = new AcademicTerm("1266", "Summer 2026");
         expired.setStatus(TermStatus.EXPIRED); expired.setDefaultTerm(true); terms.save(expired);
         user.setRole(UserRole.USER); users.save(user);
-        var mvc = MockMvcBuilders.standaloneSetup(new com.jing.monitor.controller.TaskController(tasks))
+        var mvc = MockMvcBuilders.standaloneSetup(new com.jing.monitor.controller.SubscriptionController(tasks))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
         mvc.perform(get("/api/tasks/terms")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(2))
@@ -163,8 +163,8 @@ class TermLifecycleTest {
         CourseSection fall = section("1272", "011630");
         CourseSection spring = section("1274", "011630");
         section("1272", "011631"); // Due, but has no subscription.
-        tasks.addSection(fall.getDocId());
-        tasks.addSection(spring.getDocId());
+        tasks.addSubscription(fall.getDocId());
+        tasks.addSubscription(spring.getDocId());
         SchedulerService scheduler = scheduler();
         assertThat(courses.findAllDueForPolling(LocalDateTime.now())).extracting(Course::getTermCode).containsExactly("1272");
         assertThat(scheduler.getSchedulerStatus().getDueCourseCount()).isEqualTo(1);
@@ -184,11 +184,11 @@ class TermLifecycleTest {
     @Test
     @SuppressWarnings("unchecked")
     void mailWorkerSkipsUpcomingAndExpiredAlertsButKeepsManualTests() throws Exception {
-        UUID subscription = tasks.addSection(section("1272", "011630").getDocId()).getId();
+        UUID subscription = tasks.addSubscription(section("1272", "011630").getDocId()).getId();
         MailService mail = mock(MailService.class);
         when(redis.opsForValue()).thenReturn(mock(ValueOperations.class));
         AlertConsumerService consumer = new AlertConsumerService(mail, deadLetters, deliveries,
-                mock(MailCounterService.class), sendClaims, subscriptions);
+                sendClaims, subscriptions);
         ReflectionTestUtils.setField(consumer, "alertQueueName", "test.alerts");
         AlertEvent event = new AlertEvent();
         event.setEventId(UUID.randomUUID());
@@ -249,7 +249,7 @@ class TermLifecycleTest {
 
     @Test
     void expiryAndSubscriptionDisableRollBackTogether() {
-        UUID subscription = tasks.addSection(section("1272", "011630").getDocId()).getId();
+        UUID subscription = tasks.addSubscription(section("1272", "011630").getDocId()).getId();
         assertThatThrownBy(() -> new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
             admin.updateTermStatus("1272", TermStatus.EXPIRED);
             throw new IllegalStateException("Force rollback");
@@ -267,7 +267,7 @@ class TermLifecycleTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.status").value("UPCOMING"))
                 .andExpect(jsonPath("$.data.isDefault").value(false))
                 .andExpect(jsonPath("$.data.defaultTerm").doesNotExist());
-        tasks.addSection(section("1272", "011630").getDocId());
+        tasks.addSubscription(section("1272", "011630").getDocId());
         mvc.perform(patch("/api/admin/terms/1272").contentType("application/json")
                         .content("{\"status\":\"EXPIRED\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.term.status").value("EXPIRED"))
@@ -293,7 +293,7 @@ class TermLifecycleTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.CsvSource({"false,false", "false,true", "true,true"})
     void concurrentCrossTermEnablesCannotExceedFifteen(boolean firstAdmin, boolean secondAdmin) throws Exception {
-        for (int i = 0; i < 14; i++) tasks.addSection(section("1272", "seed" + i).getDocId());
+        for (int i = 0; i < 14; i++) tasks.addSubscription(section("1272", "seed" + i).getDocId());
         CourseSection fall = section("1272", "candidate-fall");
         CourseSection spring = section("1274", "candidate-spring");
         UserSectionSubscription fallSub = new UserSectionSubscription();
@@ -311,14 +311,14 @@ class TermLifecycleTest {
                 transaction.setIsolationLevel(org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED);
                 transaction.executeWithoutResult(tx -> {
                     if (firstAdmin) admin.updateSubscriptionEnabled(fallId, true);
-                    else tasks.addSection(fall.getDocId());
+                    else tasks.addSubscription(fall.getDocId());
                     firstEnabled.countDown(); await(release);
                 });
             });
             assertThat(firstEnabled.await(5, TimeUnit.SECONDS)).isTrue();
             var second = executor.submit(() -> {
                 if (secondAdmin) admin.updateSubscriptionEnabled(springId, true);
-                else tasks.addSection(spring.getDocId());
+                else tasks.addSubscription(spring.getDocId());
             });
             // Different term rows: H2's exclusive emulation of shared locks cannot hide a missing user guard.
             assertThatThrownBy(() -> second.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
@@ -346,10 +346,10 @@ class TermLifecycleTest {
 
     @Test
     void smtpFailureAndLostAckCannotResendCourseMail() throws Exception {
-        UUID sub = tasks.addSection(section("1272", "mail").getDocId()).getId();
+        UUID sub = tasks.addSubscription(section("1272", "mail").getDocId()).getId();
         MailService mail = mock(MailService.class);
         var consumer = new AlertConsumerService(mail, deadLetters, deliveries,
-                mock(MailCounterService.class), sendClaims, subscriptions);
+                sendClaims, subscriptions);
         ReflectionTestUtils.setField(consumer, "alertQueueName", "test.alerts");
         AlertEvent event = new AlertEvent();
         event.setEventId(UUID.randomUUID()); event.setSubscriptionId(sub); event.setAlertType(AlertType.OPEN);
@@ -388,14 +388,14 @@ class TermLifecycleTest {
         try {
             var first = executor.submit(() -> new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
                 if (expireFirst) admin.updateTermStatus("1272", TermStatus.EXPIRED);
-                else tasks.addSection(section.getDocId());
+                else tasks.addSubscription(section.getDocId());
                 firstHasLock.countDown();
                 await(releaseFirst);
             }));
             assertThat(firstHasLock.await(5, TimeUnit.SECONDS)).isTrue();
             var second = executor.submit(() -> {
                 secondStarted.countDown();
-                if (expireFirst) tasks.addSection(section.getDocId());
+                if (expireFirst) tasks.addSubscription(section.getDocId());
                 else admin.updateTermStatus("1272", TermStatus.EXPIRED);
             });
             assertThat(secondStarted.await(5, TimeUnit.SECONDS)).isTrue();
@@ -435,7 +435,7 @@ class TermLifecycleTest {
 
     private CourseSection section(String term, String courseId) {
         Course course = new Course(term, courseId);
-        course.setSubjectCode("266");
+        course.setSubjectId("266");
         course.setCatalogNumber("240");
         course = courses.save(course);
         CourseSection section = new CourseSection();
@@ -456,20 +456,19 @@ class TermLifecycleTest {
     }
 
     private SchedulerService scheduler() {
-        return new SchedulerService(crawler, publisher, mock(FileRepository.class), courses, sections, subscriptions);
+        return new SchedulerService(crawler, publisher, courses, sections, subscriptions);
     }
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
     @AutoConfigurationPackage
     @EnableJpaRepositories("com.jing.monitor.repository")
-    @Import({TaskService.class, TermService.class, AdminService.class, MailSendClaimService.class})
+    @Import({SubscriptionService.class, TermService.class, AdminService.class, MailSendClaimService.class})
     static class TestApplication {
         @Bean CourseCrawler crawler() { return mock(CourseCrawler.class); }
         @Bean AuthContextService authContextService() { return mock(AuthContextService.class); }
         @Bean AlertPublisherService publisher() { return mock(AlertPublisherService.class); }
         @Bean StringRedisTemplate stringRedisTemplate() { return mock(StringRedisTemplate.class); }
-        @Bean MailCounterService mailCounterService() { return mock(MailCounterService.class); }
         @Bean SchedulerService schedulerService() { return mock(SchedulerService.class); }
     }
 }

@@ -12,14 +12,12 @@ import com.jing.monitor.model.UserSectionSubscription;
 import com.jing.monitor.model.dto.AuthLoginReqDto;
 import com.jing.monitor.model.dto.AuthLoginRespDto;
 import com.jing.monitor.model.dto.AuthRegisterReqDto;
-import com.jing.monitor.model.dto.TaskRespDto;
+import com.jing.monitor.model.dto.SubscriptionRespDto;
 import com.jing.monitor.model.event.AlertEvent;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
 import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.CourseSectionRepository;
-import com.jing.monitor.repository.FileRepository;
-import com.jing.monitor.repository.MailDailyStatRepository;
 import com.jing.monitor.repository.UserRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
 import com.jing.monitor.security.JwtService;
@@ -27,10 +25,9 @@ import com.jing.monitor.service.AlertConsumerService;
 import com.jing.monitor.service.AlertPublisherService;
 import com.jing.monitor.service.AuthContextService;
 import com.jing.monitor.service.AuthService;
-import com.jing.monitor.service.MailCounterService;
 import com.jing.monitor.service.MailService;
 import com.jing.monitor.service.SchedulerService;
-import com.jing.monitor.service.TaskService;
+import com.jing.monitor.service.SubscriptionService;
 import com.rabbitmq.client.Channel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,12 +103,10 @@ class UserAlertBusinessFlowTest {
     private final AlertPublisherService alertPublisherService = mock(AlertPublisherService.class);
     private final AuthContextService authContextService = mock(AuthContextService.class);
     private final StringRedisTemplate redisTemplate = mock(StringRedisTemplate.class);
-    private final FileRepository fileRepository = mock(FileRepository.class);
     private final MailService mailService = mock(MailService.class);
-    private final MailCounterService mailCounterService = mock(MailCounterService.class);
 
     private AuthService authService;
-    private TaskService taskService;
+    private SubscriptionService subscriptionService;
     private SchedulerService schedulerService;
     private AlertConsumerService alertConsumerService;
 
@@ -131,8 +126,7 @@ class UserAlertBusinessFlowTest {
             CourseSectionRepository courseSectionRepository,
             UserSectionSubscriptionRepository subscriptionRepository,
             AlertDeadLetterRepository alertDeadLetterRepository,
-            AlertDeliveryLogRepository alertDeliveryLogRepository,
-            MailDailyStatRepository mailDailyStatRepository
+            AlertDeliveryLogRepository alertDeliveryLogRepository
     ) {
         this.userRepository = userRepository;
         this.courseRepository = courseRepository;
@@ -157,7 +151,7 @@ class UserAlertBusinessFlowTest {
                 new JwtService("01234567890123456789012345678901", 604800000),
                 alertPublisherService
         );
-        taskService = new TaskService(
+        subscriptionService = new SubscriptionService(
                 crawler,
                 courseRepository,
                 courseSectionRepository,
@@ -170,7 +164,6 @@ class UserAlertBusinessFlowTest {
         schedulerService = new SchedulerService(
                 crawler,
                 alertPublisherService,
-                fileRepository,
                 courseRepository,
                 courseSectionRepository,
                 subscriptionRepository
@@ -179,7 +172,6 @@ class UserAlertBusinessFlowTest {
                 mailService,
                 alertDeadLetterRepository,
                 alertDeliveryLogRepository,
-                mailCounterService,
                 mockClaims(),
                 subscriptionRepository
         );
@@ -204,7 +196,7 @@ class UserAlertBusinessFlowTest {
         when(crawler.fetchCourseStatus(TERM_ID, SUBJECT_CODE, COURSE_ID))
                 .thenReturn(List.of(closed), List.of(open));
 
-        List<TaskRespDto> sections = taskService.searchSections(TERM_ID, SUBJECT_CODE, COURSE_ID);
+        List<SubscriptionRespDto> sections = subscriptionService.searchSections(TERM_ID, SUBJECT_CODE, COURSE_ID);
         assertThat(sections).singleElement()
                 .satisfies(section -> {
                     assertThat(section.getDocId()).isEqualTo(DOC_ID);
@@ -212,7 +204,7 @@ class UserAlertBusinessFlowTest {
                     assertThat(section.getStatus()).isEqualTo(StatusMapping.CLOSED);
                 });
 
-        TaskRespDto subscription = taskService.addSection(DOC_ID);
+        SubscriptionRespDto subscription = subscriptionService.addSubscription(DOC_ID);
         assertThat(subscription.isEnabled()).isTrue();
         assertThat(subscription.getCourseDisplayName()).isEqualTo("COMP SCI 240");
 
@@ -240,7 +232,7 @@ class UserAlertBusinessFlowTest {
         assertThat(alertDeliveryLogRepository.findAll()).hasSize(1);
 
         reset(mailService);
-        taskService.deleteTask(DOC_ID);
+        subscriptionService.deleteSubscription(DOC_ID);
         UserSectionSubscription disabledSub = subscriptionRepository.findById(subscriptionId).orElseThrow();
         assertThat(disabledSub.isEnabled()).isFalse();
 

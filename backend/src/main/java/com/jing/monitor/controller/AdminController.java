@@ -111,7 +111,7 @@ public class AdminController {
     }
 
     /**
-     * Lists persisted daily mail counter snapshots.
+     * Lists daily mail counters computed from the delivery and dead-letter logs.
      *
      * @return daily mail statistics
      */

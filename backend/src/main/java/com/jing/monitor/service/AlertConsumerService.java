@@ -31,7 +31,6 @@ public class AlertConsumerService {
     private final MailService mailService;
     private final AlertDeadLetterRepository alertDeadLetterRepository;
     private final AlertDeliveryLogRepository alertDeliveryLogRepository;
-    private final MailCounterService mailCounterService;
     private final MailSendClaimService sendClaims;
     private final UserSectionSubscriptionRepository subscriptionRepository;
 
@@ -81,7 +80,6 @@ public class AlertConsumerService {
             }
 
             saveDeliveryLogQuietly(event);
-            mailCounterService.recordSuccessfulSend(event);
             channel.basicAck(deliveryTag, false);
             log.info("[AlertConsumer] ACKed alert event {} on queue {}", event.getEventId(), alertQueueName);
         } catch (Exception e) {
@@ -108,13 +106,12 @@ public class AlertConsumerService {
             deadLetter.setRecipientEmail(event == null ? null : event.getRecipientEmail());
             deadLetter.setSectionId(event == null ? null : event.getSectionId());
             deadLetter.setCourseDisplayName(event == null ? null : event.getCourseDisplayName());
-            deadLetter.setTermId(event == null ? null : event.getTermId());
+            deadLetter.setTermCode(event == null ? null : event.getTermId());
             deadLetter.setReason(extractDeadLetterReason(message));
             deadLetter.setSourceQueue(extractSourceQueue(message));
             deadLetter.setCreatedAt(LocalDateTime.now());
             deadLetter.setPayloadJson(extractPayloadJson(message));
             alertDeadLetterRepository.save(deadLetter);
-            mailCounterService.recordDeadLetter(event);
             channel.basicAck(deliveryTag, false);
 
             log.error("[AlertConsumer] Dead letter saved for event {} from queue {} with reason {}",
@@ -166,7 +163,7 @@ public class AlertConsumerService {
             deliveryLog.setRecipientEmail(event.getRecipientEmail());
             deliveryLog.setSectionId(event.getSectionId());
             deliveryLog.setCourseDisplayName(event.getCourseDisplayName());
-            deliveryLog.setTermId(event.getTermId());
+            deliveryLog.setTermCode(event.getTermId());
             deliveryLog.setSourceQueue(alertQueueName);
             deliveryLog.setManualTest(event.isManualTest());
             deliveryLog.setSentAt(LocalDateTime.now());

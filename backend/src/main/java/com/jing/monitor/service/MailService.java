@@ -38,13 +38,13 @@ public class MailService {
      * @param recipientEmail recipient mailbox
      * @param section        section id
      * @param courseInfo     course display text
-     * @param termId         UW term id used to build the enroll search URL
+     * @param termCode         UW term code used to build the enroll search URL
      */
-    public void sendCourseOpenAlert(String recipientEmail, String section, String courseInfo, String termId) {
+    public void sendCourseOpenAlert(String recipientEmail, String section, String courseInfo, String termCode) {
         log.info("[Mail] Preparing to send OPEN alert for section {} to {}", section, recipientEmail);
 
         try {
-            String enrollLink = buildEnrollLink(termId, courseInfo);
+            String enrollLink = buildEnrollLink(termCode, courseInfo);
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
@@ -81,13 +81,13 @@ public class MailService {
      * @param recipientEmail recipient mailbox
      * @param section        section id
      * @param courseInfo     course display text
-     * @param termId         UW term id used to build the enroll search URL
+     * @param termCode         UW term code used to build the enroll search URL
      */
-    public void sendCourseWaitlistedAlert(String recipientEmail, String section, String courseInfo, String termId) {
+    public void sendCourseWaitlistedAlert(String recipientEmail, String section, String courseInfo, String termCode) {
         log.info("[Mail] Preparing to send WAITLIST alert for section {} to {}", section, recipientEmail);
 
         try {
-            String enrollLink = buildEnrollLink(termId, courseInfo);
+            String enrollLink = buildEnrollLink(termCode, courseInfo);
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
@@ -208,7 +208,7 @@ public class MailService {
         return feedbackText.trim();
     }
 
-    private String buildEnrollLink(String termId, String courseInfo) {
+    private String buildEnrollLink(String termCode, String courseInfo) {
         String normalizedCourseInfo = requireCourseInfo(courseInfo)
                 .toLowerCase(Locale.ROOT);
         String encodedCourse = URLEncoder.encode(normalizedCourseInfo, StandardCharsets.UTF_8)
@@ -217,8 +217,8 @@ public class MailService {
         StringBuilder link = new StringBuilder("https://enroll.wisc.edu/search?keywords=")
                 .append(encodedCourse)
                 .append("&closed=true");
-        if (termId != null && !termId.isBlank()) {
-            link.insert("https://enroll.wisc.edu/search?".length(), "term=" + termId.trim() + "&");
+        if (termCode != null && !termCode.isBlank()) {
+            link.insert("https://enroll.wisc.edu/search?".length(), "term=" + termCode.trim() + "&");
         }
         return link.toString();
     }

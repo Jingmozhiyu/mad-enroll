@@ -43,7 +43,7 @@ public class AlertDeadLetter {
     private String courseDisplayName;
 
     @Column(name = "term_id")
-    private String termId;
+    private String termCode;
 
     @Column(name = "dead_letter_reason")
     private String reason;

@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Admin-facing response DTO for one persisted daily mail counter snapshot.
+ * Admin-facing response DTO for one day of mail counters, computed from the delivery logs.
  */
 @Data
 @NoArgsConstructor

@@ -32,23 +32,23 @@
 
 ## 用户任务
 
-源码：[TaskController](../../src/main/java/com/jing/monitor/controller/TaskController.java)、[TaskService](../../src/main/java/com/jing/monitor/service/TaskService.java)。
+源码：[SubscriptionController](../../src/main/java/com/jing/monitor/controller/SubscriptionController.java)、[SubscriptionService](../../src/main/java/com/jing/monitor/service/SubscriptionService.java)。
 
 | 方法和路径 | 查询参数 | 响应数据 |
 | --- | --- | --- |
-| `GET /api/tasks` | 无 | [TaskRespDto](../../src/main/java/com/jing/monitor/model/dto/TaskRespDto.java) 数组 |
+| `GET /api/tasks` | 无 | [SubscriptionRespDto](../../src/main/java/com/jing/monitor/model/dto/SubscriptionRespDto.java) 数组 |
 | `GET /api/tasks/terms` | 无 | [SearchTermRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchTermRespDto.java) 数组：`{code,label,status,isDefault}`，仅非 EXPIRED，按代码降序 |
 | `GET /api/tasks/search/courses` | 必需 `courseName`、`termId`；可选 `page=1` | [SearchCourseRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchCourseRespDto.java) 数组 |
-| `GET /api/tasks/search/sections` | 必需 `termId`、`subjectId`、`courseId` | TaskRespDto 数组 |
-| `POST /api/tasks` | 必需 `docId`；无请求体 | TaskRespDto |
+| `GET /api/tasks/search/sections` | 必需 `termId`、`subjectId`、`courseId` | SubscriptionRespDto 数组 |
+| `POST /api/tasks` | 必需 `docId`；无请求体 | SubscriptionRespDto |
 | `DELETE /api/tasks` | 必需 `docId`；无请求体 | `null` |
 
 重要语义：
 
 - 搜索学期来自 `terms`，包括标签和由操作员维护的 `is_default` 标志。空列表是有效响应。API 不会选择或修复默认学期。普通的已认证用户可以读取此端点；管理员学期端点仍包含已过期学期。搜索请求必须提供 `termId`；Next.js 不再接受 `termKey` 作为替代，也不再使用按学期的环境变量或默认代码回退。
 - 搜索要求 termId 已配置、为四位数字且对应 UPCOMING 或 ACTIVE 学期；未知/EXPIRED 学期会被拒绝。课程搜索页码必须至少为 1。其结果是数组，而不是管理员分页封装。
-- 课程搜索返回 `{courseDesignation, title, subjectId, courseId}`。将这些 ID 和相同的 termId 传给 section 搜索。section 搜索会持久化快照，但不会创建订阅。
-- GET tasks 包含已禁用和历史订阅，按 sectionId 排序。当前 UI 会隐藏已禁用行。TaskRespDto **没有 termCode/termStatus 字段**。其 `meetingInfo` 是 JSON 编码的字符串，不是数组。未订阅的搜索行具有 `id: null, enabled: false`。
+- 课程搜索返回 `{courseDesignation, title, subjectId, courseId}`。将这些 ID 和相同的 termId 传给 section 搜索。section 搜索返回爬虫的实时快照，只插入数据库中尚不存在的 course/section 行；不会覆盖已有 section 的状态和名额（scheduler 判断状态变化的基线），也不会创建订阅。
+- GET tasks 包含已禁用和历史订阅，按 sectionId 排序。当前 UI 会隐藏已禁用行。SubscriptionRespDto **没有 termCode/termStatus 字段**。其 `meetingInfo` 是 JSON 编码的字符串，不是数组。未订阅的搜索行具有 `id: null, enabled: false`。
 - POST 要求 section 之前已同步。它会创建或重新启用调用者的订阅，检查**已存储课程的学期**，并限制每个用户最多 **15 个已启用 section**，其中包括跨学期的 UPCOMING 订阅。只有 ACTIVE 学期会被监控。
 - DELETE 会禁用属于调用者的订阅。即使学期已过期，重复禁用也会成功；缺失或不属于调用者的订阅会被拒绝。
 - Spring 没有 `GET /api/tasks/search`；该兼容别名只存在于 Next.js 中。
@@ -113,7 +113,7 @@ ACTIVE/UPCOMING 只更改学期状态。EXPIRED 还会在同一事务中禁用�
 - 汇总字段是数据库计数：totalUsers、totalSubscriptions、enabledSubscriptions、totalDeliveries、totalDeadLetters。enabled 包括 UPCOMING，不是受监控课程数。
 - 调度器的 queuedCourseIds 和 lastFetchedCourseId 使用 **`termCode:courseId`**，例如 `1272:011630`。activeCourseCount 要求存在已启用订阅和 ACTIVE 学期；dueCourseCount 还要求已到下次轮询时间。旧的排队项目可能一直保留到出队时被丢弃。最近时间戳和 lastFetchedCourseId 可能为 null。抓取间隔取决于时间/配置。
 - 死信字段使用 **reason / createdAt**，而不是 deadLetterReason / failedAt。payloadJson 是字符串。
-- 邮件统计是持久化快照。手动测试计数与邮件类型计数重叠；不要再次将其相加到总数中。FEEDBACK 会计入总数，但没有专用 DTO 计数器。
+- 邮件统计在请求时根据 `alert_delivery_logs` 和 `alert_dead_letters` 按服务器时钟的日期实时汇总，包含当天尚未结束的部分。手动测试计数与邮件类型计数重叠；不要再次将其相加到总数中。FEEDBACK 会计入总数，但没有专用 DTO 计数器。
 
 测试邮件要求四位数字的 termId；学期不必为 ACTIVE/已配置。默认值为：recipientEmail = 当前管理员邮箱，alertType = OPEN，sectionId = 99999，courseDisplayName = TEST COURSE。recipientEmail/sectionId/courseDisplayName 为空白时也使用这些默认值；省略 alertType 时默认为 OPEN。座位提醒测试使用 OPEN 或 WAITLIST。DTO 也接受 WELCOME/FEEDBACK，但不提供 feedback sender/body 字段。手动测试绕过订阅和学期检查。此端点不会广播。
 

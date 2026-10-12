@@ -38,16 +38,16 @@ and email `OPEN | WAITLIST | WELCOME | FEEDBACK`.
 
 ## User tasks
 
-Source: [TaskController](../../src/main/java/com/jing/monitor/controller/TaskController.java),
-[TaskService](../../src/main/java/com/jing/monitor/service/TaskService.java).
+Source: [SubscriptionController](../../src/main/java/com/jing/monitor/controller/SubscriptionController.java),
+[SubscriptionService](../../src/main/java/com/jing/monitor/service/SubscriptionService.java).
 
 | Method and path | Query parameters | Response data |
 | --- | --- | --- |
-| `GET /api/tasks` | None | [TaskRespDto](../../src/main/java/com/jing/monitor/model/dto/TaskRespDto.java) array |
+| `GET /api/tasks` | None | [SubscriptionRespDto](../../src/main/java/com/jing/monitor/model/dto/SubscriptionRespDto.java) array |
 | `GET /api/tasks/terms` | None | [SearchTermRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchTermRespDto.java) array: `{code,label,status,isDefault}`, non-EXPIRED only, code descending |
 | `GET /api/tasks/search/courses` | Required `courseName`, `termId`; optional `page=1` | [SearchCourseRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchCourseRespDto.java) array |
-| `GET /api/tasks/search/sections` | Required `termId`, `subjectId`, `courseId` | TaskRespDto array |
-| `POST /api/tasks` | Required `docId`; no body | TaskRespDto |
+| `GET /api/tasks/search/sections` | Required `termId`, `subjectId`, `courseId` | SubscriptionRespDto array |
+| `POST /api/tasks` | Required `docId`; no body | SubscriptionRespDto |
 | `DELETE /api/tasks` | Required `docId`; no body | `null` |
 
 Important semantics:
@@ -61,9 +61,10 @@ Important semantics:
 - Search requires a configured four-digit termId in UPCOMING or ACTIVE; unknown/EXPIRED is rejected.
   Course-search page must be at least 1. Its result is an array, not an admin page wrapper.
 - Course search returns `{courseDesignation, title, subjectId, courseId}`. Pass those IDs and the
-  same termId to section search. Section search persists snapshots but creates no subscription.
+  same termId to section search. Section search returns the live crawler snapshot and inserts only missing course/section rows; it
+  never overwrites a stored section's status or seats (the scheduler's alert baseline) and creates no subscription.
 - GET tasks includes disabled and historical subscriptions, sorted by sectionId. The current UI
-  hides disabled rows. TaskRespDto has **no termCode/termStatus field**. Its `meetingInfo` is a
+  hides disabled rows. SubscriptionRespDto has **no termCode/termStatus field**. Its `meetingInfo` is a
   JSON-encoded string, not an array. Unsubscribed search rows have `id: null, enabled: false`.
 - POST requires a previously synced section. It creates or re-enables the caller's subscription,
   checks the **stored course's term**, and permits at most **15 enabled sections per user**, including
@@ -168,7 +169,8 @@ of task `id`, adds **termCode**, and includes `onlineOnly` and `meetingInfo`.
   the polling deadline. Old queued items can remain until dequeue discards them. Recent timestamps
   and lastFetchedCourseId can be null. Fetch interval depends on time/configuration.
 - Dead-letter fields use **reason / createdAt**, not deadLetterReason / failedAt. payloadJson is a string.
-- Mail stats are persisted snapshots. Manual-test counters overlap mail-type counters; do not add
+- Mail stats are computed on request from `alert_delivery_logs` and `alert_dead_letters`, grouped by
+  server-clock day, and include the current partial day. Manual-test counters overlap mail-type counters; do not add
   them again to totals. FEEDBACK contributes to totals without a dedicated DTO counter.
 
 Test-email requires a four-digit termId; the term need not be ACTIVE/configured. Defaults:

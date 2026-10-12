@@ -51,7 +51,6 @@ class BroadcastTest {
     @Autowired UserSectionSubscriptionRepository subs;
     @Autowired AuthContextService auth;
     @Autowired MailService mail;
-    @Autowired MailCounterService counters;
     @Autowired AlertDeliveryLogRepository alertLogs;
     @Autowired PlatformTransactionManager transactions;
     @Autowired org.springframework.amqp.rabbit.core.RabbitTemplate rabbit;
@@ -63,7 +62,7 @@ class BroadcastTest {
         deliveries.deleteAll(); broadcasts.deleteAll(); subs.deleteAll(); sections.deleteAll(); courses.deleteAll();
         terms.deleteAll(); users.deleteAll(); alertLogs.deleteAll();
         claims.deleteAll();
-        reset(auth, mail, counters, rabbit);
+        reset(auth, mail, rabbit);
         admin = users.save(new User("admin@example.com", "unused"));
         admin.setRole(UserRole.ADMIN); users.save(admin);
         when(auth.currentUserId()).thenReturn(admin.getId());
@@ -86,7 +85,7 @@ class BroadcastTest {
         assertThat(service.recipients(draft.id(), 1).getItems()).extracting(Delivery::email).containsExactly(fall.getEmail());
         subscribe(spring, "1272", "late", false);
         assertThat(service.get(draft.id()).recipientCount()).isEqualTo(1);
-        verifyNoInteractions(mail, counters);
+        verifyNoInteractions(mail);
         assertThat(service.create(allUsers()).recipientCount()).isEqualTo(3);
     }
 
@@ -108,7 +107,6 @@ class BroadcastTest {
         assertThat(published()).hasSize(2);
         verify(mail, times(1)).sendBroadcast("admin@example.com", "Report", "Body");
         verify(mail, times(1)).sendBroadcast("recipient@example.com", "Report", "Body");
-        verifyNoInteractions(counters);
         assertThat(alertLogs.count()).isZero();
     }
 
@@ -212,7 +210,7 @@ class BroadcastTest {
     }
     private void subscribe(User user, String termCode, String suffix, boolean enabled) {
         Course course = new Course(termCode, suffix);
-        course.setSubjectCode("266"); course.setCatalogNumber("240"); courses.save(course);
+        course.setSubjectId("266"); course.setCatalogNumber("240"); courses.save(course);
         CourseSection section = new CourseSection(); section.setCourse(course); section.setDocId(termCode + suffix);
         section.setSectionId(suffix); sections.save(section);
         UserSectionSubscription sub = new UserSectionSubscription();
@@ -252,7 +250,6 @@ class BroadcastTest {
         consume(event); consume(event);
         verify(mail, times(1)).sendBroadcast("test@example.com", "Report", "Body");
         assertThat(service.get(draft.id())).isEqualTo(draft);
-        verifyNoInteractions(counters);
         assertThat(alertLogs.count()).isZero();
         assertThatThrownBy(() -> service.testEmail(draft.id(), new TestEmail("a@example.com,b@example.com")))
                 .hasMessageContaining("Invalid recipient");

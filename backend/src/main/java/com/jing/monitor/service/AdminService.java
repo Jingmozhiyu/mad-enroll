@@ -23,7 +23,6 @@ import com.jing.monitor.model.dto.PageRespDto;
 import com.jing.monitor.model.dto.SchedulerStatusRespDto;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
-import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.TermRepository;
 import com.jing.monitor.repository.UserRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
@@ -32,10 +31,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +52,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private static final long MAX_ENABLED_SECTION_SUBSCRIPTIONS = 15;
     private static final int USER_PAGE_SIZE = 20;
     private static final int DELIVERY_PAGE_SIZE = 3;
 
@@ -53,9 +59,8 @@ public class AdminService {
     private final UserSectionSubscriptionRepository subscriptionRepository;
     private final AlertDeadLetterRepository alertDeadLetterRepository;
     private final AlertDeliveryLogRepository alertDeliveryLogRepository;
-    private final CourseRepository courseRepository;
+    private final SubscriptionService subscriptionService;
     private final AlertPublisherService alertPublisherService;
-    private final MailCounterService mailCounterService;
     private final SchedulerService schedulerService;
     private final AuthContextService authContextService;
     private final TermService termService;
@@ -146,7 +151,7 @@ public class AdminService {
      * @param enabled target enabled state
      * @return updated admin-facing subscription DTO
      */
-    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public AdminSectionSubRespDto updateSubscriptionEnabled(UUID subscriptionId, boolean enabled) {
         requireAdmin();
         if (enabled) {
@@ -158,11 +163,13 @@ public class AdminService {
         // Load mutable subscription state only after waiting for both guards.
         UserSectionSubscription sub = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found: " + subscriptionId));
-        ensureSectionSubscriptionCapacity(sub, enabled);
+        if (enabled) {
+            subscriptionService.ensureSectionSubscriptionCapacity(sub.getUser().getId(), sub.isEnabled());
+        }
         sub.setEnabled(enabled);
         UserSectionSubscription savedSub = subscriptionRepository.save(sub);
         if (enabled) {
-            armCourseForImmediatePolling(savedSub.getSection().getCourse());
+            subscriptionService.armCourseForImmediatePolling(savedSub.getSection().getCourse());
         }
         return toAdminSubResp(savedSub);
     }
@@ -224,14 +231,32 @@ public class AdminService {
     }
 
     /**
-     * Returns persisted daily mail counter snapshots for admin reporting.
+     * Returns daily mail counters computed from the delivery and dead-letter logs,
+     * newest day first. Days follow the server clock that wrote the log timestamps.
      *
      * @return daily mail statistics ordered from newest to oldest
      */
     @Transactional(readOnly = true)
     public List<MailDailyStatRespDto> getMailDailyStats() {
         requireAdmin();
-        return mailCounterService.getPersistedDailyStats();
+        Map<LocalDate, MailDailyStatRespDto> statsByDate = new TreeMap<>(Comparator.reverseOrder());
+        for (Object[] row : alertDeliveryLogRepository.countDailyDeliveries()) {
+            MailDailyStatRespDto dto = statsByDate.computeIfAbsent(toLocalDate(row[0]), this::emptyDailyStat);
+            dto.setSentTotal(toLong(row[1]));
+            dto.setSentOpen(toLong(row[2]));
+            dto.setSentWaitlist(toLong(row[3]));
+            dto.setSentWelcome(toLong(row[4]));
+            dto.setSentManualTest(toLong(row[5]));
+        }
+        for (Object[] row : alertDeadLetterRepository.countDailyDeadLetters()) {
+            MailDailyStatRespDto dto = statsByDate.computeIfAbsent(toLocalDate(row[0]), this::emptyDailyStat);
+            dto.setDeadTotal(toLong(row[1]));
+            dto.setDeadOpen(toLong(row[2]));
+            dto.setDeadWaitlist(toLong(row[3]));
+            dto.setDeadWelcome(toLong(row[4]));
+            dto.setDeadManualTest(toLong(row[5]));
+        }
+        return new ArrayList<>(statsByDate.values());
     }
 
     /**
@@ -245,14 +270,15 @@ public class AdminService {
         AlertType alertType = req.getAlertType() == null ? AlertType.OPEN : req.getAlertType();
         String sectionId = firstNonBlank(req.getSectionId(), "99999");
         String courseDisplayName = firstNonBlank(req.getCourseDisplayName(), "TEST COURSE");
-        String termId = requireValidTermId(req.getTermId());
+        String termCode = req.getTermId();
+        termService.validateCode(termCode);
 
         alertPublisherService.publishManualTestAlert(
                 alertType,
                 recipientEmail,
                 sectionId,
                 courseDisplayName,
-                termId
+                termCode
         );
     }
 
@@ -265,6 +291,28 @@ public class AdminService {
     public SchedulerStatusRespDto getSchedulerStatus() {
         requireAdmin();
         return schedulerService.getSchedulerStatus();
+    }
+
+    private MailDailyStatRespDto emptyDailyStat(LocalDate date) {
+        MailDailyStatRespDto dto = new MailDailyStatRespDto();
+        // Stable per-day id: the frontend uses it as a list key.
+        dto.setId(UUID.nameUUIDFromBytes(("mail-stat:" + date).getBytes(StandardCharsets.UTF_8)));
+        dto.setStatsDate(date);
+        return dto;
+    }
+
+    private LocalDate toLocalDate(Object value) {
+        if (value instanceof LocalDate date) {
+            return date;
+        }
+        if (value instanceof java.sql.Date date) {
+            return date.toLocalDate();
+        }
+        throw new IllegalStateException("Unexpected date value from mail statistics query: " + value);
+    }
+
+    private long toLong(Object value) {
+        return value == null ? 0L : ((Number) value).longValue();
     }
 
     private User requireAdmin() {
@@ -287,9 +335,9 @@ public class AdminService {
         dto.setDocId(section.getDocId());
         dto.setCourseId(course.getCourseId());
         dto.setTermCode(course.getTermCode());
-        dto.setSubjectCode(course.getSubjectCode());
+        dto.setSubjectCode(course.getSubjectId());
         dto.setCatalogNumber(course.getCatalogNumber());
-        dto.setCourseDisplayName(buildCourseDisplayName(course));
+        dto.setCourseDisplayName(course.displayName());
         dto.setSectionId(section.getSectionId());
         dto.setStatus(section.getLastStatus());
         dto.setOpenSeats(section.getOpenSeats());
@@ -301,13 +349,6 @@ public class AdminService {
         return dto;
     }
 
-    private String buildCourseDisplayName(Course course) {
-        String subject = (course.getSubjectShortName() == null || course.getSubjectShortName().isBlank())
-                ? course.getSubjectCode()
-                : course.getSubjectShortName();
-        return subject + " " + course.getCatalogNumber();
-    }
-
     private AlertDeadLetterRespDto toDeadLetterResp(AlertDeadLetter deadLetter) {
         AlertDeadLetterRespDto dto = new AlertDeadLetterRespDto();
         dto.setId(deadLetter.getId());
@@ -316,7 +357,7 @@ public class AdminService {
         dto.setRecipientEmail(deadLetter.getRecipientEmail());
         dto.setSectionId(deadLetter.getSectionId());
         dto.setCourseDisplayName(deadLetter.getCourseDisplayName());
-        dto.setTermId(deadLetter.getTermId());
+        dto.setTermId(deadLetter.getTermCode());
         dto.setReason(deadLetter.getReason());
         dto.setSourceQueue(deadLetter.getSourceQueue());
         dto.setCreatedAt(deadLetter.getCreatedAt());
@@ -332,7 +373,7 @@ public class AdminService {
         dto.setRecipientEmail(deliveryLog.getRecipientEmail());
         dto.setSectionId(deliveryLog.getSectionId());
         dto.setCourseDisplayName(deliveryLog.getCourseDisplayName());
-        dto.setTermId(deliveryLog.getTermId());
+        dto.setTermId(deliveryLog.getTermCode());
         dto.setSourceQueue(deliveryLog.getSourceQueue());
         dto.setManualTest(deliveryLog.isManualTest());
         dto.setSentAt(deliveryLog.getSentAt());
@@ -344,31 +385,5 @@ public class AdminService {
             return preferred.trim();
         }
         return fallback;
-    }
-
-    private String requireValidTermId(String termId) {
-        if (termId == null || !termId.matches("\\d{4}")) {
-            throw new RuntimeException("termId must be a 4-digit number.");
-        }
-        return termId;
-    }
-
-    private void armCourseForImmediatePolling(Course course) {
-        if (course == null) {
-            return;
-        }
-        course.setUnchangedPollCount(0);
-        course.setNextPollAt(LocalDateTime.now());
-        courseRepository.save(course);
-    }
-
-    private void ensureSectionSubscriptionCapacity(UserSectionSubscription sub, boolean targetEnabled) {
-        if (!targetEnabled || sub.isEnabled()) {
-            return;
-        }
-        long enabledCount = subscriptionRepository.countByUser_IdAndEnabledTrue(sub.getUser().getId());
-        if (enabledCount >= MAX_ENABLED_SECTION_SUBSCRIPTIONS) {
-            throw new RuntimeException("This user can monitor at most 15 sections at the same time.");
-        }
     }
 }

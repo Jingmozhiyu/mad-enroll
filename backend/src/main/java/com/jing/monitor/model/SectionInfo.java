@@ -13,7 +13,7 @@ public class SectionInfo {
     private String courseId;
     private String docId;
     private String sectionId;
-    private String subjectCode;
+    private String subjectId;
     private String subjectShortName;
     private String catalogNumber;
     private StatusMapping status;
@@ -29,7 +29,7 @@ public class SectionInfo {
             String courseId,
             String docId,
             String sectionId,
-            String subjectCode,
+            String subjectId,
             String subjectShortName,
             String catalogNumber,
             StatusMapping status,
@@ -44,7 +44,7 @@ public class SectionInfo {
         this.courseId = courseId;
         this.docId = docId;
         this.sectionId = sectionId;
-        this.subjectCode = subjectCode;
+        this.subjectId = subjectId;
         this.subjectShortName = subjectShortName;
         this.catalogNumber = catalogNumber;
         this.status = status;
@@ -65,12 +65,6 @@ public class SectionInfo {
     }
 
     public String getCourseDisplayName() {
-        if (subjectShortName == null || subjectShortName.isBlank()) {
-            return catalogNumber;
-        }
-        if (catalogNumber == null || catalogNumber.isBlank()) {
-            return subjectShortName;
-        }
-        return subjectShortName + " " + catalogNumber;
+        return Course.displayName(subjectShortName, subjectId, catalogNumber);
     }
 }

@@ -42,7 +42,7 @@ public class AlertDeliveryLog {
     private String courseDisplayName;
 
     @Column(name = "term_id")
-    private String termId;
+    private String termCode;
 
     @Column(name = "source_queue", nullable = false)
     private String sourceQueue;

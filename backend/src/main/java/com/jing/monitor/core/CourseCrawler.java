@@ -40,10 +40,10 @@ public class CourseCrawler {
      * @param courseId The canonical course identifier accepted by the enrollment-package endpoint.
      * @return List of SectionInfo objects, or null if fetch fails.
      */
-    public List<SectionInfo> fetchCourseStatus(String termId, String subjectCode, String courseId) {
+    public List<SectionInfo> fetchCourseStatus(String termCode, String subjectId, String courseId) {
         // Construct the GET endpoint for course-level details
         String url = String.format("https://public.enroll.wisc.edu/api/search/v1/enrollmentPackages/%s/%s/%s",
-                termId, subjectCode, courseId);
+                termCode, subjectId, courseId);
 
         try {
             Connection conn = Jsoup.connect(url)
@@ -219,12 +219,12 @@ public class CourseCrawler {
      * @param userQueryString user input query such as "COMP SCI 577"
      * @return parsed search response JSON, or {@code null} when request fails
      */
-    public JsonNode searchCourse(String userQueryString, String termId, int page) {
+    public JsonNode searchCourse(String userQueryString, String termCode, int page) {
         String searchUrl = "https://public.enroll.wisc.edu/api/search/v1";
 
         try {
             ObjectNode root = mapper.createObjectNode();
-            root.put("selectedTerm", termId);
+            root.put("selectedTerm", termCode);
             root.put("queryString", userQueryString); // "COMP SCI 571"
             root.put("page", page);
             root.put("pageSize", 50);
