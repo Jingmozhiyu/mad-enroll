@@ -4,7 +4,7 @@ export type AdminSubscription = {
     enabled: boolean
     docId?: string
     courseId: string
-    subjectCode: string
+    subjectId: string
     catalogNumber: string
     courseDisplayName: string
     sectionId: string
@@ -115,7 +115,7 @@ export type TestEmailPayload = {
     alertType?: string
     sectionId?: string
     courseDisplayName?: string
-    termId?: string
+    termCode?: string
 }
 
 export type SchedulerStatus = {

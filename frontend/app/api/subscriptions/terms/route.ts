@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server'
-import {backendFetchSearchTerms} from '@/lib/api/server/tasks'
+import {backendFetchSearchTerms} from '@/lib/api/server/subscriptions'
 import {getServerSession} from '@/lib/auth/session.server'
 import {jsonError, unauthorizedResponse} from '@/lib/api/server/responses'
 

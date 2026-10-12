@@ -15,5 +15,5 @@ public class AdminTestEmailReqDto {
     private AlertType alertType;
     private String sectionId;
     private String courseDisplayName;
-    private String termId;
+    private String termCode;
 }

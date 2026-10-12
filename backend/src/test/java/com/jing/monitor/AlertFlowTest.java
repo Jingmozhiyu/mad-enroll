@@ -266,7 +266,7 @@ class AlertFlowTest {
         event.setRecipientEmail(USER_EMAIL);
         event.setSectionId(SECTION_ID);
         event.setCourseDisplayName("COMP SCI 240");
-        event.setTermId(TERM_ID);
+        event.setTermCode(TERM_ID);
         return event;
     }
 

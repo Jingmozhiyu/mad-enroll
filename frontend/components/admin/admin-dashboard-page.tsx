@@ -519,7 +519,7 @@ export function AdminDashboardPage() {
 
                             <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
                                 <label className="grid min-w-[132px] gap-1.5">
-                                    <span className="text-sm text-[var(--color-ink-soft)]">termId</span>
+                                    <span className="text-sm text-[var(--color-ink-soft)]">termCode</span>
                                     <input
                                         className="input-shell h-11"
                                         inputMode="numeric"
@@ -527,11 +527,11 @@ export function AdminDashboardPage() {
                                         onChange={(event) =>
                                             setTestEmailForm((current) => ({
                                                 ...current,
-                                                termId: event.target.value,
+                                                termCode: event.target.value,
                                             }))
                                         }
                                         placeholder="1272"
-                                        value={testEmailForm.termId}
+                                        value={testEmailForm.termCode}
                                     />
                                 </label>
                                 <button

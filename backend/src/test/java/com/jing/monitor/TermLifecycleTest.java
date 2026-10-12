@@ -99,7 +99,7 @@ class TermLifecycleTest extends IntegrationTestBase {
         user.setRole(UserRole.USER); users.save(user);
         var mvc = MockMvcBuilders.standaloneSetup(new com.jing.monitor.controller.SubscriptionController(tasks))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
-        mvc.perform(get("/api/tasks/terms")).andExpect(status().isOk())
+        mvc.perform(get("/api/subscriptions/terms")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(2))
                 .andExpect(jsonPath("$.data[0].code").value("1274"))
                 .andExpect(jsonPath("$.data[0].status").value("UPCOMING"))
@@ -107,7 +107,7 @@ class TermLifecycleTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data[1].label").value("Fall 2026"))
                 .andExpect(jsonPath("$.data[1].isDefault").value(true));
         for (var term : terms.findAll()) { term.setStatus(TermStatus.EXPIRED); terms.save(term); }
-        mvc.perform(get("/api/tasks/terms")).andExpect(status().isOk())
+        mvc.perform(get("/api/subscriptions/terms")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()").value(0));
     }
 

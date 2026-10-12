@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.UUID;
 
 /**
- * Response DTO returned to task UI clients.
+ * One section row for the monitor UI: live search results and the user's subscriptions.
  */
 @Data
 public class SubscriptionRespDto {
@@ -14,7 +14,7 @@ public class SubscriptionRespDto {
     private String docId;
     private String sectionId;
     private String courseId;
-    private String subjectCode;
+    private String subjectId;
     private String catalogNumber;
     private String courseDisplayName;
     private Integer openSeats;

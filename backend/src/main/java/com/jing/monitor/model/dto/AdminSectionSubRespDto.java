@@ -15,7 +15,7 @@ public class AdminSectionSubRespDto {
     private boolean enabled;
     private String docId;
     private String courseId;
-    private String subjectCode;
+    private String subjectId;
     private String catalogNumber;
     private String courseDisplayName;
     private String sectionId;

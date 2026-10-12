@@ -1,5 +1,5 @@
 import {MonitorClientPage} from '@/components/monitor/monitor-client-page'
-import {backendFetchTasks} from '@/lib/api/server/tasks'
+import {backendFetchSubscriptions} from '@/lib/api/server/subscriptions'
 import {getServerSession} from '@/lib/auth/session.server'
 
 type MonitorPageProps = {
@@ -28,10 +28,10 @@ export default async function MonitorPage({searchParams}: MonitorPageProps) {
         )
     }
 
-    let initialTasks = [] as Awaited<ReturnType<typeof backendFetchTasks>>
+    let initialTasks = [] as Awaited<ReturnType<typeof backendFetchSubscriptions>>
 
     try {
-        initialTasks = await backendFetchTasks(token)
+        initialTasks = await backendFetchSubscriptions(token)
     } catch {
         initialTasks = []
     }

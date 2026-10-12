@@ -19,7 +19,7 @@ public class AlertDeliveryLogRespDto {
     private String recipientEmail;
     private String sectionId;
     private String courseDisplayName;
-    private String termId;
+    private String termCode;
     private String sourceQueue;
     private boolean manualTest;
     private LocalDateTime sentAt;

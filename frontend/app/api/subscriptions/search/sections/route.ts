@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server'
-import {backendSearchSections} from '@/lib/api/server/tasks'
+import {backendSearchSections} from '@/lib/api/server/subscriptions'
 import {
     COURSE_SEARCH_FAILURE_MESSAGE,
 } from '@/lib/course/search'
@@ -18,9 +18,9 @@ export async function GET(request: Request) {
 
     try {
         const {searchParams} = new URL(request.url)
-        const termId = searchParams.get('termId')
-        if (!termId || !/^\d{4}$/.test(termId)) {
-            return badRequestResponse('A four-digit termId is required.')
+        const termCode = searchParams.get('termCode')
+        if (!termCode || !/^\d{4}$/.test(termCode)) {
+            return badRequestResponse('A four-digit termCode is required.')
         }
         const subjectId = searchParams.get('subjectId') ?? ''
         const courseId = searchParams.get('courseId') ?? ''
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
             return badRequestResponse('Subject and course are required.')
         }
 
-        const results = await backendSearchSections(token, termId, subjectId, courseId)
+        const results = await backendSearchSections(token, termCode, subjectId, courseId)
         return NextResponse.json(results)
     } catch (error) {
         return courseSearchErrorResponse(error, COURSE_SEARCH_FAILURE_MESSAGE)

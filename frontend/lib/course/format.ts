@@ -1,4 +1,4 @@
-import type {MeetingSlot, Task} from '@/lib/course/types'
+import type {MeetingSlot, Subscription} from '@/lib/course/types'
 
 const DISPLAY_TIME_ZONE = 'America/Chicago'
 
@@ -88,7 +88,7 @@ export function getMeetingDetailLines(meetingInfo: string) {
     }))
 }
 
-export function sortTasks(tasks: Task[]) {
+export function sortTasks(tasks: Subscription[]) {
     return [...tasks].sort((left, right) => {
         if (left.courseDisplayName !== right.courseDisplayName) {
             return left.courseDisplayName.localeCompare(right.courseDisplayName)
@@ -140,7 +140,7 @@ export function formatDateOnly(value?: string) {
     }).format(date)
 }
 
-export function getSeatsSummary(task: Pick<Task, 'openSeats' | 'capacity' | 'waitlistSeats' | 'waitlistCapacity'>) {
+export function getSeatsSummary(task: Pick<Subscription, 'openSeats' | 'capacity' | 'waitlistSeats' | 'waitlistCapacity'>) {
     const seatParts: string[] = []
 
     if (typeof task.openSeats === 'number' || typeof task.capacity === 'number') {
@@ -158,10 +158,10 @@ export function getSeatsSummary(task: Pick<Task, 'openSeats' | 'capacity' | 'wai
     return seatParts.length > 0 ? seatParts.join(' | ') : 'Seat data unavailable'
 }
 
-export function getOpenSeatsSummary(task: Pick<Task, 'openSeats' | 'capacity'>) {
+export function getOpenSeatsSummary(task: Pick<Subscription, 'openSeats' | 'capacity'>) {
     return `Open Seats: ${task.openSeats ?? '?'} / ${task.capacity ?? '?'}`
 }
 
-export function getWaitlistSeatsSummary(task: Pick<Task, 'waitlistSeats' | 'waitlistCapacity'>) {
+export function getWaitlistSeatsSummary(task: Pick<Subscription, 'waitlistSeats' | 'waitlistCapacity'>) {
     return `Waitlist Seats: ${task.waitlistSeats ?? '?'} / ${task.waitlistCapacity ?? '?'}`
 }

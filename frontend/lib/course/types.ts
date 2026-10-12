@@ -5,13 +5,13 @@ export type SearchTerm = {
     isDefault: boolean
 }
 
-export type Task = {
+export type Subscription = {
     id: string | null
     docId: string
     enabled?: boolean
     sectionId: string
     courseId: string
-    subjectCode: string
+    subjectId: string
     catalogNumber: string
     courseDisplayName: string
     onlineOnly?: boolean

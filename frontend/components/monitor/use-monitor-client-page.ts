@@ -10,13 +10,13 @@ import {
 } from 'react'
 import {useAuth} from '@/components/providers'
 import {
-    addTask,
-    deleteTask,
-    fetchTasks,
+    addSubscription,
+    deleteSubscription,
+    fetchSubscriptions,
     fetchSearchTerms,
     searchCourses,
     searchSections,
-} from '@/lib/api/client/tasks'
+} from '@/lib/api/client/subscriptions'
 import {getErrorMessage, isUnauthorizedError} from '@/lib/api/client/http'
 import {
     COURSE_SEARCH_FAILURE_MESSAGE,
@@ -27,7 +27,7 @@ import {
     normalizeCourseSearchQuery,
 } from '@/lib/course/search'
 import {sortTasks} from '@/lib/course/format'
-import type {SearchCourseHit, SearchTerm, Task} from '@/lib/course/types'
+import type {SearchCourseHit, SearchTerm, Subscription} from '@/lib/course/types'
 
 const initialAuthForm = {
     email: '',
@@ -35,7 +35,7 @@ const initialAuthForm = {
 }
 
 export type MonitorClientPageProps = {
-    initialTasks?: Task[]
+    initialTasks?: Subscription[]
     initialStatusMessage?: string
     serviceMode?: string
 }
@@ -49,11 +49,11 @@ const UI_PAGES_PER_BACKEND_PAGE =
 const INITIAL_SEARCH_MESSAGE = 'Search for a course to view sections.'
 const DEFAULT_SIGN_IN_STATUS_MESSAGE = 'Sign in to view and manage your seat alerts.'
 
-function getActiveTasks(tasks: Task[]) {
+function getActiveTasks(tasks: Subscription[]) {
     return sortTasks(tasks.filter((task) => task.enabled !== false))
 }
 
-function upsertTask(tasks: Task[], nextTask: Task) {
+function upsertTask(tasks: Subscription[], nextTask: Subscription) {
     return getActiveTasks([
         ...tasks.filter((task) => task.docId !== nextTask.docId),
         nextTask,
@@ -73,7 +73,7 @@ export function useMonitorClientPage({
     const previousLoggedIn = useRef(isLoggedIn)
     const previousSearchOpen = useRef(false)
     const [authForm, setAuthForm] = useState(initialAuthForm)
-    const [tasks, setTasks] = useState<Task[]>(activeInitialTasks)
+    const [tasks, setTasks] = useState<Subscription[]>(activeInitialTasks)
     const [statusMessage, setStatusMessage] = useState(
         initialStatusMessage ??
         (activeInitialTasks.length > 0
@@ -97,7 +97,7 @@ export function useMonitorClientPage({
     const [hasMoreCoursePages, setHasMoreCoursePages] = useState(false)
     const [currentCoursePage, setCurrentCoursePage] = useState(1)
     const [selectedCourse, setSelectedCourse] = useState<SearchCourseHit | null>(null)
-    const [sectionResults, setSectionResults] = useState<Task[]>([])
+    const [sectionResults, setSectionResults] = useState<Subscription[]>([])
     const [isSearchStageTransitioning, setIsSearchStageTransitioning] = useState(false)
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [isAuthOpen, setIsAuthOpen] = useState(Boolean(initialStatusMessage))
@@ -195,7 +195,7 @@ export function useMonitorClientPage({
         return () => { active = false }
     }, [ready, isLoggedIn, termRefreshVersion])
 
-    function applyTasks(nextTasks: Task[], message?: string) {
+    function applyTasks(nextTasks: Subscription[], message?: string) {
         const sortedTasks = getActiveTasks(nextTasks)
         setTasks(sortedTasks)
         setStatusMessage(
@@ -216,7 +216,7 @@ export function useMonitorClientPage({
 
             try {
                 setBusyAction('load')
-                applyTasks(await fetchTasks(), message)
+                applyTasks(await fetchSubscriptions(), message)
             } catch (error) {
                 setTasks([])
                 if (isUnauthorizedError(error)) {
@@ -320,7 +320,7 @@ export function useMonitorClientPage({
             setBusyAction('login')
             const nextSession = await login(payload)
             setIsAuthOpen(false)
-            const nextTasks = await fetchTasks()
+            const nextTasks = await fetchSubscriptions()
             applyTasks(nextTasks, `Welcome back, ${nextSession.email}.`)
         } catch (error) {
             setStatusMessage(getErrorMessage(error, 'Login failed.'))
@@ -507,7 +507,7 @@ export function useMonitorClientPage({
     async function handleAdd(docId: string) {
         try {
             setAddingDocId(docId)
-            const nextTask = await addTask(docId)
+            const nextTask = await addSubscription(docId)
             setSectionResults((current) =>
                 current.map((section) =>
                     section.docId === docId
@@ -534,7 +534,7 @@ export function useMonitorClientPage({
     async function handleDelete(docId: string, sectionId: string) {
         try {
             setDeletingDocId(docId)
-            await deleteTask(docId)
+            await deleteSubscription(docId)
             setTasks((current) => current.filter((task) => task.docId !== docId))
             setStatusMessage(`Section ${sectionId} has been removed from your active tasks.`)
         } catch (error) {

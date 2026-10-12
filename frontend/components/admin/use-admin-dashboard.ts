@@ -37,7 +37,7 @@ const initialTestEmailForm: Required<TestEmailPayload> = {
     alertType: 'OPEN',
     sectionId: '31380',
     courseDisplayName: 'COMP SCI 640',
-    termId: '1272',
+    termCode: '1272',
 }
 
 export function useAdminDashboard() {
@@ -303,11 +303,11 @@ export function useAdminDashboard() {
             if (testEmailForm.courseDisplayName.trim()) {
                 payload.courseDisplayName = testEmailForm.courseDisplayName.trim()
             }
-            if (!/^\d{4}$/.test(testEmailForm.termId.trim())) {
-                setStatusMessage('termId is required and must be a 4-digit UW term id.')
+            if (!/^\d{4}$/.test(testEmailForm.termCode.trim())) {
+                setStatusMessage('termCode is required and must be a 4-digit UW term code.')
                 return
             }
-            payload.termId = testEmailForm.termId.trim()
+            payload.termCode = testEmailForm.termCode.trim()
 
             await sendAdminTestEmail(payload)
             setStatusMessage('Manual test email has been queued successfully.')

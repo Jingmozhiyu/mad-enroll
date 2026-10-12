@@ -40,7 +40,7 @@ class MailWorkerTest extends IntegrationTestBase {
         event.setEventId(UUID.randomUUID());
         event.setSubscriptionId(subscription);
         event.setAlertType(AlertType.OPEN);
-        event.setTermId("1272");
+        event.setTermCode("1272");
         event.setSectionId("66400");
         event.setCourseDisplayName("COMP SCI 240");
         event.setRecipientEmail(user.getEmail());
@@ -89,7 +89,7 @@ class MailWorkerTest extends IntegrationTestBase {
         AlertEvent event = new AlertEvent();
         event.setEventId(UUID.randomUUID()); event.setSubscriptionId(sub); event.setAlertType(AlertType.OPEN);
         event.setRecipientEmail(user.getEmail()); event.setSectionId("66400");
-        event.setCourseDisplayName("CS 240"); event.setTermId("1272");
+        event.setCourseDisplayName("CS 240"); event.setTermCode("1272");
         var properties = new MessageProperties(); properties.setDeliveryTag(1L);
         var message = new Message(new byte[0], properties);
         Channel broken = mock(Channel.class);

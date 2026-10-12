@@ -129,7 +129,7 @@ public class RateLimitService {
     /**
      * Checks whether the current request should bypass rate limiting because the caller is admin.
      * Admin requests keep their dedicated /api/admin/** limit, but admin users are exempt from
-     * ordinary user-facing limits such as /api/tasks and search.
+     * ordinary user-facing limits such as /api/subscriptions and search.
      *
      * @return true when the authenticated caller is admin
      */
@@ -289,13 +289,13 @@ public class RateLimitService {
         rules.put(buildEndpointKey("POST", "/auth/login"), ipRule("login", 10, 10 * 60_000L, 30, 24 * 60 * 60_000L));
         rules.put(buildEndpointKey("POST", "/auth/register"), ipRule("register", 5, 10 * 60_000L, 10, 24 * 60 * 60_000L));
         rules.put(buildEndpointKey("POST", "/api/feedback"), ipRule("feedback", 2, 60_000L, 5, 24 * 60 * 60_000L));
-        rules.put(buildEndpointKey("GET", "/api/tasks"), userRule("tasks_list", 20, 60_000L, 200, 24 * 60 * 60_000L));
+        rules.put(buildEndpointKey("GET", "/api/subscriptions"), userRule("subscriptions_list", 20, 60_000L, 200, 24 * 60 * 60_000L));
         // Both search endpoints share the same Redis bucket name so one user cannot bypass
         // the intended quota by alternating between "search courses" and "search sections".
-        rules.put(buildEndpointKey("GET", "/api/tasks/search/courses"), userRule("search", 10, 60_000L, 80, 24 * 60 * 60_000L));
-        rules.put(buildEndpointKey("GET", "/api/tasks/search/sections"), userRule("search", 10, 60_000L, 80, 24 * 60 * 60_000L));
-        rules.put(buildEndpointKey("POST", "/api/tasks"), userRule("add", 5, 60_000L, 30, 24 * 60 * 60_000L));
-        rules.put(buildEndpointKey("DELETE", "/api/tasks"), userRule("delete", 5, 60_000L, 30, 24 * 60 * 60_000L));
+        rules.put(buildEndpointKey("GET", "/api/subscriptions/search/courses"), userRule("search", 10, 60_000L, 80, 24 * 60 * 60_000L));
+        rules.put(buildEndpointKey("GET", "/api/subscriptions/search/sections"), userRule("search", 10, 60_000L, 80, 24 * 60 * 60_000L));
+        rules.put(buildEndpointKey("POST", "/api/subscriptions"), userRule("add", 5, 60_000L, 30, 24 * 60 * 60_000L));
+        rules.put(buildEndpointKey("DELETE", "/api/subscriptions"), userRule("delete", 5, 60_000L, 30, 24 * 60 * 60_000L));
         return rules;
     }
 

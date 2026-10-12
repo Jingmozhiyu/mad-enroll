@@ -270,7 +270,7 @@ public class AdminService {
         AlertType alertType = req.getAlertType() == null ? AlertType.OPEN : req.getAlertType();
         String sectionId = firstNonBlank(req.getSectionId(), "99999");
         String courseDisplayName = firstNonBlank(req.getCourseDisplayName(), "TEST COURSE");
-        String termCode = req.getTermId();
+        String termCode = req.getTermCode();
         termService.validateCode(termCode);
 
         alertPublisherService.publishManualTestAlert(
@@ -335,7 +335,7 @@ public class AdminService {
         dto.setDocId(section.getDocId());
         dto.setCourseId(course.getCourseId());
         dto.setTermCode(course.getTermCode());
-        dto.setSubjectCode(course.getSubjectId());
+        dto.setSubjectId(course.getSubjectId());
         dto.setCatalogNumber(course.getCatalogNumber());
         dto.setCourseDisplayName(course.displayName());
         dto.setSectionId(section.getSectionId());
@@ -357,7 +357,7 @@ public class AdminService {
         dto.setRecipientEmail(deadLetter.getRecipientEmail());
         dto.setSectionId(deadLetter.getSectionId());
         dto.setCourseDisplayName(deadLetter.getCourseDisplayName());
-        dto.setTermId(deadLetter.getTermCode());
+        dto.setTermCode(deadLetter.getTermCode());
         dto.setReason(deadLetter.getReason());
         dto.setSourceQueue(deadLetter.getSourceQueue());
         dto.setCreatedAt(deadLetter.getCreatedAt());
@@ -373,7 +373,7 @@ public class AdminService {
         dto.setRecipientEmail(deliveryLog.getRecipientEmail());
         dto.setSectionId(deliveryLog.getSectionId());
         dto.setCourseDisplayName(deliveryLog.getCourseDisplayName());
-        dto.setTermId(deliveryLog.getTermCode());
+        dto.setTermCode(deliveryLog.getTermCode());
         dto.setSourceQueue(deliveryLog.getSourceQueue());
         dto.setManualTest(deliveryLog.isManualTest());
         dto.setSentAt(deliveryLog.getSentAt());

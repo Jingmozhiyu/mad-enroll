@@ -35,7 +35,7 @@ course. Course lookup uses `(termCode, courseId)` exclusively.
    the default-term backend. It adds `is_default` with FALSE as its initial value and preserves
    existing values on rerun. It does not guess which term to select. In a database transaction,
    clear the old flag and set exactly one non-EXPIRED term as default. The script includes an example.
-5. The frontend obtains codes, labels and defaults through authenticated `GET /api/tasks/terms`.
+5. The frontend obtains codes, labels and defaults through authenticated `GET /api/subscriptions/terms`.
    It lists all non-EXPIRED terms and initially selects the unique default. No/multiple defaults
    require manual selection; loading errors allow retry and never fall back to a hardcoded term.
    A user's valid manual choice survives a list refresh. Switching terms clears search results

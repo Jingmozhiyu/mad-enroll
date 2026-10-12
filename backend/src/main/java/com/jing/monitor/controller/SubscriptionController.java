@@ -18,11 +18,9 @@ import java.util.List;
 
 /**
  * REST controller for the current user's course search and section subscriptions.
- * <p>
- * The {@code /api/tasks} path and the {@code termId} query parameter are kept for API compatibility.
  */
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/api/subscriptions")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class SubscriptionController {
@@ -60,7 +58,7 @@ public class SubscriptionController {
     @GetMapping("/search/courses")
     public Result<List<SearchCourseRespDto>> searchCourses(
             @RequestParam String courseName,
-            @RequestParam("termId") String termCode,
+            @RequestParam String termCode,
             @RequestParam(defaultValue = "1") int page
     ) {
         return Result.success(subscriptionService.searchCourse(courseName, termCode, page));
@@ -76,7 +74,7 @@ public class SubscriptionController {
      */
     @GetMapping("/search/sections")
     public Result<List<SubscriptionRespDto>> searchSections(
-            @RequestParam("termId") String termCode,
+            @RequestParam String termCode,
             @RequestParam String subjectId,
             @RequestParam String courseId
     ) {

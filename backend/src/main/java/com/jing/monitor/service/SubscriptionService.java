@@ -306,7 +306,7 @@ public class SubscriptionService {
         resp.setDocId(section.getDocId());
         resp.setSectionId(section.getSectionId());
         resp.setCourseId(course.getCourseId());
-        resp.setSubjectCode(course.getSubjectId());
+        resp.setSubjectId(course.getSubjectId());
         resp.setCatalogNumber(course.getCatalogNumber());
         resp.setCourseDisplayName(course.displayName());
         resp.setOpenSeats(section.getOpenSeats());

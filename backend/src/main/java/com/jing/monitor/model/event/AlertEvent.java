@@ -21,7 +21,7 @@ public class AlertEvent {
     private String senderEmail;
     private String sectionId;
     private String courseDisplayName;
-    private String termId;
+    private String termCode;
     private String messageBody;
     private boolean manualTest;
     private LocalDateTime createdAt;

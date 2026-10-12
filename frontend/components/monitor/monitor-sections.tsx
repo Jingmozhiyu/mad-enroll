@@ -1,7 +1,7 @@
 import type {RefObject} from 'react'
 import {EmptyState} from '@/components/empty-state'
 import {getMeetingLocationSummary, getMeetingSummary} from '@/lib/course/format'
-import type {Task} from '@/lib/course/types'
+import type {Subscription} from '@/lib/course/types'
 
 type MonitorAuthForm = {
     email: string
@@ -35,7 +35,7 @@ type MonitorTaskListProps = {
     isLoggedIn: boolean
     termsLoading: boolean
     onDelete: (docId: string, sectionId: string) => void
-    tasks: Task[]
+    tasks: Subscription[]
 }
 
 type StatusBadgeProps = {

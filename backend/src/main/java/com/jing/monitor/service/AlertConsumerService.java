@@ -62,14 +62,14 @@ public class AlertConsumerService {
                         event.getRecipientEmail(),
                         event.getSectionId(),
                         event.getCourseDisplayName(),
-                        event.getTermId()
+                        event.getTermCode()
                 );
             } else if (event.getAlertType() == AlertType.WAITLIST) {
                 mailService.sendCourseWaitlistedAlert(
                         event.getRecipientEmail(),
                         event.getSectionId(),
                         event.getCourseDisplayName(),
-                        event.getTermId()
+                        event.getTermCode()
                 );
             } else if (event.getAlertType() == AlertType.WELCOME) {
                 mailService.sendWelcomeEmail(event.getRecipientEmail());
@@ -106,7 +106,7 @@ public class AlertConsumerService {
             deadLetter.setRecipientEmail(event == null ? null : event.getRecipientEmail());
             deadLetter.setSectionId(event == null ? null : event.getSectionId());
             deadLetter.setCourseDisplayName(event == null ? null : event.getCourseDisplayName());
-            deadLetter.setTermCode(event == null ? null : event.getTermId());
+            deadLetter.setTermCode(event == null ? null : event.getTermCode());
             deadLetter.setReason(extractDeadLetterReason(message));
             deadLetter.setSourceQueue(extractSourceQueue(message));
             deadLetter.setCreatedAt(LocalDateTime.now());
@@ -163,7 +163,7 @@ public class AlertConsumerService {
             deliveryLog.setRecipientEmail(event.getRecipientEmail());
             deliveryLog.setSectionId(event.getSectionId());
             deliveryLog.setCourseDisplayName(event.getCourseDisplayName());
-            deliveryLog.setTermCode(event.getTermId());
+            deliveryLog.setTermCode(event.getTermCode());
             deliveryLog.setSourceQueue(alertQueueName);
             deliveryLog.setManualTest(event.isManualTest());
             deliveryLog.setSentAt(LocalDateTime.now());

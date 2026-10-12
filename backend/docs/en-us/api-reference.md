@@ -11,7 +11,7 @@ DTOs, services and tests define the detailed implementation. Avoid copying entir
 These paths belong to the **Spring backend origin**, configured as `API_BASE_URL` by Next.js.
 They are not the browser-facing proxy contract.
 
-- `/api/tasks/**` requires `Authorization: Bearer <token>`.
+- `/api/subscriptions/**` requires `Authorization: Bearer <token>`.
 - `/api/admin/**` additionally requires an ADMIN. Non-admin access currently returns **401**, not 403.
 - Register/login are public. Feedback allows anonymous requests.
 - JSON request bodies use `Content-Type: application/json`.
@@ -43,27 +43,27 @@ Source: [SubscriptionController](../../src/main/java/com/jing/monitor/controller
 
 | Method and path | Query parameters | Response data |
 | --- | --- | --- |
-| `GET /api/tasks` | None | [SubscriptionRespDto](../../src/main/java/com/jing/monitor/model/dto/SubscriptionRespDto.java) array |
-| `GET /api/tasks/terms` | None | [SearchTermRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchTermRespDto.java) array: `{code,label,status,isDefault}`, non-EXPIRED only, code descending |
-| `GET /api/tasks/search/courses` | Required `courseName`, `termId`; optional `page=1` | [SearchCourseRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchCourseRespDto.java) array |
-| `GET /api/tasks/search/sections` | Required `termId`, `subjectId`, `courseId` | SubscriptionRespDto array |
-| `POST /api/tasks` | Required `docId`; no body | SubscriptionRespDto |
-| `DELETE /api/tasks` | Required `docId`; no body | `null` |
+| `GET /api/subscriptions` | None | [SubscriptionRespDto](../../src/main/java/com/jing/monitor/model/dto/SubscriptionRespDto.java) array |
+| `GET /api/subscriptions/terms` | None | [SearchTermRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchTermRespDto.java) array: `{code,label,status,isDefault}`, non-EXPIRED only, code descending |
+| `GET /api/subscriptions/search/courses` | Required `courseName`, `termCode`; optional `page=1` | [SearchCourseRespDto](../../src/main/java/com/jing/monitor/model/dto/SearchCourseRespDto.java) array |
+| `GET /api/subscriptions/search/sections` | Required `termCode`, `subjectId`, `courseId` | SubscriptionRespDto array |
+| `POST /api/subscriptions` | Required `docId`; no body | SubscriptionRespDto |
+| `DELETE /api/subscriptions` | Required `docId`; no body | `null` |
 
 Important semantics:
 
 - Search terms come from `terms`, including labels and the operator-maintained `is_default` flag.
   An empty list is a valid response. The API does not choose or repair a default term.
   Ordinary authenticated users can read this endpoint; the admin terms endpoint still includes
-  expired terms. Search requests must supply `termId`; Next.js no longer accepts `termKey`
+  expired terms. Search requests must supply `termCode`; Next.js no longer accepts `termKey`
   as a substitute or uses per-semester environment variables/default-code fallbacks.
 
-- Search requires a configured four-digit termId in UPCOMING or ACTIVE; unknown/EXPIRED is rejected.
+- Search requires a configured four-digit termCode in UPCOMING or ACTIVE; unknown/EXPIRED is rejected.
   Course-search page must be at least 1. Its result is an array, not an admin page wrapper.
 - Course search returns `{courseDesignation, title, subjectId, courseId}`. Pass those IDs and the
-  same termId to section search. Section search returns the live crawler snapshot and inserts only missing course/section rows; it
+  same termCode to section search. Section search returns the live crawler snapshot and inserts only missing course/section rows; it
   never overwrites a stored section's status or seats (the scheduler's alert baseline) and creates no subscription.
-- GET tasks includes disabled and historical subscriptions, sorted by sectionId. The current UI
+- GET subscriptions includes disabled and historical subscriptions, sorted by sectionId. The current UI
   hides disabled rows. SubscriptionRespDto has **no termCode/termStatus field**. Its `meetingInfo` is a
   JSON-encoded string, not an array. Unsubscribed search rows have `id: null, enabled: false`.
 - POST requires a previously synced section. It creates or re-enables the caller's subscription,
@@ -71,7 +71,6 @@ Important semantics:
   UPCOMING subscriptions across terms. Only ACTIVE terms are monitored.
 - DELETE disables an owned subscription. Repeated disable succeeds even after expiry, but a missing
   or unowned subscription is rejected.
-- There is no Spring `GET /api/tasks/search`; that compatibility alias exists only in Next.js.
 
 ## Admin operations
 
@@ -173,7 +172,7 @@ of task `id`, adds **termCode**, and includes `onlineOnly` and `meetingInfo`.
   server-clock day, and include the current partial day. Manual-test counters overlap mail-type counters; do not add
   them again to totals. FEEDBACK contributes to totals without a dedicated DTO counter.
 
-Test-email requires a four-digit termId; the term need not be ACTIVE/configured. Defaults:
+Test-email requires a four-digit termCode; the term need not be ACTIVE/configured. Defaults:
 recipientEmail = current admin email, alertType = OPEN, sectionId = 99999, courseDisplayName = TEST COURSE.
 Blank recipientEmail/sectionId/courseDisplayName also use those defaults; an omitted alertType
 defaults to OPEN. For seat-alert tests use OPEN or WAITLIST. The DTO also accepts

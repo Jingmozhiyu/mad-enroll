@@ -72,7 +72,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/feedback/**").permitAll()
 
                         // Require authentication for user and admin API endpoints
-                        .requestMatchers("/api/tasks/**").authenticated()
+                        .requestMatchers("/api/subscriptions/**").authenticated()
                         .requestMatchers("/api/admin/**").authenticated()
 
                         // NOTE: Permitting all other requests by default (Fail-Open approach).

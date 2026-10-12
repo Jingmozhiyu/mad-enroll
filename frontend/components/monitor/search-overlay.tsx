@@ -9,7 +9,7 @@ import {
     getOpenSeatsSummary,
     getWaitlistSeatsSummary,
 } from '@/lib/course/format'
-import type {SearchCourseHit, SearchTerm, Task} from '@/lib/course/types'
+import type {SearchCourseHit, SearchTerm, Subscription} from '@/lib/course/types'
 
 type SearchOverlayProps = {
     open: boolean
@@ -25,7 +25,7 @@ type SearchOverlayProps = {
     coursePage: number
     courseTotalPages: number
     selectedCourse: SearchCourseHit | null
-    sectionResults: Task[]
+    sectionResults: Subscription[]
     isSearchingCourses: boolean
     isLoadingSections: boolean
     isTransitioning: boolean

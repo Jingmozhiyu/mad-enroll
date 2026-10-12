@@ -84,7 +84,7 @@ public class AlertPublisherService {
         event.setRecipientEmail(recipientEmail);
         event.setSectionId(sectionId);
         event.setCourseDisplayName(courseDisplayName);
-        event.setTermId(termCode);
+        event.setTermCode(termCode);
         event.setMessageBody(null);
         event.setManualTest(manualTest);
         event.setCreatedAt(LocalDateTime.now());
@@ -116,7 +116,7 @@ public class AlertPublisherService {
         event.setSenderEmail(senderEmail);
         event.setSectionId("FEEDBACK");
         event.setCourseDisplayName("User Feedback");
-        event.setTermId(null);
+        event.setTermCode(null);
         event.setMessageBody(feedbackText);
         event.setManualTest(false);
         event.setCreatedAt(LocalDateTime.now());
