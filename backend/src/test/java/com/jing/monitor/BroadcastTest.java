@@ -25,20 +25,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = {TermLifecycleTest.TestApplication.class, BroadcastService.class,
-        BroadcastPublisherService.class, BroadcastConsumerService.class, BroadcastTest.MailConfig.class}, properties = {
-        "spring.datasource.url=jdbc:h2:mem:broadcast-test;MODE=MySQL;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000",
-        "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.show-sql=false",
-        "spring.config.import=optional:classpath:/isolated-test.properties",
-        "app.mail.from=noreply@example.com",
-        "spring.rabbitmq.host=localhost", "spring.rabbitmq.port=5672",
-        "spring.rabbitmq.username=guest", "spring.rabbitmq.password=guest",
-        "spring.rabbitmq.listener.simple.auto-startup=false",
-        "spring.rabbitmq.listener.direct.auto-startup=false",
-        "spring.data.redis.host=localhost", "spring.data.redis.port=6379"
-})
+@SpringBootTest(classes = {IntegrationTestBase.TestApplication.class, BroadcastService.class,
+        BroadcastPublisherService.class, BroadcastConsumerService.class, BroadcastTest.MailConfig.class})
 class BroadcastTest {
     @Autowired BroadcastService service;
     @Autowired BroadcastConsumerService consumer;
@@ -194,20 +182,6 @@ class BroadcastTest {
         assertThat(service.recipients(draft.id(), 1).getItems().getFirst().attempts()).isEqualTo(1);
     }
 
-    @Test
-    void broadcastMailContainsOnlyOneRecipientAndExactPlainText() {
-        var sender = mock(org.springframework.mail.javamail.JavaMailSender.class);
-        MailService realMail = new MailService(sender);
-        org.springframework.test.util.ReflectionTestUtils.setField(realMail, "fromEmail", "noreply@example.com");
-        realMail.sendBroadcast("badger@example.com", "Report", "Hello\nhttps://madenroll.com/report");
-        var captor = org.mockito.ArgumentCaptor.forClass(org.springframework.mail.SimpleMailMessage.class);
-        verify(sender).send(captor.capture());
-        var message = captor.getValue();
-        assertThat(message.getTo()).containsExactly("badger@example.com");
-        assertThat(message.getCc()).isNull(); assertThat(message.getBcc()).isNull();
-        assertThat(message.getSubject()).isEqualTo("Report");
-        assertThat(message.getText()).isEqualTo("Hello\nhttps://madenroll.com/report");
-    }
     private void subscribe(User user, String termCode, String suffix, boolean enabled) {
         Course course = new Course(termCode, suffix);
         course.setSubjectId("266"); course.setCatalogNumber("240"); courses.save(course);

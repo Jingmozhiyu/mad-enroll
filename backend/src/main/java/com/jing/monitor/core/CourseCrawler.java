@@ -74,31 +74,12 @@ public class CourseCrawler {
             int statusCode = response.statusCode();
 
             if (statusCode == 200) {
-                String jsonBody = response.body();
-                JsonNode rootNode = mapper.readTree(jsonBody);
-                List<SectionInfo> sectionInfos = new ArrayList<>();
-
-                if (rootNode.isArray()) {
-                    for (JsonNode node : rootNode) {
-                        SectionInfo info = parseSectionInfo(node, courseId);
-                        if (info != null) {
-                            sectionInfos.add(info);
-                        }
-                    }
-                    return sectionInfos;
+                List<SectionInfo> sectionInfos = parseCourseStatus(response.body(), courseId);
+                if (sectionInfos == null) {
+                    log.warn("[Crawler] API 200 but returned unexpected format for course: {}", courseId);
+                    lastFailure = "unexpected JSON format for " + termCode + ":" + courseId;
                 }
-
-                if (rootNode.isObject()) {
-                    SectionInfo info = parseSectionInfo(rootNode, courseId);
-                    if (info != null) {
-                        sectionInfos.add(info);
-                        return sectionInfos;
-                    }
-                }
-
-                log.warn("[Crawler] API 200 but returned unexpected format for course: {}", courseId);
-                lastFailure = "unexpected JSON format for " + termCode + ":" + courseId;
-                return null;
+                return sectionInfos;
             }
 
             // Handle WAF or Rate Limiting
@@ -117,6 +98,37 @@ public class CourseCrawler {
             lastFailure = "network error for " + termCode + ":" + courseId + ": " + e.getMessage();
         }
 
+        return null;
+    }
+
+    /**
+     * Parses an enrollment-package response: an array of packages, or a single package object.
+     *
+     * @param json response body
+     * @param fallbackCourseId course id used when a package omits it
+     * @return parsed sections (packages without docId or class number are skipped),
+     *         or null when the body is neither an array nor a usable package object
+     * @throws IOException when the body is not valid JSON
+     */
+    List<SectionInfo> parseCourseStatus(String json, String fallbackCourseId) throws IOException {
+        JsonNode rootNode = mapper.readTree(json);
+        List<SectionInfo> sectionInfos = new ArrayList<>();
+        if (rootNode.isArray()) {
+            for (JsonNode node : rootNode) {
+                SectionInfo info = parseSectionInfo(node, fallbackCourseId);
+                if (info != null) {
+                    sectionInfos.add(info);
+                }
+            }
+            return sectionInfos;
+        }
+        if (rootNode.isObject()) {
+            SectionInfo info = parseSectionInfo(rootNode, fallbackCourseId);
+            if (info != null) {
+                sectionInfos.add(info);
+                return sectionInfos;
+            }
+        }
         return null;
     }
 

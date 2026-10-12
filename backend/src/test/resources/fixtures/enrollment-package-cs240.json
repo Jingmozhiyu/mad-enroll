@@ -1,0 +1,595 @@
+{
+  "id": "66400",
+  "termCode": "1264",
+  "subjectCode": "266",
+  "courseId": "011630",
+  "catalogNumber": "240",
+  "enrollmentClassNumber": 66400,
+  "packageEnrollmentStatus": {
+    "availableSeats": 7,
+    "waitlistTotal": 0,
+    "status": "OPEN"
+  },
+  "creditRange": "3",
+  "classMeetings": [
+    {
+      "meetingOrExamNumber": "1",
+      "meetingType": "CLASS",
+      "meetingTimeStart": 81300000,
+      "meetingTimeEnd": 84300000,
+      "meetingDays": "M",
+      "meetingDaysList": [
+        "MONDAY"
+      ],
+      "building": {
+        "buildingCode": "0048",
+        "buildingName": "Van Vleck Hall",
+        "streetAddress": "480 Lincoln Dr.",
+        "latitude": 43.07480652279825,
+        "longitude": -89.40493702344519,
+        "location": [
+          -89.40493702344519,
+          43.07480652279825
+        ]
+      },
+      "room": "B203",
+      "examDate": null,
+      "monday": true,
+      "tuesday": false,
+      "wednesday": false,
+      "thursday": false,
+      "friday": false,
+      "saturday": false,
+      "sunday": false,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000
+    },
+    {
+      "meetingOrExamNumber": "1",
+      "meetingType": "CLASS",
+      "meetingTimeStart": 73800000,
+      "meetingTimeEnd": 78300000,
+      "meetingDays": "TR",
+      "meetingDaysList": [
+        "TUESDAY",
+        "THURSDAY"
+      ],
+      "building": {
+        "buildingCode": "0050",
+        "buildingName": "Bascom Hall",
+        "streetAddress": "500 Lincoln Dr.",
+        "latitude": 43.07534639770641,
+        "longitude": -89.40433580443906,
+        "location": [
+          -89.40433580443906,
+          43.07534639770641
+        ]
+      },
+      "room": "272",
+      "examDate": null,
+      "monday": false,
+      "tuesday": true,
+      "wednesday": false,
+      "thursday": true,
+      "friday": false,
+      "saturday": false,
+      "sunday": false,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000
+    },
+    {
+      "meetingOrExamNumber": "1",
+      "meetingType": "EXAM",
+      "meetingTimeStart": 91500000,
+      "meetingTimeEnd": 98700000,
+      "meetingDays": null,
+      "meetingDaysList": [],
+      "building": {
+        "buildingCode": "0000",
+        "buildingName": "PENDING",
+        "streetAddress": null,
+        "latitude": null,
+        "longitude": null
+      },
+      "room": "ROOM",
+      "examDate": 1777870800000,
+      "monday": false,
+      "tuesday": false,
+      "wednesday": false,
+      "thursday": false,
+      "friday": false,
+      "saturday": false,
+      "sunday": false,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000
+    }
+  ],
+  "nestedClassMeetings": [
+    {
+      "meetingOrExamNumber": "1",
+      "meetingType": "CLASS",
+      "meetingTimeStart": 81300000,
+      "meetingTimeEnd": 84300000,
+      "meetingDays": "M",
+      "meetingDaysList": [
+        "MONDAY"
+      ],
+      "building": {
+        "buildingCode": "0048",
+        "buildingName": "Van Vleck Hall",
+        "streetAddress": "480 Lincoln Dr.",
+        "latitude": 43.07480652279825,
+        "longitude": -89.40493702344519,
+        "location": [
+          -89.40493702344519,
+          43.07480652279825
+        ]
+      },
+      "room": "B203",
+      "examDate": null,
+      "monday": true,
+      "tuesday": false,
+      "wednesday": false,
+      "thursday": false,
+      "friday": false,
+      "saturday": false,
+      "sunday": false,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000
+    },
+    {
+      "meetingOrExamNumber": "1",
+      "meetingType": "CLASS",
+      "meetingTimeStart": 73800000,
+      "meetingTimeEnd": 78300000,
+      "meetingDays": "TR",
+      "meetingDaysList": [
+        "TUESDAY",
+        "THURSDAY"
+      ],
+      "building": {
+        "buildingCode": "0050",
+        "buildingName": "Bascom Hall",
+        "streetAddress": "500 Lincoln Dr.",
+        "latitude": 43.07534639770641,
+        "longitude": -89.40433580443906,
+        "location": [
+          -89.40433580443906,
+          43.07534639770641
+        ]
+      },
+      "room": "272",
+      "examDate": null,
+      "monday": false,
+      "tuesday": true,
+      "wednesday": false,
+      "thursday": true,
+      "friday": false,
+      "saturday": false,
+      "sunday": false,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000
+    },
+    {
+      "meetingOrExamNumber": "1",
+      "meetingType": "EXAM",
+      "meetingTimeStart": 91500000,
+      "meetingTimeEnd": 98700000,
+      "meetingDays": null,
+      "meetingDaysList": [],
+      "building": {
+        "buildingCode": "0000",
+        "buildingName": "PENDING",
+        "streetAddress": null,
+        "latitude": null,
+        "longitude": null
+      },
+      "room": "ROOM",
+      "examDate": 1777870800000,
+      "monday": false,
+      "tuesday": false,
+      "wednesday": false,
+      "thursday": false,
+      "friday": false,
+      "saturday": false,
+      "sunday": false,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000
+    }
+  ],
+  "instructorProvidedClassDetails": null,
+  "published": true,
+  "classPermissionNumberEnabled": false,
+  "sections": [
+    {
+      "classUniqueId": {
+        "termCode": "1264",
+        "classNumber": 56051
+      },
+      "published": true,
+      "topic": null,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000,
+      "active": true,
+      "sessionCode": "A1",
+      "subject": {
+        "termCode": "1264",
+        "subjectCode": "266",
+        "description": "COMPUTER SCIENCES",
+        "shortDescription": "COMP SCI",
+        "formalDescription": "COMPUTER SCIENCES",
+        "undergraduateCatalogURI": "http://guide.wisc.edu/undergraduate/letters-science/computer-sciences/",
+        "graduateCatalogURI": "http://guide.wisc.edu/graduate/computer-sciences/",
+        "departmentURI": "http://www.cs.wisc.edu/",
+        "schoolCollege": {
+          "academicOrgCode": "L",
+          "academicGroupCode": "L&S",
+          "shortDescription": "Letters and Science",
+          "formalDescription": "Letters and Science, College of",
+          "schoolCollegeURI": "http://www.ls.wisc.edu/"
+        },
+        "footnotes": [
+          "Courses taught and managed by the Computer Sciences department often have enrollment restrictions that give students in UW-Madison Computer Sciences programs priority access during initial enrollment periods. Those restrictions are removed after the conclusion of sophomore enrollment.\n\nSome CS courses add seats gradually during enrollment. Once all seats have been released, a wait list will be added. Visit this Comp Sci webpage for specific CS course enrollment information:  https://www.cs.wisc.edu/courses-2/ \n\nEvening exams are likely for most of our undergraduate courses."
+        ],
+        "departmentOwnerAcademicOrgCode": "L0780"
+      },
+      "catalogNumber": "240",
+      "courseId": "011630",
+      "type": "LEC",
+      "sectionNumber": "002",
+      "honors": null,
+      "comB": false,
+      "gradedComponent": false,
+      "instructionMode": "Classroom Instruction",
+      "addConsent": {
+        "code": "N",
+        "description": "No Special Consent Required"
+      },
+      "dropConsent": {
+        "code": "N",
+        "description": "No Special Consent Required"
+      },
+      "crossListing": {
+        "crossListedType": "CROSS_LISTED",
+        "primaryClassNumber": 56050,
+        "primarySubject": {
+          "termCode": "1264",
+          "subjectCode": "600",
+          "description": "MATHEMATICS",
+          "shortDescription": "MATH",
+          "formalDescription": "MATHEMATICS",
+          "undergraduateCatalogURI": "http://guide.wisc.edu/undergraduate/letters-science/mathematics/",
+          "graduateCatalogURI": "http://guide.wisc.edu/graduate/mathematics/",
+          "departmentURI": "https://www.math.wisc.edu/",
+          "schoolCollege": {
+            "academicOrgCode": "L",
+            "academicGroupCode": "L&S",
+            "shortDescription": "Letters and Science",
+            "formalDescription": "Letters and Science, College of",
+            "schoolCollegeURI": "http://www.ls.wisc.edu/"
+          },
+          "footnotes": [
+            "--Adequate placement scores or prerequisite course required for enrollment.\n--Enrollment problems concerning unavailable or closed sections: Add section to the wait list if available. For registration issues, please email enrollment@math.wisc.edu.\n--To arrange a Math placement test, see www.testing.wisc.edu.\n--For placement, retake of the placement test, or ineligibility questions, email enrollment@math.wisc.edu.\nJean-Luc Thiffeault, Department Chair\nMathematics Department"
+          ],
+          "departmentOwnerAcademicOrgCode": "L1060"
+        }
+      },
+      "classMeetings": [
+        {
+          "meetingOrExamNumber": "1",
+          "meetingType": "CLASS",
+          "meetingTimeStart": 73800000,
+          "meetingTimeEnd": 78300000,
+          "meetingDays": "TR",
+          "meetingDaysList": [
+            "TUESDAY",
+            "THURSDAY"
+          ],
+          "building": {
+            "buildingCode": "0050",
+            "buildingName": "Bascom Hall",
+            "streetAddress": "500 Lincoln Dr.",
+            "latitude": 43.07534639770641,
+            "longitude": -89.40433580443906
+          },
+          "room": "272",
+          "examDate": null
+        },
+        {
+          "meetingOrExamNumber": "1",
+          "meetingType": "EXAM",
+          "meetingTimeStart": 91500000,
+          "meetingTimeEnd": 98700000,
+          "meetingDays": null,
+          "meetingDaysList": [],
+          "building": {
+            "buildingCode": "0000",
+            "buildingName": "PENDING",
+            "streetAddress": null,
+            "latitude": null,
+            "longitude": null
+          },
+          "room": "ROOM",
+          "examDate": 1777870800000
+        }
+      ],
+      "classAttributes": [],
+      "enrollmentStatus": {
+        "classUniqueId": {
+          "termCode": "1264",
+          "classNumber": 56051
+        },
+        "capacity": 320,
+        "currentlyEnrolled": 121,
+        "waitlistCapacity": 36,
+        "waitlistCurrentSize": 0,
+        "openSeats": 121,
+        "openWaitlistSpots": 33,
+        "aggregateCapacity": 320,
+        "aggregateCurrentlyEnrolled": 199,
+        "aggregateWaitlistCapacity": 33,
+        "aggregateWaitlistCurrentSize": 0
+      },
+      "footnotes": [
+        "Enrollment of this course is managed by our CS Partner - Department of Mathematics. Please contact them with questions or for enrollment assistance:  enrollment@math.wisc.edu"
+      ],
+      "classMaterials": [
+        {
+          "classUniqueId": {
+            "termCode": "1264",
+            "classNumber": 56051
+          },
+          "materialsDefined": false,
+          "noMaterialsInstructorMessage": null,
+          "sectionNotes": null,
+          "lastUpdate": 1774767839000,
+          "relatedUrls": [],
+          "textbooks": [],
+          "otherMaterials": []
+        }
+      ],
+      "instructors": [
+        {
+          "emplid": null,
+          "pvi": null,
+          "name": {
+            "first": "Isabella",
+            "middle": null,
+            "last": "Scott",
+            "legalFirst": null,
+            "legalMiddle": null
+          },
+          "email": "ISCOTT6@WISC.EDU",
+          "netid": "ISCOTT6",
+          "campusid": null,
+          "office365PrimaryEmail": null
+        }
+      ],
+      "instructor": {
+        "emplid": null,
+        "pvi": null,
+        "name": {
+          "first": "Isabella",
+          "middle": null,
+          "last": "Scott",
+          "legalFirst": null,
+          "legalMiddle": null
+        },
+        "email": "ISCOTT6@WISC.EDU",
+        "netid": "ISCOTT6",
+        "campusid": null,
+        "office365PrimaryEmail": null
+      }
+    },
+    {
+      "classUniqueId": {
+        "termCode": "1264",
+        "classNumber": 66400
+      },
+      "published": true,
+      "topic": null,
+      "startDate": 1768888800000,
+      "endDate": 1777611600000,
+      "active": true,
+      "sessionCode": "A1",
+      "subject": {
+        "termCode": "1264",
+        "subjectCode": "266",
+        "description": "COMPUTER SCIENCES",
+        "shortDescription": "COMP SCI",
+        "formalDescription": "COMPUTER SCIENCES",
+        "undergraduateCatalogURI": "http://guide.wisc.edu/undergraduate/letters-science/computer-sciences/",
+        "graduateCatalogURI": "http://guide.wisc.edu/graduate/computer-sciences/",
+        "departmentURI": "http://www.cs.wisc.edu/",
+        "schoolCollege": {
+          "academicOrgCode": "L",
+          "academicGroupCode": "L&S",
+          "shortDescription": "Letters and Science",
+          "formalDescription": "Letters and Science, College of",
+          "schoolCollegeURI": "http://www.ls.wisc.edu/"
+        },
+        "footnotes": [
+          "Courses taught and managed by the Computer Sciences department often have enrollment restrictions that give students in UW-Madison Computer Sciences programs priority access during initial enrollment periods. Those restrictions are removed after the conclusion of sophomore enrollment.\n\nSome CS courses add seats gradually during enrollment. Once all seats have been released, a wait list will be added. Visit this Comp Sci webpage for specific CS course enrollment information:  https://www.cs.wisc.edu/courses-2/ \n\nEvening exams are likely for most of our undergraduate courses."
+        ],
+        "departmentOwnerAcademicOrgCode": "L0780"
+      },
+      "catalogNumber": "240",
+      "courseId": "011630",
+      "type": "DIS",
+      "sectionNumber": "330",
+      "honors": null,
+      "comB": false,
+      "gradedComponent": true,
+      "instructionMode": "Classroom Instruction",
+      "addConsent": {
+        "code": "N",
+        "description": "No Special Consent Required"
+      },
+      "dropConsent": {
+        "code": "N",
+        "description": "No Special Consent Required"
+      },
+      "crossListing": {
+        "crossListedType": "CROSS_LISTED",
+        "primaryClassNumber": 66303,
+        "primarySubject": {
+          "termCode": "1264",
+          "subjectCode": "600",
+          "description": "MATHEMATICS",
+          "shortDescription": "MATH",
+          "formalDescription": "MATHEMATICS",
+          "undergraduateCatalogURI": "http://guide.wisc.edu/undergraduate/letters-science/mathematics/",
+          "graduateCatalogURI": "http://guide.wisc.edu/graduate/mathematics/",
+          "departmentURI": "https://www.math.wisc.edu/",
+          "schoolCollege": {
+            "academicOrgCode": "L",
+            "academicGroupCode": "L&S",
+            "shortDescription": "Letters and Science",
+            "formalDescription": "Letters and Science, College of",
+            "schoolCollegeURI": "http://www.ls.wisc.edu/"
+          },
+          "footnotes": [
+            "--Adequate placement scores or prerequisite course required for enrollment.\n--Enrollment problems concerning unavailable or closed sections: Add section to the wait list if available. For registration issues, please email enrollment@math.wisc.edu.\n--To arrange a Math placement test, see www.testing.wisc.edu.\n--For placement, retake of the placement test, or ineligibility questions, email enrollment@math.wisc.edu.\nJean-Luc Thiffeault, Department Chair\nMathematics Department"
+          ],
+          "departmentOwnerAcademicOrgCode": "L1060"
+        }
+      },
+      "classMeetings": [
+        {
+          "meetingOrExamNumber": "1",
+          "meetingType": "CLASS",
+          "meetingTimeStart": 81300000,
+          "meetingTimeEnd": 84300000,
+          "meetingDays": "M",
+          "meetingDaysList": [
+            "MONDAY"
+          ],
+          "building": {
+            "buildingCode": "0048",
+            "buildingName": "Van Vleck Hall",
+            "streetAddress": "480 Lincoln Dr.",
+            "latitude": 43.07480652279825,
+            "longitude": -89.40493702344519
+          },
+          "room": "B203",
+          "examDate": null
+        }
+      ],
+      "classAttributes": [],
+      "enrollmentStatus": {
+        "classUniqueId": {
+          "termCode": "1264",
+          "classNumber": 66400
+        },
+        "capacity": 24,
+        "currentlyEnrolled": 11,
+        "waitlistCapacity": 3,
+        "waitlistCurrentSize": 0,
+        "openSeats": 7,
+        "openWaitlistSpots": 3,
+        "aggregateCapacity": 24,
+        "aggregateCurrentlyEnrolled": 17,
+        "aggregateWaitlistCapacity": 3,
+        "aggregateWaitlistCurrentSize": 0
+      },
+      "footnotes": [],
+      "classMaterials": [
+        {
+          "classUniqueId": {
+            "termCode": "1264",
+            "classNumber": 66400
+          },
+          "materialsDefined": false,
+          "noMaterialsInstructorMessage": null,
+          "sectionNotes": null,
+          "lastUpdate": 1774767839000,
+          "relatedUrls": [],
+          "textbooks": [],
+          "otherMaterials": []
+        }
+      ],
+      "instructors": [
+        {
+          "emplid": null,
+          "pvi": null,
+          "name": {
+            "first": "Peiyi",
+            "middle": null,
+            "last": "Chen",
+            "legalFirst": null,
+            "legalMiddle": null
+          },
+          "email": "PCHEN345@WISC.EDU",
+          "netid": "PCHEN345",
+          "campusid": null,
+          "office365PrimaryEmail": null
+        }
+      ],
+      "instructor": {
+        "emplid": null,
+        "pvi": null,
+        "name": {
+          "first": "Peiyi",
+          "middle": null,
+          "last": "Chen",
+          "legalFirst": null,
+          "legalMiddle": null
+        },
+        "email": "PCHEN345@WISC.EDU",
+        "netid": "PCHEN345",
+        "campusid": null,
+        "office365PrimaryEmail": null
+      }
+    }
+  ],
+  "autoEnrollClasses": [
+    "56051"
+  ],
+  "enrollmentOptions": {
+    "classPermissionNumberNeeded": false,
+    "relatedClasses": [],
+    "waitlist": true,
+    "relatedClassNumber": false
+  },
+  "lastUpdated": 1774769973542,
+  "enrollmentStatus": {
+    "classUniqueId": {
+      "termCode": "1264",
+      "classNumber": 66400
+    },
+    "capacity": 24,
+    "currentlyEnrolled": 11,
+    "waitlistCapacity": 3,
+    "waitlistCurrentSize": 0,
+    "openSeats": 7,
+    "openWaitlistSpots": 3,
+    "aggregateCapacity": 24,
+    "aggregateCurrentlyEnrolled": 17,
+    "aggregateWaitlistCapacity": 3,
+    "aggregateWaitlistCurrentSize": 0
+  },
+  "meetingMap": {
+    "monday": true,
+    "tuesday": true,
+    "wednesday": false,
+    "thursday": true,
+    "friday": false,
+    "saturday": false,
+    "sunday": false
+  },
+  "onlineOnly": false,
+  "enrollmentRequirementGroups": {
+    "catalogRequirementGroups": [
+      {
+        "code": "013924",
+        "description": "MATH 217 or 221"
+      }
+    ],
+    "classAssociationRequirementGroups": []
+  },
+  "isAsynchronous": false,
+  "modesOfInstruction": [
+    "Classroom Instruction"
+  ],
+  "docId": "1264-A1-266-240-002-330"
+}

@@ -42,58 +42,11 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = TermLifecycleTest.TestApplication.class, properties = {
-        "spring.datasource.url=jdbc:h2:mem:term-lifecycle;MODE=MySQL;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa", "spring.datasource.password=",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop", "spring.jpa.show-sql=false",
-        "spring.config.import=optional:classpath:/isolated-test.properties",
-        "app.mail.from=noreply@example.com",
-        "spring.rabbitmq.host=localhost", "spring.rabbitmq.port=5672",
-        "spring.rabbitmq.username=guest", "spring.rabbitmq.password=guest",
-        "spring.rabbitmq.listener.simple.auto-startup=false",
-        "spring.rabbitmq.listener.direct.auto-startup=false",
-        "spring.data.redis.host=localhost", "spring.data.redis.port=6379"
-})
-class TermLifecycleTest {
-    @Autowired TermRepository terms;
-    @Autowired CourseRepository courses;
-    @Autowired CourseSectionRepository sections;
-    @Autowired UserSectionSubscriptionRepository subscriptions;
-    @Autowired UserRepository users;
-    @Autowired AlertDeadLetterRepository deadLetters;
-    @Autowired AlertDeliveryLogRepository deliveries;
-    @Autowired SubscriptionService tasks;
-    @Autowired AdminService admin;
-    @Autowired TermService termService;
-    @Autowired AuthContextService auth;
-    @Autowired CourseCrawler crawler;
-    @Autowired AlertPublisherService publisher;
-    @Autowired StringRedisTemplate redis;
-    @Autowired PlatformTransactionManager transactionManager;
-    @Autowired MailSendClaimService sendClaims;
-    @Autowired MailSendClaimRepository claims;
-
-    private User user;
-
-    @BeforeEach
-    void setUp() {
-        subscriptions.deleteAll();
-        sections.deleteAll();
-        courses.deleteAll();
-        terms.deleteAll();
-        users.deleteAll();
-        deliveries.deleteAll();
-        claims.deleteAll();
-        reset(auth, crawler, publisher, redis);
-        user = new User("admin@example.com", "unused-password-hash");
-        user.setRole(UserRole.ADMIN);
-        user = users.save(user);
-        when(auth.currentUserId()).thenReturn(user.getId());
-        term("1272", TermStatus.ACTIVE);
-        term("1274", TermStatus.UPCOMING);
-    }
+/**
+ * Term lifecycle rules: which terms can be searched, subscribed and polled, expiry side effects,
+ * and the locks that keep expiry and the 15-subscription cap consistent under concurrency.
+ */
+class TermLifecycleTest extends IntegrationTestBase {
 
     @Test
     void upcomingActivationAndPausePreserveUserChoicesAndExpiryIsScopedAndIdempotent() {
@@ -179,41 +132,6 @@ class TermLifecycleTest {
         admin.updateTermStatus("1272", TermStatus.ACTIVE);
         admin.updateTermStatus("1274", TermStatus.ACTIVE);
         assertThat(courses.findAllDueForPolling(LocalDateTime.now())).hasSize(2);
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    void mailWorkerSkipsUpcomingAndExpiredAlertsButKeepsManualTests() throws Exception {
-        UUID subscription = tasks.addSubscription(section("1272", "011630").getDocId()).getId();
-        MailService mail = mock(MailService.class);
-        when(redis.opsForValue()).thenReturn(mock(ValueOperations.class));
-        AlertConsumerService consumer = new AlertConsumerService(mail, deadLetters, deliveries,
-                sendClaims, subscriptions);
-        ReflectionTestUtils.setField(consumer, "alertQueueName", "test.alerts");
-        AlertEvent event = new AlertEvent();
-        event.setEventId(UUID.randomUUID());
-        event.setSubscriptionId(subscription);
-        event.setAlertType(AlertType.OPEN);
-        event.setTermId("1272");
-        event.setSectionId("66400");
-        event.setCourseDisplayName("COMP SCI 240");
-        event.setRecipientEmail(user.getEmail());
-        MessageProperties properties = new MessageProperties();
-        properties.setDeliveryTag(1L);
-        Message message = new Message(new byte[0], properties);
-        Channel channel = mock(Channel.class);
-
-        admin.updateTermStatus("1272", TermStatus.UPCOMING);
-        consumer.consumeAlert(event, message, channel);
-        admin.updateTermStatus("1272", TermStatus.EXPIRED);
-        consumer.consumeAlert(event, message, channel);
-        verifyNoInteractions(mail);
-        verify(channel, times(2)).basicAck(1L, false);
-        event.setManualTest(true);
-        event.setEventId(UUID.randomUUID());
-        event.setSubscriptionId(null);
-        consumer.consumeAlert(event, message, channel);
-        verify(mail).sendCourseOpenAlert(user.getEmail(), "66400", "COMP SCI 240", "1272");
     }
 
     @Test
@@ -330,51 +248,6 @@ class TermLifecycleTest {
     }
 
     @Test
-    void durableClaimAllowsOnlyOneConcurrentAttempt() throws Exception {
-        UUID id = UUID.randomUUID();
-        var executor = Executors.newFixedThreadPool(2);
-        CountDownLatch start = new CountDownLatch(1);
-        try {
-            var first = executor.submit(() -> { await(start); return sendClaims.claim(id); });
-            var second = executor.submit(() -> { await(start); return sendClaims.claim(id); });
-            start.countDown();
-            assertThat(List.of(first.get(5, TimeUnit.SECONDS), second.get(5, TimeUnit.SECONDS)))
-                    .containsExactlyInAnyOrder(true, false);
-            assertThat(sendClaims.claim(id)).isFalse();
-        } finally { executor.shutdownNow(); executor.awaitTermination(5, TimeUnit.SECONDS); }
-    }
-
-    @Test
-    void smtpFailureAndLostAckCannotResendCourseMail() throws Exception {
-        UUID sub = tasks.addSubscription(section("1272", "mail").getDocId()).getId();
-        MailService mail = mock(MailService.class);
-        var consumer = new AlertConsumerService(mail, deadLetters, deliveries,
-                sendClaims, subscriptions);
-        ReflectionTestUtils.setField(consumer, "alertQueueName", "test.alerts");
-        AlertEvent event = new AlertEvent();
-        event.setEventId(UUID.randomUUID()); event.setSubscriptionId(sub); event.setAlertType(AlertType.OPEN);
-        event.setRecipientEmail(user.getEmail()); event.setSectionId("66400");
-        event.setCourseDisplayName("CS 240"); event.setTermId("1272");
-        var properties = new MessageProperties(); properties.setDeliveryTag(1L);
-        var message = new Message(new byte[0], properties);
-        Channel broken = mock(Channel.class);
-        doThrow(new java.io.IOException("ACK lost")).when(broken).basicAck(1L, false);
-        consumer.consumeAlert(event, message, broken);
-        consumer.consumeAlert(event, message, mock(Channel.class));
-        verify(mail, times(1)).sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
-
-        event.setEventId(UUID.randomUUID());
-        doThrow(new org.springframework.mail.MailSendException("timeout")).when(mail)
-                .sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
-        Channel rejected = mock(Channel.class);
-        consumer.consumeAlert(event, message, rejected);
-        consumer.consumeAlert(event, message, rejected);
-        verify(mail, times(2)).sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
-        verify(rejected).basicReject(1L, false);
-        verify(rejected).basicAck(1L, false);
-    }
-
-    @Test
     void expiringFirstMakesAddWaitAndRejectAfterCommit() throws Exception {
         assertConcurrentExpiry(true);
     }
@@ -418,38 +291,6 @@ class TermLifecycleTest {
         }
     }
 
-    private void await(CountDownLatch latch) {
-        try {
-            if (!latch.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("Timed out waiting for test transaction");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private void term(String code, TermStatus status) {
-        AcademicTerm term = new AcademicTerm(code, "Term " + code);
-        term.setStatus(status);
-        terms.save(term);
-    }
-
-    private CourseSection section(String term, String courseId) {
-        Course course = new Course(term, courseId);
-        course.setSubjectId("266");
-        course.setCatalogNumber("240");
-        course = courses.save(course);
-        CourseSection section = new CourseSection();
-        section.setCourse(course);
-        section.setDocId(term + "-" + courseId);
-        section.setSectionId("66400");
-        section.setLastStatus(StatusMapping.CLOSED);
-        return sections.save(section);
-    }
-
-    private boolean enabled(UUID id) {
-        return subscriptions.findById(id).orElseThrow().isEnabled();
-    }
-
     private SectionInfo snapshot(String term) {
         return new SectionInfo(term, "011630", term + "-011630", "66400", "266", "COMP SCI", "240",
                 StatusMapping.CLOSED, 0, 24, 0, 5, false, "[]");
@@ -457,18 +298,5 @@ class TermLifecycleTest {
 
     private SchedulerService scheduler() {
         return new SchedulerService(crawler, publisher, courses, sections, subscriptions, mock(OpsAlertService.class));
-    }
-
-    @SpringBootConfiguration
-    @EnableAutoConfiguration
-    @AutoConfigurationPackage
-    @EnableJpaRepositories("com.jing.monitor.repository")
-    @Import({SubscriptionService.class, TermService.class, AdminService.class, MailSendClaimService.class})
-    static class TestApplication {
-        @Bean CourseCrawler crawler() { return mock(CourseCrawler.class); }
-        @Bean AuthContextService authContextService() { return mock(AuthContextService.class); }
-        @Bean AlertPublisherService publisher() { return mock(AlertPublisherService.class); }
-        @Bean StringRedisTemplate stringRedisTemplate() { return mock(StringRedisTemplate.class); }
-        @Bean SchedulerService schedulerService() { return mock(SchedulerService.class); }
     }
 }

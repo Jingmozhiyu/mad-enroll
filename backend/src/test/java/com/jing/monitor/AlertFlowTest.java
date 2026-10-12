@@ -61,37 +61,14 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest(
-        classes = UserAlertBusinessFlowTest.TestApplication.class,
-        properties = {
-        "spring.config.import=optional:classpath:/isolated-test.properties",
-        "spring.datasource.url=jdbc:h2:mem:uw-track-test;MODE=MySQL;DB_CLOSE_DELAY=-1",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.show-sql=false",
-        "FETCH_INTERVAL_HIGH=60000",
-        "FETCH_INTERVAL_MID=60000",
-        "FETCH_INTERVAL_LOW=60000",
-        "JWT_SECRET=01234567890123456789012345678901",
-        "ADMIN_EMAIL=admin@example.com",
-        "ADMIN_PASSWORD=admin-secret",
-        "DB_USERNAME=sa",
-        "DB_PASSWORD=test-db-password",
-        "MAIL_ADDRESS=noreply@example.com",
-        "MAIL_AUTH_CODE=test-mail-code",
-        "RABBITMQ_HOST=localhost",
-        "RABBITMQ_PORT=5672",
-        "RABBITMQ_USERNAME=guest",
-        "RABBITMQ_PASSWORD=guest",
-        "REDIS_HOST=localhost",
-        "REDIS_PORT=6379"
-})
+/**
+ * End-to-end course alert path on H2: register, search, subscribe, poll, publish, send, unsubscribe.
+ * Services are wired by hand around real repositories; the crawler, publisher and SMTP sender are mocks.
+ */
+@SpringBootTest(classes = AlertFlowTest.TestApplication.class)
 @Transactional
 @SuppressWarnings("unchecked")
-class UserAlertBusinessFlowTest {
+class AlertFlowTest {
 
     private static final String TERM_ID = "1272";
     private static final String SUBJECT_CODE = "266";
@@ -121,7 +98,7 @@ class UserAlertBusinessFlowTest {
     private TermRepository termRepository;
 
     @Autowired
-    UserAlertBusinessFlowTest(
+    AlertFlowTest(
             UserRepository userRepository,
             CourseRepository courseRepository,
             CourseSectionRepository courseSectionRepository,
@@ -298,6 +275,30 @@ class UserAlertBusinessFlowTest {
         properties.setDeliveryTag(1L);
         properties.setMessageId(eventId.toString());
         return new Message("{}".getBytes(StandardCharsets.UTF_8), properties);
+    }
+
+    @Test
+    void searchingTheCourseBeforeThePollDoesNotSwallowTheAlert() throws Exception {
+        registerAndLoginUser();
+        when(authContextService.currentUserId()).thenReturn(
+                userRepository.findByEmail(USER_EMAIL).orElseThrow().getId()
+        );
+        when(crawler.fetchCourseStatus(TERM_ID, SUBJECT_CODE, COURSE_ID)).thenReturn(
+                List.of(section(StatusMapping.CLOSED, 0, 0)),
+                List.of(section(StatusMapping.OPEN, 1, 0)),
+                List.of(section(StatusMapping.OPEN, 1, 0)));
+        subscriptionService.searchSections(TERM_ID, SUBJECT_CODE, COURSE_ID);
+        subscriptionService.addSubscription(DOC_ID);
+
+        // The seat opens, and someone looks at the course before the scheduler polls it.
+        List<SubscriptionRespDto> seen = subscriptionService.searchSections(TERM_ID, SUBJECT_CODE, COURSE_ID);
+        assertThat(seen).singleElement().satisfies(row -> assertThat(row.getStatus()).isEqualTo(StatusMapping.OPEN));
+
+        schedulerService.monitorTask();
+        schedulerService.consumeDueCourseQueue();
+
+        verify(alertPublisherService).publishAlert(
+                eq(AlertType.OPEN), eq(USER_EMAIL), eq(SECTION_ID), eq("COMP SCI 240"), eq(TERM_ID), any(UUID.class));
     }
 
     @SpringBootConfiguration
