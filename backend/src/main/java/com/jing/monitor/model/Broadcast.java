@@ -1,12 +1,23 @@
 package com.jing.monitor.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Admin broadcast email. The recipient snapshot lives in {@link BroadcastDeliveryLog}.
+ */
 @Entity
 @Table(name = "broadcasts", indexes = @Index(name = "idx_broadcast_status_created", columnList = "status,created_at"))
 @Data

@@ -1,6 +1,7 @@
 package com.jing.monitor.repository;
 
 import com.jing.monitor.model.AcademicTerm;
+import com.jing.monitor.model.TermStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -8,10 +9,11 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TermRepository extends JpaRepository<AcademicTerm, String> {
-    java.util.List<AcademicTerm> findAllByStatusNotOrderByCodeDesc(com.jing.monitor.model.TermStatus status);
+    List<AcademicTerm> findAllByStatusNotOrderByCodeDesc(TermStatus status);
     // Insert only: a concurrent duplicate create must never merge over an existing term's state.
     @Modifying
     @Query(value = "insert into terms (term_code, label, status, is_default) values (:code, :label, 'UPCOMING', false)", nativeQuery = true)

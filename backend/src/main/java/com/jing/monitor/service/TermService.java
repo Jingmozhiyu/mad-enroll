@@ -2,11 +2,14 @@ package com.jing.monitor.service;
 
 import com.jing.monitor.model.AcademicTerm;
 import com.jing.monitor.model.TermStatus;
+import com.jing.monitor.model.dto.SearchTermRespDto;
 import com.jing.monitor.repository.TermRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -14,9 +17,9 @@ public class TermService {
     private final TermRepository termRepository;
 
     @Transactional(readOnly = true)
-    public java.util.List<com.jing.monitor.model.dto.SearchTermRespDto> getSearchTerms() {
+    public List<SearchTermRespDto> getSearchTerms() {
         return termRepository.findAllByStatusNotOrderByCodeDesc(TermStatus.EXPIRED).stream()
-                .map(term -> new com.jing.monitor.model.dto.SearchTermRespDto(
+                .map(term -> new SearchTermRespDto(
                         term.getCode(), term.getLabel(), term.getStatus(), term.isDefaultTerm()))
                 .toList();
     }

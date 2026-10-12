@@ -1,15 +1,19 @@
 package com.jing.monitor.service;
 
 import com.jing.monitor.model.MailSendClaim;
+import com.jing.monitor.repository.MailSendClaimRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import java.util.UUID;
-import com.jing.monitor.repository.MailSendClaimRepository;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.UUID;
+
+/**
+ * Durable at-most-once guard for mail sends, keyed by event id.
+ */
 @Service
 @RequiredArgsConstructor
 public class MailSendClaimService {
@@ -17,8 +21,16 @@ public class MailSendClaimService {
     private final PlatformTransactionManager transactionManager;
     private final MailSendClaimRepository claims;
 
+    /**
+     * Commits a claim for one event id in its own transaction before SMTP is attempted.
+     *
+     * @param eventId mail event id
+     * @return true when this caller owns the send; false when the event was already claimed
+     */
     public boolean claim(UUID eventId) {
-        if (eventId == null) throw new IllegalArgumentException("Mail event ID is required.");
+        if (eventId == null) {
+            throw new IllegalArgumentException("Mail event ID is required.");
+        }
         var transaction = new TransactionTemplate(transactionManager);
         transaction.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
         try {
@@ -30,7 +42,9 @@ public class MailSendClaimService {
             return true;
         } catch (RuntimeException failure) {
             // Query only after rollback; database outages must fail closed, never permit SMTP.
-            if (claims.existsById(eventId)) return false;
+            if (claims.existsById(eventId)) {
+                return false;
+            }
             throw failure;
         }
     }

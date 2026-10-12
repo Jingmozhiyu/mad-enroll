@@ -1,12 +1,18 @@
 package com.jing.monitor.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/** Durable attempt marker, committed before SMTP; never deleted or retried automatically. */
+/**
+ * Durable attempt marker, committed before SMTP; never deleted or retried automatically.
+ */
 @Entity
 @Table(name = "mail_send_claims")
 @Getter
