@@ -54,7 +54,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -207,7 +209,8 @@ class AlertFlowTest {
         Channel activeChannel = mock(Channel.class);
         alertConsumerService.consumeAlert(activeEvent, message(activeEvent.getEventId()), activeChannel);
 
-        verify(mailService).sendCourseOpenAlert(USER_EMAIL, SECTION_ID, "COMP SCI 240", TERM_ID);
+        // The email gets the event plus the section row, so it can show seats and meeting times.
+        verify(mailService).sendCourseAlert(same(activeEvent), argThat(section -> DOC_ID.equals(section.getDocId())));
         assertThat(alertDeliveryLogRepository.findAll()).hasSize(1);
 
         reset(mailService);
@@ -219,7 +222,7 @@ class AlertFlowTest {
         Channel staleChannel = mock(Channel.class);
         alertConsumerService.consumeAlert(staleEvent, message(staleEvent.getEventId()), staleChannel);
 
-        verify(mailService, never()).sendCourseOpenAlert(anyString(), anyString(), anyString(), anyString());
+        verify(mailService, never()).sendCourseAlert(any(), any());
         verify(staleChannel).basicAck(1L, false);
         assertThat(alertDeliveryLogRepository.findAll()).hasSize(1);
     }

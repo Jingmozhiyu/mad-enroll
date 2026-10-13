@@ -18,6 +18,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -59,7 +62,7 @@ class MailWorkerTest extends IntegrationTestBase {
         event.setEventId(UUID.randomUUID());
         event.setSubscriptionId(null);
         consumer.consumeAlert(event, message, channel);
-        verify(mail).sendCourseOpenAlert(user.getEmail(), "66400", "COMP SCI 240", "1272");
+        verify(mail).sendCourseAlert(same(event), isNull());
     }
 
 
@@ -96,15 +99,15 @@ class MailWorkerTest extends IntegrationTestBase {
         doThrow(new java.io.IOException("ACK lost")).when(broken).basicAck(1L, false);
         consumer.consumeAlert(event, message, broken);
         consumer.consumeAlert(event, message, mock(Channel.class));
-        verify(mail, times(1)).sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
+        verify(mail, times(1)).sendCourseAlert(same(event), any());
 
         event.setEventId(UUID.randomUUID());
         doThrow(new org.springframework.mail.MailSendException("timeout")).when(mail)
-                .sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
+                .sendCourseAlert(same(event), any());
         Channel rejected = mock(Channel.class);
         consumer.consumeAlert(event, message, rejected);
         consumer.consumeAlert(event, message, rejected);
-        verify(mail, times(2)).sendCourseOpenAlert(user.getEmail(), "66400", "CS 240", "1272");
+        verify(mail, times(2)).sendCourseAlert(same(event), any());
         verify(rejected).basicReject(1L, false);
         verify(rejected).basicAck(1L, false);
     }

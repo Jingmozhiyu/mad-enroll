@@ -4,6 +4,7 @@ import com.rabbitmq.client.Channel;
 import com.jing.monitor.model.AlertDeadLetter;
 import com.jing.monitor.model.AlertDeliveryLog;
 import com.jing.monitor.model.AlertType;
+import com.jing.monitor.model.CourseSection;
 import com.jing.monitor.model.event.AlertEvent;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
 import com.jing.monitor.repository.AlertDeliveryLogRepository;
@@ -57,20 +58,11 @@ public class AlertConsumerService {
                 return;
             }
 
-            if (event.getAlertType() == AlertType.OPEN) {
-                mailService.sendCourseOpenAlert(
-                        event.getRecipientEmail(),
-                        event.getSectionId(),
-                        event.getCourseDisplayName(),
-                        event.getTermCode()
-                );
-            } else if (event.getAlertType() == AlertType.WAITLIST) {
-                mailService.sendCourseWaitlistedAlert(
-                        event.getRecipientEmail(),
-                        event.getSectionId(),
-                        event.getCourseDisplayName(),
-                        event.getTermCode()
-                );
+            if (event.getAlertType() == AlertType.OPEN || event.getAlertType() == AlertType.WAITLIST) {
+                // Manual test alerts carry no subscription, so their email omits seats and meetings.
+                CourseSection section = event.getSubscriptionId() == null ? null
+                        : subscriptionRepository.findSectionBySubscriptionId(event.getSubscriptionId()).orElse(null);
+                mailService.sendCourseAlert(event, section);
             } else if (event.getAlertType() == AlertType.WELCOME) {
                 mailService.sendWelcomeEmail(event.getRecipientEmail());
             } else if (event.getAlertType() == AlertType.FEEDBACK) {

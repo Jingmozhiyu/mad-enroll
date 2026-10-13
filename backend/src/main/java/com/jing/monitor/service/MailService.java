@@ -1,13 +1,26 @@
 package com.jing.monitor.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jing.monitor.model.AlertType;
+import com.jing.monitor.model.CourseSection;
+import com.jing.monitor.model.event.AlertEvent;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -17,6 +30,11 @@ import java.util.Objects;
 @Service
 @Slf4j
 public class MailService {
+
+    private static final ZoneId MADISON_ZONE = ZoneId.of("America/Chicago");
+    private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("h:mm a", Locale.US);
+    private static final DateTimeFormatter DETECTED_AT = DateTimeFormatter.ofPattern("h:mm a 'CT', MMM d", Locale.US);
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final JavaMailSender mailSender;
 
@@ -33,88 +51,55 @@ public class MailService {
     }
 
     /**
-     * Sends an email alert when a section becomes OPEN.
+     * Sends an OPEN or WAITLIST alert for one subscribed section.
      *
-     * @param recipientEmail recipient mailbox
-     * @param section        section id
-     * @param courseInfo     course display text
-     * @param termCode         UW term code used to build the enroll search URL
+     * @param event   queued alert; supplies recipient, course, section, term and detection time
+     * @param section current section row for seats and meetings, or null (manual tests have no subscription)
      */
-    public void sendCourseOpenAlert(String recipientEmail, String section, String courseInfo, String termCode) {
-        log.info("[Mail] Preparing to send OPEN alert for section {} to {}", section, recipientEmail);
-
-        try {
-            String enrollLink = buildEnrollLink(termCode, courseInfo);
-
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(requireRecipientEmail(recipientEmail));
-
-            // Optimized Subject
-            message.setSubject("🟢 OPEN SEAT ALERT: " + courseInfo + " (Section " + section + ")");
-
-            // Optimized Body
-            message.setText(
-                    "Hello Badger!\n\n" +
-                            "A seat has just opened up for your monitored course.\n\n" +
-                            "📚 Course: " + courseInfo + "\n" +
-                            "🔖 Section: " + section + "\n" +
-                            "🟢 Status: OPEN\n\n" +
-                            "Click the link below to go directly to Course Search & Enroll:\n" +
-                            "👉 " + enrollLink + "\n\n" +
-                            "Fingers crossed for your enrollment!\n\n" +
-                            "---\n" +
-                            "Automated alert from MadEnroll"
-            );
-
-            mailSender.send(message);
-            log.info("[Mail] OPEN alert email sent successfully for section {} to {}", section, recipientEmail);
-        } catch (Exception e) {
-            log.error("[Mail] Failed to send OPEN alert email for section {} to {}", section, recipientEmail, e);
-            throw new IllegalStateException("Failed to send OPEN alert email.", e);
+    public void sendCourseAlert(AlertEvent event, CourseSection section) {
+        boolean open = event.getAlertType() == AlertType.OPEN;
+        if (!open && event.getAlertType() != AlertType.WAITLIST) {
+            throw new IllegalArgumentException("Not a course alert: " + event.getAlertType());
         }
-    }
-
-    /**
-     * Sends an email alert when a section becomes WAITLISTED.
-     *
-     * @param recipientEmail recipient mailbox
-     * @param section        section id
-     * @param courseInfo     course display text
-     * @param termCode         UW term code used to build the enroll search URL
-     */
-    public void sendCourseWaitlistedAlert(String recipientEmail, String section, String courseInfo, String termCode) {
-        log.info("[Mail] Preparing to send WAITLIST alert for section {} to {}", section, recipientEmail);
+        String sectionId = event.getSectionId();
+        String recipientEmail = event.getRecipientEmail();
+        String courseInfo = requireCourseInfo(event.getCourseDisplayName());
+        log.info("[Mail] Preparing to send {} alert for section {} to {}", event.getAlertType(), sectionId, recipientEmail);
 
         try {
-            String enrollLink = buildEnrollLink(termCode, courseInfo);
+            StringBuilder text = new StringBuilder()
+                    .append(open
+                            ? "A seat just opened in a section you set an alert for.\n\n"
+                            : "A waitlist spot just opened in a section you set an alert for.\n\n")
+                    .append(courseInfo).append(" · Section ").append(sectionId).append('\n');
+            if (section != null) {
+                for (String meeting : formatMeetings(section.getMeetingInfo())) {
+                    text.append(meeting).append('\n');
+                }
+                text.append("Open seats: ").append(seats(section.getOpenSeats(), section.getCapacity()))
+                        .append(" · Waitlist: ").append(seats(section.getWaitlistSeats(), section.getWaitlistCapacity()))
+                        .append('\n');
+            }
+            text.append("Detected ").append(formatDetectedAt(event.getCreatedAt())).append("\n\n")
+                    .append("Enroll on Course Search & Enroll:\n")
+                    .append(buildEnrollLink(event.getTermCode(), courseInfo)).append("\n\n")
+                    .append(open
+                            ? "Open seats can be taken quickly, so enroll as soon as you can.\n"
+                            : "Waitlist spots can be taken quickly, so join as soon as you can.\n")
+                    .append("Got in? Remove the alert at https://madenroll.com/monitor.\n\n")
+                    .append("— MadEnroll\n");
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(requireRecipientEmail(recipientEmail));
-
-            // Optimized Subject
-            message.setSubject("🟡 WAITLIST ALERT: " + courseInfo + " (Section " + section + ")");
-
-            // Optimized Body
-            message.setText(
-                    "Hello Badger!,\n\n" +
-                            "A waitlist spot has just opened up for your monitored course.\n\n" +
-                            "📚 Course: " + courseInfo + "\n" +
-                            "🔖 Section: " + section + "\n" +
-                            "🟡 Status: WAITLISTED\n\n" +
-                            "Click the link below to secure your spot via Course Search & Enroll:\n" +
-                            "👉 " + enrollLink + "\n\n" +
-                            "Fingers crossed for your enrollment!\n\n" +
-                            "---\n" +
-                            "Automated alert from MadEnroll"
-            );
+            message.setSubject((open ? "Seat open: " : "Waitlist open: ") + courseInfo + ", section " + sectionId);
+            message.setText(text.toString());
 
             mailSender.send(message);
-            log.info("[Mail] WAITLIST alert email sent successfully for section {} to {}", section, recipientEmail);
+            log.info("[Mail] {} alert email sent successfully for section {} to {}", event.getAlertType(), sectionId, recipientEmail);
         } catch (Exception e) {
-            log.error("[Mail] Failed to send WAITLIST alert email for section {} to {}", section, recipientEmail, e);
-            throw new IllegalStateException("Failed to send WAITLIST alert email.", e);
+            log.error("[Mail] Failed to send {} alert email for section {} to {}", event.getAlertType(), sectionId, recipientEmail, e);
+            throw new IllegalStateException("Failed to send " + event.getAlertType() + " alert email.", e);
         }
     }
 
@@ -136,7 +121,7 @@ public class MailService {
                             "Your account has been created successfully.\n\n" +
                             "You can now:\n" +
                             "- search courses across supported subjects\n" +
-                            "- subscribe to specific sections\n" +
+                            "- add alerts for specific sections\n" +
                             "- receive automatic OPEN and WAITLIST alerts by email\n\n" +
                             "We are excited to help you track the classes you care about.\n\n" +
                             "---\n" +
@@ -221,6 +206,53 @@ public class MailService {
             link.insert("https://enroll.wisc.edu/search?".length(), "term=" + termCode.trim() + "&");
         }
         return link.toString();
+    }
+
+    /**
+     * One line per meeting, e.g. "TR 9:30 AM – 10:45 AM · 1100 Grainger Hall".
+     * Times are epoch milliseconds from UW, shown in Madison time like the frontend does.
+     */
+    private List<String> formatMeetings(String meetingInfo) {
+        if (meetingInfo == null || meetingInfo.isBlank()) {
+            return List.of();
+        }
+        List<String> lines = new ArrayList<>();
+        try {
+            for (JsonNode meeting : JSON.readTree(meetingInfo)) {
+                String days = meeting.path("meetingDays").asText("");
+                StringBuilder line = new StringBuilder(days.isBlank() || days.equals("null") ? "TBA" : days)
+                        .append(' ').append(formatClock(meeting.path("meetingTimeStart")))
+                        .append(" – ").append(formatClock(meeting.path("meetingTimeEnd")));
+                String location = (meeting.path("room").asText("") + " " + meeting.path("buildingName").asText("")).trim();
+                if (!location.isEmpty()) {
+                    line.append(" · ").append(location);
+                }
+                lines.add(line.toString());
+            }
+        } catch (IOException e) {
+            log.warn("[Mail] Ignoring unreadable meeting info: {}", meetingInfo);
+            return List.of();
+        }
+        return lines;
+    }
+
+    private static String formatClock(JsonNode epochMillis) {
+        if (!epochMillis.isNumber()) {
+            return "TBA";
+        }
+        return CLOCK.format(Instant.ofEpochMilli(epochMillis.asLong()).atZone(MADISON_ZONE));
+    }
+
+    private static String seats(Integer available, Integer capacity) {
+        return (available == null ? "?" : available) + " / " + (capacity == null ? "?" : capacity);
+    }
+
+    // createdAt is written by the publisher in this JVM's default zone.
+    private static String formatDetectedAt(LocalDateTime createdAt) {
+        ZonedDateTime detected = createdAt == null
+                ? ZonedDateTime.now(MADISON_ZONE)
+                : createdAt.atZone(ZoneId.systemDefault()).withZoneSameInstant(MADISON_ZONE);
+        return DETECTED_AT.format(detected);
     }
 
     private String requireCourseInfo(String courseInfo) {

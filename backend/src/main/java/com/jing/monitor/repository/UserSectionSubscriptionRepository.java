@@ -1,5 +1,6 @@
 package com.jing.monitor.repository;
 
+import com.jing.monitor.model.CourseSection;
 import com.jing.monitor.model.UserSectionSubscription;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -86,6 +87,10 @@ public interface UserSectionSubscriptionRepository extends JpaRepository<UserSec
 
     @EntityGraph(attributePaths = {"user", "section", "section.course"})
     Optional<UserSectionSubscription> findByUser_IdAndSection_DocId(UUID userId, String docId);
+
+    /** Section behind a subscription, for the seats and meetings shown in alert emails. */
+    @Query("select sub.section from UserSectionSubscription sub where sub.id = :id")
+    Optional<CourseSection> findSectionBySubscriptionId(@Param("id") UUID id);
 
     long countByUser_IdAndEnabledTrue(UUID userId);
 
