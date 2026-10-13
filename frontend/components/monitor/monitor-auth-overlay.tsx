@@ -48,7 +48,7 @@ export function MonitorAuthOverlay({open, onClose, authCardProps}: MonitorAuthOv
             ref={dialogRef}
         >
             <div className="flex items-center justify-between gap-4 border-b border-[var(--surface-divider)] px-5 py-4 md:px-6">
-                <h2 id="monitor-auth-heading" className="text-xl font-semibold text-[var(--color-ink)]">Welcome here!</h2>
+                <h2 id="monitor-auth-heading" className="text-xl font-semibold text-[var(--color-ink)]">Log in or register</h2>
                 <button className="button-ghost" onClick={onClose} type="button">Close</button>
             </div>
             <div className="px-5 py-6 md:px-6">

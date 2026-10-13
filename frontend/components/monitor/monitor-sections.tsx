@@ -15,7 +15,7 @@ type MonitorAuthCardProps = {
     onGoogleLogin: () => void
     onLogin: () => void
     onRegister: () => void
-    statusMessage: string
+    authMessage: string
 }
 
 type MonitorPageHeaderProps = {
@@ -31,10 +31,12 @@ type MonitorPageHeaderProps = {
 
 type MonitorTaskListProps = {
     canSearch: boolean
+    deleteError: {docId: string, message: string} | null
     deletingDocId: string | null
-    isLoggedIn: boolean
+    loadError: string
+    onRetryLoad: () => void
     termsLoading: boolean
-    onDelete: (docId: string, sectionId: string) => void
+    onDelete: (docId: string) => void
     tasks: Subscription[]
 }
 
@@ -113,7 +115,7 @@ export function MonitorAuthCard({
                                     onGoogleLogin,
                                     onLogin,
                                     onRegister,
-                                    statusMessage,
+                                    authMessage,
                                 }: MonitorAuthCardProps) {
     return (
         <div className="monitor-auth-stack">
@@ -155,7 +157,7 @@ export function MonitorAuthCard({
                             disabled={busyAction !== null}
                             type="submit"
                         >
-                            {busyAction === 'login' ? 'Logging in...' : 'Login'}
+                            {busyAction === 'login' ? 'Logging in...' : 'Log in'}
                         </button>
                     </div>
 
@@ -177,8 +179,8 @@ export function MonitorAuthCard({
                         </span>
                     </button>
             </form>
-            {statusMessage !== 'Sign in to view and manage your seat alerts.' ? (
-                <p className="text-sm leading-6 text-[var(--color-ink-soft)]" role="status">{statusMessage}</p>
+            {authMessage ? (
+                <p className="text-sm leading-6 text-[var(--color-ink-soft)]" role="status">{authMessage}</p>
             ) : null}
             <p className="text-xs text-center leading-5 text-[var(--color-ink-soft)]">
                 Google sign-in requests your email address only.
@@ -237,18 +239,13 @@ export function MonitorPageHeader({
                     <div className="flex flex-col items-end gap-0.5 text-right">
                         <span className="monitor-email-label max-w-[42vw] truncate md:max-w-none">{sessionEmail}</span>
                         <button className="logout-text-link" onClick={onLogout} type="button">
-                            Logout
+                            Log out
                         </button>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-end gap-0.5 text-right">
-                        <span className="monitor-email-label max-w-[42vw] text-right md:max-w-none">
-                            You have not logged in yet.
-                        </span>
-                        <button className="login-text-link" onClick={onOpenAuth} type="button">
-                            Login...
-                        </button>
-                    </div>
+                    <button className="login-text-link" onClick={onOpenAuth} type="button">
+                        Log in
+                    </button>
                 )}
             </div>
         </div>
@@ -257,30 +254,34 @@ export function MonitorPageHeader({
 
 export function MonitorTaskList({
                                     canSearch,
+                                    deleteError,
                                     deletingDocId,
-                                    isLoggedIn,
+                                    loadError,
+                                    onRetryLoad,
                                     termsLoading,
                                     onDelete,
                                     tasks,
                                 }: MonitorTaskListProps) {
+    if (loadError) {
+        return (
+            <div className="px-5 py-10 text-center" role="alert">
+                <h2 className="text-2xl font-semibold text-[var(--color-ink)]">Couldn&apos;t load your alerts</h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
+                    {loadError} Your alerts are still active.
+                </p>
+                <button className="button-secondary mt-5" onClick={onRetryLoad} type="button">Retry</button>
+            </div>
+        )
+    }
+
     if (tasks.length === 0) {
-        if (!isLoggedIn) {
-            return (
-                <div className="px-5 py-10 text-center">
-                    <h2 className="text-2xl font-semibold text-[var(--color-ink)]">No alerts yet</h2>
-                    <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--color-ink-soft)]">
-                        Log in to view your alerts or add a section to track.
-                    </p>
-                </div>
-            )
-        }
         return (
             <EmptyState
                 bordered={false}
                 description={termsLoading
-                    ? 'Your tracked sections will appear here.'
+                    ? 'Your alerts will appear here.'
                     : canSearch
-                        ? 'Search to start tracking seat openings.'
+                        ? 'Search for a course to add your first alert.'
                         : 'New alerts are unavailable right now.'}
                 title="No alerts yet"
             />
@@ -335,11 +336,16 @@ export function MonitorTaskList({
                             ) : null}
                         </dl>
 
-                        <div className="mt-auto flex flex-wrap justify-end gap-3 border-t border-[var(--surface-divider)] pt-4">
+                        <div className="mt-auto flex flex-wrap items-center justify-end gap-3 border-t border-[var(--surface-divider)] pt-4">
+                            {deleteError?.docId === task.docId ? (
+                                <p className="mr-auto text-sm text-[#9b365e]" role="alert">
+                                    {deleteError.message}
+                                </p>
+                            ) : null}
                             <button
                                 className="min-w-[112px] rounded-[14px] px-3 py-0 text-[var(--action-link-subtle)] transition hover:text-[var(--action-link-subtle-hover)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-55"
                                 disabled={deletingDocId === task.docId}
-                                onClick={() => onDelete(task.docId, task.sectionId)}
+                                onClick={() => onDelete(task.docId)}
                                 type="button"
                             >
                                 {deletingDocId === task.docId ? 'Removing...' : 'Remove Alert'}

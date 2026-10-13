@@ -47,7 +47,6 @@ const COURSE_RESULTS_PER_UI_PAGE = 10
 const UI_PAGES_PER_BACKEND_PAGE =
     COURSE_RESULTS_PER_BACKEND_PAGE / COURSE_RESULTS_PER_UI_PAGE
 const INITIAL_SEARCH_MESSAGE = 'Search for a course to view sections.'
-const DEFAULT_SIGN_IN_STATUS_MESSAGE = 'Sign in to view and manage your seat alerts.'
 
 function getActiveTasks(tasks: Subscription[]) {
     return sortTasks(tasks.filter((task) => task.enabled !== false))
@@ -69,17 +68,16 @@ export function useMonitorClientPage({
     const searchTriggerRef = useRef<HTMLButtonElement | null>(null)
     const hasInitializedSearchFocus = useRef(false)
     const pendingSearchFocus = useRef(false)
-    const hasConsumedInitialStatusMessage = useRef(!initialStatusMessage)
     const previousLoggedIn = useRef(isLoggedIn)
+    // Server-rendered alerts cover the first logged-in render; every later login fetches.
+    const skipNextTaskFetch = useRef(initialTasks.length > 0)
     const previousSearchOpen = useRef(false)
     const [authForm, setAuthForm] = useState(initialAuthForm)
     const [tasks, setTasks] = useState<Subscription[]>(activeInitialTasks)
-    const [statusMessage, setStatusMessage] = useState(
-        initialStatusMessage ??
-        (activeInitialTasks.length > 0
-            ? `Loaded ${activeInitialTasks.length} monitored section${activeInitialTasks.length > 1 ? 's' : ''}.`
-            : DEFAULT_SIGN_IN_STATUS_MESSAGE),
-    )
+    // Shown only inside the login dialog: login/register results and session expiry.
+    const [authMessage, setAuthMessage] = useState(initialStatusMessage ?? '')
+    const [loadError, setLoadError] = useState('')
+    const [deleteError, setDeleteError] = useState<{docId: string, message: string} | null>(null)
     const [searchMessage, setSearchMessage] = useState(INITIAL_SEARCH_MESSAGE)
     const [searchValue, setSearchValue] = useState('')
     const [selectedTermId, setSelectedTermId] = useState('')
@@ -195,42 +193,24 @@ export function useMonitorClientPage({
         return () => { active = false }
     }, [ready, isLoggedIn, termRefreshVersion])
 
-    function applyTasks(nextTasks: Subscription[], message?: string) {
-        const sortedTasks = getActiveTasks(nextTasks)
-        setTasks(sortedTasks)
-        setStatusMessage(
-            message ??
-            (sortedTasks.length === 0
-                ? 'No alerts yet. Search to start tracking seat openings.'
-                : `Loaded ${sortedTasks.length} monitored section${sortedTasks.length > 1 ? 's' : ''}.`),
-        )
-    }
-
-    const loadTasks = useCallback(
-        async (message?: string) => {
-            if (!isLoggedIn) {
-                setTasks([])
-                setStatusMessage(DEFAULT_SIGN_IN_STATUS_MESSAGE)
-                return
+    // Fetches the user's alerts. A failure is shown in place of the list, never as an empty list.
+    const fetchTasks = useCallback(async () => {
+        try {
+            setBusyAction('load')
+            setTasks(getActiveTasks(await fetchSubscriptions()))
+            setLoadError('')
+        } catch (error) {
+            setTasks([])
+            if (isUnauthorizedError(error)) {
+                void logout()
+                setAuthMessage('Session expired. Please log in again.')
+            } else {
+                setLoadError(getErrorMessage(error, "Couldn't load your alerts."))
             }
-
-            try {
-                setBusyAction('load')
-                applyTasks(await fetchSubscriptions(), message)
-            } catch (error) {
-                setTasks([])
-                if (isUnauthorizedError(error)) {
-                    void logout()
-                    setStatusMessage('Session expired. Please login again.')
-                } else {
-                    setStatusMessage(getErrorMessage(error, 'Failed to load monitored courses.'))
-                }
-            } finally {
-                setBusyAction(null)
-            }
-        },
-        [isLoggedIn, logout],
-    )
+        } finally {
+            setBusyAction(null)
+        }
+    }, [logout])
 
     const focusSearchTrigger = useCallback(() => {
         window.requestAnimationFrame(() => {
@@ -245,20 +225,20 @@ export function useMonitorClientPage({
 
         if (!isLoggedIn) {
             setTasks([])
+            setLoadError('')
+            setDeleteError(null)
             resetSearchFlow()
             setIsSearchOpen(false)
-            if (hasConsumedInitialStatusMessage.current) {
-                setStatusMessage(DEFAULT_SIGN_IN_STATUS_MESSAGE)
-            } else {
-                hasConsumedInitialStatusMessage.current = true
-            }
+            skipNextTaskFetch.current = false
             return
         }
 
-        if (initialTasks.length === 0) {
-            void loadTasks()
+        if (skipNextTaskFetch.current) {
+            skipNextTaskFetch.current = false
+            return
         }
-    }, [initialTasks.length, isLoggedIn, loadTasks, ready])
+        void fetchTasks()
+    }, [isLoggedIn, fetchTasks, ready])
 
     const searchDisabled = isLoggedIn && (termsLoading || !!termsError || termOptions.length === 0)
 
@@ -306,9 +286,9 @@ export function useMonitorClientPage({
             const payload = getValidatedAuthForm()
             setBusyAction('register')
             await register(payload)
-            setStatusMessage('Register success. Please login.')
+            setAuthMessage('Registered. You can log in now.')
         } catch (error) {
-            setStatusMessage(getErrorMessage(error, 'Register failed.'))
+            setAuthMessage(getErrorMessage(error, 'Register failed.'))
         } finally {
             setBusyAction(null)
         }
@@ -318,12 +298,12 @@ export function useMonitorClientPage({
         try {
             const payload = getValidatedAuthForm()
             setBusyAction('login')
-            const nextSession = await login(payload)
+            await login(payload)
+            setAuthMessage('')
             setIsAuthOpen(false)
-            const nextTasks = await fetchSubscriptions()
-            applyTasks(nextTasks, `Welcome back, ${nextSession.email}.`)
+            // The alert list is loaded by the login effect, so a list failure is not reported as a login failure.
         } catch (error) {
-            setStatusMessage(getErrorMessage(error, 'Login failed.'))
+            setAuthMessage(getErrorMessage(error, 'Login failed.'))
         } finally {
             setBusyAction(null)
         }
@@ -336,7 +316,7 @@ export function useMonitorClientPage({
         resetSearchFlow()
         setIsSearchOpen(false)
         setIsAuthOpen(false)
-        setStatusMessage(DEFAULT_SIGN_IN_STATUS_MESSAGE)
+        setAuthMessage('')
     }
 
     function handleGoogleLogin() {
@@ -523,7 +503,7 @@ export function useMonitorClientPage({
             startTransition(() => {
                 setTasks((current) => upsertTask(current, nextTask))
             })
-            setSearchMessage(`Section ${nextTask.sectionId} added. You can keep adding more sections.`)
+            setSearchMessage(`Alert added for section ${nextTask.sectionId}. You can add more.`)
         } catch (error) {
             setSearchMessage(getErrorMessage(error, 'Add request failed.'))
         } finally {
@@ -531,14 +511,14 @@ export function useMonitorClientPage({
         }
     }
 
-    async function handleDelete(docId: string, sectionId: string) {
+    async function handleDelete(docId: string) {
         try {
             setDeletingDocId(docId)
+            setDeleteError(null)
             await deleteSubscription(docId)
             setTasks((current) => current.filter((task) => task.docId !== docId))
-            setStatusMessage(`Section ${sectionId} has been removed from your active tasks.`)
         } catch (error) {
-            setStatusMessage(getErrorMessage(error, 'Delete failed.'))
+            setDeleteError({docId, message: getErrorMessage(error, "Couldn't remove this alert.")})
         } finally {
             setDeletingDocId(null)
         }
@@ -552,7 +532,7 @@ export function useMonitorClientPage({
             onGoogleLogin: handleGoogleLogin,
             onLogin: () => void handleLogin(),
             onRegister: () => void handleRegister(),
-            statusMessage,
+            authMessage,
         },
         authOverlayProps: {
             open: isAuthOpen && ready && !isLoggedIn,
@@ -604,12 +584,13 @@ export function useMonitorClientPage({
             retry: () => setTermRefreshVersion(value => value + 1)},
         taskListProps: {
             canSearch: !termsLoading && !termsError && termOptions.length > 0,
+            deleteError,
             deletingDocId,
-            isLoggedIn,
+            loadError,
+            onRetryLoad: () => void fetchTasks(),
             termsLoading,
-            onDelete: (docId: string, sectionId: string) => void handleDelete(docId, sectionId),
+            onDelete: (docId: string) => void handleDelete(docId),
             tasks,
         },
-        trackedSectionCount: tasks.length,
     }
 }

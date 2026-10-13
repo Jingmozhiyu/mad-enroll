@@ -221,11 +221,6 @@ export function AboutSecondaryActions({
 
     return (
         <>
-            <div className="flex flex-wrap items-center justify-center gap-0 pt-4 text-center">
-                <InlineAction label="❓ FAQ" onClick={() => setActivePanel('faq')}/>
-                <span className="px-3 text-[var(--inline-muted)]">|</span>
-                <InlineAction label="💡 Send Feedback" onClick={() => setActivePanel('feedback')}/>
-            </div>
 
             {activePanel === 'faq' ? (
                 <ModalShell onClose={closePanel} title="Frequently asked questions">

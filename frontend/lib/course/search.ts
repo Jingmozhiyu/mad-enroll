@@ -5,7 +5,7 @@ export const COURSE_SEARCH_NOT_FOUND_MESSAGE =
 export const COURSE_SEARCH_FAILURE_MESSAGE =
     'Search failed. Please try another course query.'
 export const COURSE_SELECTION_MESSAGE = 'Choose a course to view its sections.'
-export const SECTION_SELECTION_MESSAGE = 'Choose a section to add it to your monitor list.'
+export const SECTION_SELECTION_MESSAGE = 'Choose a section to add an alert.'
 
 export function normalizeCourseSearchQuery(value: string) {
     return value.trim().replace(/\s+/g, ' ')

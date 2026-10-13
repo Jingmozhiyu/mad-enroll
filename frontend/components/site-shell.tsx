@@ -88,6 +88,23 @@ export function SiteShell({children}: { children: ReactNode }) {
                     </header>
 
                     <main className="flex-1 pt-1">{children}</main>
+
+                    <footer
+                        className="mt-16 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-[var(--surface-divider)] pt-5 pb-2 text-sm text-[var(--color-ink-soft)]">
+                            <span>Courses updated <span style={{color:"#4183C4"}}>Spring 2027</span>.</span>
+                        <a
+                            className="inline-flex items-center gap-1.5 font-semibold text-[var(--color-ink)] underline decoration-[var(--color-shizuku)] decoration-2 underline-offset-4 transition hover:decoration-[var(--color-miku)]"
+                            href="https://github.com/jingmozhiyu/mad-enroll"
+                            rel="noopener"
+                            target="_blank"
+                        >
+                            <svg aria-hidden="true" className="h-4 w-4 text-[var(--color-monori)]" viewBox="0 0 24 24"
+                                 fill="currentColor" stroke="#d99a6c" strokeWidth="1.2" strokeLinejoin="round">
+                                <path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.1l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.8Z"/>
+                            </svg>
+                            Star it on GitHub
+                        </a>
+                    </footer>
                 </div>
             </div>
         </RouteProgressProvider>

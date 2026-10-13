@@ -22,8 +22,9 @@ const hanyiWenHei = localFont({
 })
 
 export const metadata: Metadata = {
+    metadataBase: new URL('https://madenroll.com'),
     title: 'MadEnroll',
-    description: 'Course monitoring dashboard for search, subscriptions, and admin control.',
+    description: 'Seat alerts for UW–Madison courses, with grade distributions.',
     icons: {
         icon: '/shamrock_6ccb20.svg',
     },

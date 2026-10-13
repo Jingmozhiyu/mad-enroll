@@ -51,9 +51,10 @@ export function WelcomeHero() {
             <CloverBackground/>
             <section className={styles.hero} aria-labelledby="welcome-title">
                 <div className={styles.copy}>
-                    <h1 id="welcome-title">Get <span className={styles.enhance}>instant</span>
-                        <sup style={{fontSize:40,color:"var(--color-airi)",marginRight: 3}}>*</sup>
-                        email for course seats by using Mad<span className={styles.enhance}>Enroll</span>.
+                    {/* Two fixed lines; the trailing space keeps the text readable when copied or crawled. */}
+                    <h1 id="welcome-title">
+                        <span className={styles.line}>Get <span className={styles.enhance}>email alerts</span> for </span>
+                        <span className={styles.line}><span>UW<span className={styles.dash}>-</span>Madison</span> course seats.</span>
                     </h1>
 
                     <aside className={styles.proof} aria-label="Enrollment update">
@@ -72,12 +73,20 @@ export function WelcomeHero() {
             </section>
             <section className={styles.news} aria-labelledby="home-news-title">
                 <h2 id="home-news-title">News!</h2>
-                <ReportEntry href="/news/fall-2026-report" title="MadEnroll Semester Report (FA26)"/>
-            </section>
-
-            <section className={styles.compl}>
-                <p><span>*</span>MadEnroll detects each seat opening at 28 seconds in Avg.</p>
-                <p>Source: MadEnroll Semester Report (FA26).</p>
+                <ReportEntry
+                    href="/news/fall-2026-report"
+                    title="MadEnroll Semester Report (FA26)"
+                    publishedAt="2026-09-30"
+                    publishedLabel=""
+                    image={{
+                        src: '/news/fall-2026-report/03-hourly-emails.svg',
+                        alt: 'Bar chart of MadEnroll seat alert emails by hour of day during Fall 2026 enrollment',
+                        width: 733,
+                        height: 350,
+                    }}
+                >
+                    <p><strong>BIOCHEM 104</strong> was the most-followed course; Seats were detected <strong>28s</strong> after opening on average.</p>
+                </ReportEntry>
             </section>
         </div>
     )
