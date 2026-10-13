@@ -48,7 +48,6 @@ class MailServiceTest {
                 .contains("Open seats: 3 / 120 · Waitlist: 0 / ?\n")
                 .contains("Detected 2:41 PM CT, Oct 12\n")
                 .contains("https://enroll.wisc.edu/search?term=1272&keywords=comp%20sci%20240&closed=true")
-                .contains("if this seat is taken and opens again, we'll email you again.")
                 .contains("https://madenroll.com/monitor");
     }
 
@@ -60,7 +59,7 @@ class MailServiceTest {
         assertThat(message.getSubject()).isEqualTo("Waitlist open: COMP SCI 240, section 66400");
         assertThat(message.getText())
                 .startsWith("A waitlist spot just opened in a section you set an alert for.")
-                .contains("we'll email you again when a seat opens.")
+                .contains("Waitlist spots can be taken quickly, so join as soon as you can.")
                 .doesNotContain("Open seats can be taken quickly");
     }
 
