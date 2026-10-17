@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -63,17 +64,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Allow all pre-flight OPTIONS requests for CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Permit access to static resources and public data endpoints
-                        .requestMatchers("/", "/index.html", "/app.js", "/js/**", "/api.json", "/search.json").permitAll()
-
+                        
                         // Permit access to authentication endpoints (e.g., login, register)
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/feedback/**").permitAll()
 
-                        // Require authentication for user and admin API endpoints
+                        // User endpoints need a login; admin endpoints need the ADMIN role
                         .requestMatchers("/api/subscriptions/**").authenticated()
-                        .requestMatchers("/api/admin/**").authenticated()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // NOTE: Permitting all other requests by default (Fail-Open approach).
                         // For stricter security, consider changing this to .anyRequest().authenticated()
@@ -85,15 +83,28 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class)
 
-                // Handle authentication exceptions (e.g., missing or invalid JWT)
-                .exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, ex) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType("application/json;charset=UTF-8");
-                    // Return a structured JSON response instead of a default HTML error page
-                    response.getWriter().write("{\"code\":401,\"msg\":\"Unauthorized\",\"data\":null}");
-                }));
+                // Missing or invalid JWT -> 401; authenticated but lacking the role -> 403
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, ex) ->
+                                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                        .accessDeniedHandler((request, response, ex) ->
+                                writeError(response, HttpServletResponse.SC_FORBIDDEN, "Admin access is required.")));
 
         return http.build();
+    }
+
+    /**
+     * Writes a structured JSON error instead of the default HTML error page.
+     *
+     * @param response current HTTP response
+     * @param status HTTP status code, also used as the body code
+     * @param message error message
+     * @throws IOException if the response body cannot be written
+     */
+    private void writeError(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"code\":" + status + ",\"msg\":\"" + message + "\",\"data\":null}");
     }
 
     /**

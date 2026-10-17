@@ -2,8 +2,6 @@ package com.jing.monitor.service;
 
 import com.jing.monitor.model.Broadcast;
 import com.jing.monitor.model.BroadcastDeliveryLog;
-import com.jing.monitor.model.User;
-import com.jing.monitor.model.UserRole;
 import com.jing.monitor.model.dto.BroadcastDtos.Counts;
 import com.jing.monitor.model.dto.BroadcastDtos.Create;
 import com.jing.monitor.model.dto.BroadcastDtos.Delivery;
@@ -55,7 +53,7 @@ public class BroadcastService {
      */
     @Transactional
     public View create(Create request) {
-        UUID admin = requireAdmin();
+        UUID admin = auth.currentUserId();
         if (request == null || request.audience() == null) {
             throw new IllegalArgumentException("Audience is required.");
         }
@@ -104,7 +102,6 @@ public class BroadcastService {
      */
     @Transactional(readOnly = true)
     public PageRespDto<View> list(int page) {
-        requireAdmin();
         var result = broadcasts.findAll(PageRequest.of(pageIndex(page), 10,
                 Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by("id"))));
         return new PageRespDto<>(result.map(this::view).getContent(), page, 10, result.getTotalElements(), result.getTotalPages());
@@ -118,7 +115,6 @@ public class BroadcastService {
      */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public View get(UUID id) {
-        requireAdmin();
         Broadcast broadcast = lock(id);
         // Reconcile only on an admin detail request, never through a background polling loop.
         deliveries.recoverInterrupted(id, LocalDateTime.now().minusMinutes(5));
@@ -138,7 +134,6 @@ public class BroadcastService {
      */
     @Transactional(readOnly = true)
     public PageRespDto<Delivery> recipients(UUID id, int page) {
-        requireAdmin();
         find(id);
         var result = deliveries.findAllByBroadcast_Id(id, PageRequest.of(pageIndex(page), 50, Sort.by("email")));
         return new PageRespDto<>(result.map(d -> new Delivery(d.getId(), d.getEmail(), d.getStatus(),
@@ -155,7 +150,6 @@ public class BroadcastService {
      */
     @Transactional
     public View send(UUID id) {
-        requireAdmin();
         Broadcast broadcast = lock(id);
         if (broadcast.getStatus() == Broadcast.Status.DRAFT) {
             if (counts(id).total() == 0) {
@@ -177,7 +171,6 @@ public class BroadcastService {
      */
     @Transactional
     public UUID testEmail(UUID id, TestEmail request) {
-        requireAdmin();
         Broadcast broadcast = find(id);
         String email = request == null || request.recipientEmail() == null ? "" : request.recipientEmail().trim();
         try {
@@ -277,15 +270,7 @@ public class BroadcastService {
     }
 
     private Broadcast lock(UUID id) {
-        return broadcasts.lockById(id).orElseThrow(() -> new IllegalArgumentException("Broadcast not found."));
-    }
-
-    private UUID requireAdmin() {
-        User user = users.findById(auth.currentUserId()).orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
-        if (user.getRole() != UserRole.ADMIN) {
-            throw new IllegalArgumentException("Unauthorized");
-        }
-        return user.getId();
+        return broadcasts.lockByIdForUpdate(id).orElseThrow(() -> new IllegalArgumentException("Broadcast not found."));
     }
 
     private int pageIndex(int page) {

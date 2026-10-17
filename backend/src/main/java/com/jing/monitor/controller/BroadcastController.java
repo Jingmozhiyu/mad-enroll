@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * REST controller for admin broadcast emails. Admin role is enforced in {@link BroadcastService}.
+ * REST controller for admin broadcast emails. The ADMIN role is enforced for /api/admin/** in {@link com.jing.monitor.config.SecurityConfig}.
  */
 @RestController
 @RequestMapping("/api/admin/broadcasts")

@@ -12,7 +12,9 @@ These paths belong to the **Spring backend origin**, configured as `API_BASE_URL
 They are not the browser-facing proxy contract.
 
 - `/api/subscriptions/**` requires `Authorization: Bearer <token>`.
-- `/api/admin/**` additionally requires an ADMIN. Non-admin access currently returns **401**, not 403.
+- `/api/admin/**` additionally requires the ADMIN role, enforced in
+  [SecurityConfig](../../src/main/java/com/jing/monitor/config/SecurityConfig.java). The role is read
+  from the database on every request. Missing/invalid token returns **401**; a non-admin returns **403**.
 - Register/login are public. Feedback allows anonymous requests.
 - JSON request bodies use `Content-Type: application/json`.
 - Successful controller responses use HTTP **200**, including creation and enqueueing:
@@ -103,7 +105,7 @@ All routes require an authenticated ADMIN.
 Source: [BroadcastController](../../src/main/java/com/jing/monitor/controller/BroadcastController.java),
 [BroadcastService](../../src/main/java/com/jing/monitor/service/BroadcastService.java),
 [BroadcastDtos](../../src/main/java/com/jing/monitor/model/dto/BroadcastDtos.java).
-All six endpoints check ADMIN in the service. See [broadcast operations](broadcasts.md) for
+All six endpoints require ADMIN through the `/api/admin/**` security rule. See [broadcast operations](broadcasts.md) for
 deployment and the no-retry policy. Next.js exposes the same paths, reads the
 session cookie and unwraps `data`; its dynamic action route accepts only `send`, `test-email` and
 `recipients` with their matching methods.
@@ -184,7 +186,8 @@ and term checks. This endpoint does not broadcast.
 | HTTP status | Current meaning |
 | --- | --- |
 | 400 | Invalid input, missing/unowned subscription, unknown/EXPIRED term, duplicate term, capacity limit, course not found |
-| 401 | Authentication failure or non-admin calling admin operations |
+| 401 | Missing or invalid token |
+| 403 | Authenticated non-admin calling `/api/admin/**` |
 | 429 | Rate limit; backend provides Retry-After seconds |
 | 5xx | Infrastructure/unhandled failure; some runtime failures currently map to 400 |
 
@@ -194,5 +197,7 @@ binding/enum errors or upstream failures may use other bodies. The envelope is n
 for every error. See [RateLimitFilter](../../src/main/java/com/jing/monitor/security/RateLimitFilter.java).
 
 [TermLifecycleTest](../../src/test/java/com/jing/monitor/TermLifecycleTest.java) covers term API,
-authorization, rollback and concurrent expiry. Tests verify behavior; this hand-maintained index
+rollback and concurrent expiry;
+[SecurityConfigTest](../../src/test/java/com/jing/monitor/config/SecurityConfigTest.java) covers
+401/403 and admin authorization. Tests verify behavior; this hand-maintained index
 is not a generated schema or a substitute for inspecting changed code.

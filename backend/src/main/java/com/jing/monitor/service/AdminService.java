@@ -8,7 +8,6 @@ import com.jing.monitor.model.Course;
 import com.jing.monitor.model.CourseSection;
 import com.jing.monitor.model.TermStatus;
 import com.jing.monitor.model.User;
-import com.jing.monitor.model.UserRole;
 import com.jing.monitor.model.UserSectionSubscription;
 import com.jing.monitor.model.dto.AdminSectionSubRespDto;
 import com.jing.monitor.model.dto.AdminSummaryRespDto;
@@ -26,6 +25,7 @@ import com.jing.monitor.repository.AlertDeliveryLogRepository;
 import com.jing.monitor.repository.TermRepository;
 import com.jing.monitor.repository.UserRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
+import com.jing.monitor.security.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -68,13 +68,11 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public List<AcademicTerm> getTerms() {
-        requireAdmin();
         return termRepository.findAll(Sort.by(Sort.Direction.DESC, "code"));
     }
 
     @Transactional
     public AcademicTerm createTerm(AdminTermReqDto req) {
-        requireAdmin();
         termService.validateCode(req.code());
         if (req.label() == null || req.label().isBlank() || req.label().trim().length() > 80) {
             throw new IllegalArgumentException("Term label must contain 1 to 80 characters.");
@@ -89,11 +87,10 @@ public class AdminService {
 
     @Transactional
     public AdminTermUpdateRespDto updateTermStatus(String code, TermStatus status) {
-        requireAdmin();
         if (status == null) {
             throw new IllegalArgumentException("Term status is required.");
         }
-        AcademicTerm term = termService.lockTerm(code);
+        AcademicTerm term = termService.lockTermForUpdate(code);
         term.setStatus(status);
         termRepository.saveAndFlush(term);
         int disabled = status == TermStatus.EXPIRED ? subscriptionRepository.disableAllForTerm(code) : 0;
@@ -107,7 +104,6 @@ public class AdminService {
      */
     @Transactional(readOnly = true)
     public PageRespDto<AdminUserSubsRespDto> getUserSubscriptionsPage(int page) {
-        requireAdmin();
 
         Page<User> usersPage = userRepository.findAll(PageRequest.of(
                 Math.max(0, page - 1),
@@ -153,12 +149,11 @@ public class AdminService {
      */
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public AdminSectionSubRespDto updateSubscriptionEnabled(UUID subscriptionId, boolean enabled) {
-        requireAdmin();
         if (enabled) {
             var owner = subscriptionRepository.findOwner(subscriptionId)
                     .orElseThrow(() -> new RuntimeException("Subscription not found: " + subscriptionId));
-            termService.lockSubscribableTerm(owner.getTermCode());
-            userRepository.lockById(owner.getUserId()).orElseThrow(() -> new RuntimeException("User not found."));
+            termService.lockSubscribableTermForShare(owner.getTermCode());
+            userRepository.lockByIdForUpdate(owner.getUserId()).orElseThrow(() -> new RuntimeException("User not found."));
         }
         // Load mutable subscription state only after waiting for both guards.
         UserSectionSubscription sub = subscriptionRepository.findById(subscriptionId)
@@ -181,7 +176,6 @@ public class AdminService {
      */
     @Transactional(readOnly = true)
     public List<AlertDeadLetterRespDto> getDeadLetters() {
-        requireAdmin();
         return alertDeadLetterRepository.findAll().stream()
                 .sorted(Comparator.comparing(AlertDeadLetter::getCreatedAt).reversed())
                 .map(this::toDeadLetterResp)
@@ -195,7 +189,6 @@ public class AdminService {
      */
     @Transactional(readOnly = true)
     public PageRespDto<AlertDeliveryLogRespDto> getMailDeliveriesPage(int page) {
-        requireAdmin();
         Page<AlertDeliveryLog> deliveriesPage = alertDeliveryLogRepository.findAll(PageRequest.of(
                 Math.max(0, page - 1),
                 DELIVERY_PAGE_SIZE,
@@ -220,7 +213,6 @@ public class AdminService {
      */
     @Transactional(readOnly = true)
     public AdminSummaryRespDto getSummary() {
-        requireAdmin();
         return new AdminSummaryRespDto(
                 userRepository.count(),
                 subscriptionRepository.count(),
@@ -238,7 +230,6 @@ public class AdminService {
      */
     @Transactional(readOnly = true)
     public List<MailDailyStatRespDto> getMailDailyStats() {
-        requireAdmin();
         Map<LocalDate, MailDailyStatRespDto> statsByDate = new TreeMap<>(Comparator.reverseOrder());
         for (Object[] row : alertDeliveryLogRepository.countDailyDeliveries()) {
             MailDailyStatRespDto dto = statsByDate.computeIfAbsent(toLocalDate(row[0]), this::emptyDailyStat);
@@ -265,8 +256,8 @@ public class AdminService {
      * @param req admin test mail request
      */
     public void sendTestEmail(AdminTestEmailReqDto req) {
-        User currentAdmin = requireAdmin();
-        String recipientEmail = firstNonBlank(req.getRecipientEmail(), currentAdmin.getEmail());
+        AuthenticatedUser currentAdmin = authContextService.currentUser();
+        String recipientEmail = firstNonBlank(req.getRecipientEmail(), currentAdmin.email());
         AlertType alertType = req.getAlertType() == null ? AlertType.OPEN : req.getAlertType();
         String sectionId = firstNonBlank(req.getSectionId(), "99999");
         String courseDisplayName = firstNonBlank(req.getCourseDisplayName(), "TEST COURSE");
@@ -289,7 +280,6 @@ public class AdminService {
      */
     @Transactional(readOnly = true)
     public SchedulerStatusRespDto getSchedulerStatus() {
-        requireAdmin();
         return schedulerService.getSchedulerStatus();
     }
 
@@ -313,16 +303,6 @@ public class AdminService {
 
     private long toLong(Object value) {
         return value == null ? 0L : ((Number) value).longValue();
-    }
-
-    private User requireAdmin() {
-        UUID currentUserId = authContextService.currentUserId();
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new RuntimeException("Unauthorized"));
-        if (currentUser.getRole() != UserRole.ADMIN) {
-            throw new RuntimeException("Unauthorized");
-        }
-        return currentUser;
     }
 
     private AdminSectionSubRespDto toAdminSubResp(UserSectionSubscription sub) {

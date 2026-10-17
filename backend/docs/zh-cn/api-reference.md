@@ -9,7 +9,7 @@
 这些路径属于由 Next.js 通过 `API_BASE_URL` 配置的 **Spring 后端源站**。它们不是面向浏览器的代理契约。
 
 - `/api/subscriptions/**` 要求 `Authorization: Bearer <token>`。
-- `/api/admin/**` 还要求 ADMIN 权限。非管理员访问当前返回 **401**，而不是 403。
+- `/api/admin/**` 还要求 ADMIN 角色，由 [SecurityConfig](../../src/main/java/com/jing/monitor/config/SecurityConfig.java) 统一校验。角色在每个请求中从数据库读取。缺少或无效的 token 返回 **401**；非管理员返回 **403**。
 - 注册/登录为公开接口。反馈允许匿名请求。
 - JSON 请求体使用 `Content-Type: application/json`。
 - 控制器成功响应使用 HTTP **200**，包括创建和入队：
@@ -80,7 +80,7 @@
 
 源码：[BroadcastController](../../src/main/java/com/jing/monitor/controller/BroadcastController.java)、[BroadcastService](../../src/main/java/com/jing/monitor/service/BroadcastService.java)、[BroadcastDtos](../../src/main/java/com/jing/monitor/model/dto/BroadcastDtos.java)。
 
-全部六个端点都会在服务中检查 ADMIN。部署、送达保证和无重试策略参见[广播操作](broadcasts.md)。Next.js 暴露相同路径，读取 session cookie 并解包 `data`；其动态 action 路由只接受 `send`、`test-email` 和 `recipients` 及其匹配的方法。
+全部六个端点都通过 `/api/admin/**` 安全规则要求 ADMIN。部署、送达保证和无重试策略参见[广播操作](broadcasts.md)。Next.js 暴露相同路径，读取 session cookie 并解包 `data`；其动态 action 路由只接受 `send`、`test-email` 和 `recipients` 及其匹配的方法。
 
 创建要求 `subject`（1–200 个字符，单行）、纯文本 `body`（1–20000 个字符）和 `audience`：`ALL_USERS` 或 `TERM_SUBSCRIBERS`。后者要求配置 `termCode`，包括 UPCOMING/EXPIRED 学期；ALL_USERS 拒绝非空 term code。地址会在创建时规范化、去重并固定，包括已禁用订阅记录。正文可以包含报告 URL；不会渲染 HTML 和 Markdown。空受众可以保存，但不能发送。草稿不能编辑；管理员 UI 可以将其复制到新草稿中。广播分页会拒绝非正页码；Next.js 会将无效页码规范化为 1。广播不会计入课程提醒计数、普通邮件历史或死信行。事务提交后，每个收件人发布一个 RabbitMQ 事件。每个送达 ID 只允许一次 SMTP 尝试；失败或未确认的尝试永远不会自动再次发送。没有重试端点。测试邮件使用已保存的主题/正文，并要求一个不带显示名称或地址列表的单一纯文本电子邮件地址。返回的 UUID 只确认请求已接收，不代表 SMTP 或 broker 已接收。重复测试请求会创建新的测试事件。
 
@@ -121,10 +121,11 @@ ACTIVE/UPCOMING 只更改学期状态。EXPIRED 还会在同一事务中禁用�
 | HTTP 状态 | 当前含义 |
 | --- | --- |
 | 400 | 输入无效、缺失/不属于调用者的订阅、未知/EXPIRED 学期、重复学期、订阅数量上限、课程不存在 |
-| 401 | 身份验证失败，或非管理员调用管理操作 |
+| 401 | 缺少或无效的 token |
+| 403 | 已认证的非管理员调用 `/api/admin/**` |
 | 429 | 速率限制；后端提供 Retry-After 秒数 |
 | 5xx | 基础设施/未处理失败；某些运行时失败当前会映射为 400 |
 
 [GlobalExceptionHandler](../../src/main/java/com/jing/monitor/common/GlobalExceptionHandler.java) 将 RuntimeException 封装为 `{code,msg,data}`（`Unauthorized` 返回 401，否则返回 400）。框架绑定/枚举错误或上游失败可能使用其他响应体。并非每个错误都保证使用该封装。参见 [RateLimitFilter](../../src/main/java/com/jing/monitor/security/RateLimitFilter.java)。
 
-[TermLifecycleTest](../../src/test/java/com/jing/monitor/TermLifecycleTest.java) 覆盖学期 API、授权、回滚和并发过期。测试用于验证行为；此手工维护的索引不是生成的 schema，也不能替代检查变更后的代码。
+[TermLifecycleTest](../../src/test/java/com/jing/monitor/TermLifecycleTest.java) 覆盖学期 API、回滚和并发过期；[SecurityConfigTest](../../src/test/java/com/jing/monitor/config/SecurityConfigTest.java) 覆盖 401/403 与管理员授权。测试用于验证行为；此手工维护的索引不是生成的 schema，也不能替代检查变更后的代码。

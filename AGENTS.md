@@ -18,6 +18,8 @@ infrastructure, abstractions or defensive layers for scale we don't have.
 - Server clock and DB timestamps are UTC; business rules (fetch windows, reports) use
   America/Chicago.
 - IP rate limits rely on X-Client-IP forwarded by the BFF with the shared secret.
+- Admin authorization is URL-based only: SecurityConfig requires ROLE_ADMIN for `/api/admin/**`
+  and services do not re-check. Every admin endpoint must live under `/api/admin/`.
 
 ## Conventions
 - Match surrounding style: explicit imports, Javadoc on public methods, no `var`.

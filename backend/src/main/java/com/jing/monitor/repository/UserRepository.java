@@ -19,7 +19,7 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
-    Optional<User> lockById(@Param("id") UUID id);
+    Optional<User> lockByIdForUpdate(@Param("id") UUID id);
 
     /**
      * Finds a user by normalized email.

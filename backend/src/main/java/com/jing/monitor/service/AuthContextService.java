@@ -21,6 +21,17 @@ public class AuthContextService {
      * @throws RuntimeException if no valid authenticated principal is available
      */
     public UUID currentUserId() {
+        return currentUser().id();
+    }
+
+    /**
+     * Returns the current authenticated principal, loaded from the database by the JWT filter
+     * on every request.
+     *
+     * @return authenticated principal with id, email and role
+     * @throws RuntimeException if no valid authenticated principal is available
+     */
+    public AuthenticatedUser currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             throw new RuntimeException("Unauthorized");
@@ -28,7 +39,7 @@ public class AuthContextService {
 
         Object principal = authentication.getPrincipal();
         if (principal instanceof AuthenticatedUser user) {
-            return user.id();
+            return user;
         }
 
         throw new RuntimeException("Unauthorized");

@@ -163,9 +163,9 @@ public class SubscriptionService {
         UUID userId = authContextService.currentUserId();
         CourseSection section = courseSectionRepository.findByDocId(docId)
                 .orElseThrow(() -> new RuntimeException("Section not found. Search before adding: " + docId));
-        termService.lockSubscribableTerm(section.getCourse().getTermCode());
+        termService.lockSubscribableTermForShare(section.getCourse().getTermCode());
         // Across all terms, only one enable operation may count/write this user's subscriptions.
-        userRepository.lockById(userId).orElseThrow(() -> new RuntimeException("User not found."));
+        userRepository.lockByIdForUpdate(userId).orElseThrow(() -> new RuntimeException("User not found."));
 
         UserSectionSubscription existingSub = subscriptionRepository.findByUser_IdAndSection_DocId(userId, docId)
                 .orElse(null);

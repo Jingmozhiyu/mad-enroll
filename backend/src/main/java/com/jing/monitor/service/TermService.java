@@ -32,14 +32,14 @@ public class TermService {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public AcademicTerm lockTerm(String code) {
+    public AcademicTerm lockTermForUpdate(String code) {
         validateCode(code);
         return termRepository.findByCodeForUpdate(code)
                 .orElseThrow(() -> new IllegalArgumentException("Term is not configured: " + code));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void lockSubscribableTerm(String code) {
+    public void lockSubscribableTermForShare(String code) {
         validateCode(code);
         requireNotExpired(termRepository.findByCodeForShare(code)
                 .orElseThrow(() -> new IllegalArgumentException("Term is not configured: " + code)));

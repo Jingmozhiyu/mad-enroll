@@ -150,19 +150,13 @@ class TermLifecycleTest extends IntegrationTestBase {
     }
 
     @Test
-    void adminValidationAndAuthorizationProtectTermOperations() {
+    void adminValidationProtectsTermOperations() {
         assertThat(admin.createTerm(new AdminTermReqDto("1282", "Fall 2027")).getStatus()).isEqualTo(TermStatus.UPCOMING);
         assertThatThrownBy(() -> admin.createTerm(new AdminTermReqDto("1282", "Duplicate"))).hasMessageContaining("already exists");
         assertThatThrownBy(() -> admin.createTerm(new AdminTermReqDto("bad", "Invalid"))).hasMessageContaining("4-digit");
         assertThatThrownBy(() -> admin.createTerm(new AdminTermReqDto("1284", "  "))).hasMessageContaining("label");
         assertThatThrownBy(() -> admin.updateTermStatus("1272", null)).hasMessageContaining("required");
         assertThatThrownBy(() -> admin.updateTermStatus("9999", TermStatus.ACTIVE)).hasMessageContaining("not configured");
-        user.setRole(UserRole.USER);
-        users.save(user);
-        assertThatThrownBy(() -> admin.getTerms()).hasMessage("Unauthorized");
-        assertThatThrownBy(() -> admin.createTerm(new AdminTermReqDto("1284", "Spring"))).hasMessage("Unauthorized");
-        assertThatThrownBy(() -> admin.updateTermStatus("1272", TermStatus.EXPIRED)).hasMessage("Unauthorized");
-        assertThat(terms.findById("1272").orElseThrow().getStatus()).isEqualTo(TermStatus.ACTIVE);
     }
 
     @Test
@@ -177,7 +171,7 @@ class TermLifecycleTest extends IntegrationTestBase {
     }
 
     @Test
-    void adminHttpEndpointsCreateListAndExpireTermsAndRejectNonAdmins() throws Exception {
+    void adminHttpEndpointsCreateListAndExpireTerms() throws Exception {
         var mvc = MockMvcBuilders.standaloneSetup(new AdminController(admin))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
         mvc.perform(post("/api/admin/terms").contentType("application/json")
@@ -195,12 +189,6 @@ class TermLifecycleTest extends IntegrationTestBase {
         mvc.perform(patch("/api/admin/terms/1272").contentType("application/json")
                         .content("{\"status\":\"CLOSED\"}"))
                 .andExpect(status().isBadRequest());
-        user.setRole(UserRole.USER);
-        users.save(user);
-        mvc.perform(get("/api/admin/terms")).andExpect(status().isUnauthorized());
-        mvc.perform(patch("/api/admin/terms/1272").contentType("application/json")
-                        .content("{\"status\":\"ACTIVE\"}"))
-                .andExpect(status().isUnauthorized());
     }
 
     @Test
