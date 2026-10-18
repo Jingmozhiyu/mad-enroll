@@ -20,6 +20,9 @@ infrastructure, abstractions or defensive layers for scale we don't have.
 - IP rate limits rely on X-Client-IP forwarded by the BFF with the shared secret.
 - Admin authorization is URL-based only: SecurityConfig requires ROLE_ADMIN for `/api/admin/**`
   and services do not re-check. Every admin endpoint must live under `/api/admin/`.
+- No enabled subscription may exist in an EXPIRED term: any path that enables a subscription
+  must first call `TermService.lockSubscribableTermForShare` in the same transaction
+  (term status changes take `lockTermForUpdate`).
 
 ## Conventions
 - Match surrounding style: explicit imports, Javadoc on public methods, no `var`.

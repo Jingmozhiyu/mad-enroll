@@ -1,3 +1,0 @@
-api.madenroll.com {
-    reverse_proxy app:8080
-}
