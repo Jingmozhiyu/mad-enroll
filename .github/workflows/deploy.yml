@@ -61,10 +61,10 @@ jobs:
         run: |
           set -euo pipefail
           ssh orcl 'mkdir -p ~/mad-enroll'
-          scp backend/target/app.jar backend/docker-compose.yml backend/Caddyfile backend/ops/backup-db.sh orcl:~/mad-enroll/
+          scp backend/target/app.jar backend/docker-compose.yml backend/ops/backup-db.sh orcl:~/mad-enroll/
           ssh orcl 'chmod +x ~/mad-enroll/backup-db.sh'
 
       - name: Deploy with Docker Compose
         run: |
           set -euo pipefail
-          ssh orcl 'cd ~/mad-enroll && docker compose up -d --remove-orphans && docker compose up -d --no-deps --force-recreate app caddy'
+          ssh orcl 'cd ~/mad-enroll && docker compose up -d --remove-orphans && docker compose up -d --no-deps --force-recreate app'
