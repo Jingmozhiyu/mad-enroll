@@ -37,3 +37,4 @@ logs/
 .env
 .DS_Store
 deprecated/
+Caddyfile
