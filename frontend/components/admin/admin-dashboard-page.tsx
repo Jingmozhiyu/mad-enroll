@@ -121,42 +121,7 @@ export function AdminDashboardPage() {
                         </div>
                     </div>
 
-                    <AdminTermsPanel onChanged={() => loadDashboard(undefined, {
-                        usersPage, emailHistoryPage, preserveClientPagination: true,
-                    })} />
 
-                    <AdminBroadcastsPanel />
-
-                    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <SummaryMetric
-                            label="Users"
-                            value={totalUsers}
-                            detail={latestWelcomeDeliverySummary ?? 'No recent welcome deliveries'}
-                        />
-                        <SummaryMetric
-                            label="Subscriptions"
-                            value={totalSubscriptions}
-                            detail={`${enabledSubscriptions} enabled`}
-                        />
-                        <SummaryMetric
-                            label="Deliveries"
-                            value={totalDeliveries}
-                            detail={
-                                latestStat
-                                    ? `Sent ${latestStat.sentTotal} on ${formatDateOnly(latestStat.statsDate)}`
-                                    : 'No daily stats yet'
-                            }
-                        />
-                        <SummaryMetric
-                            label="Dead Letters"
-                            value={totalDeadLetters}
-                            detail={
-                                latestStat
-                                    ? `Dead ${latestStat.deadTotal} on ${formatDateOnly(latestStat.statsDate)}`
-                                    : 'No dead-letter stats yet'
-                            }
-                        />
-                    </section>
 
                     <section className="surface-panel-strong rounded-[14px] px-4 py-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -572,6 +537,43 @@ export function AdminDashboardPage() {
                                 totalPages={deadLettersTotalPages}
                             />
                         </CompactPanel>
+                    </section>
+
+                    <AdminTermsPanel onChanged={() => loadDashboard(undefined, {
+                        usersPage, emailHistoryPage, preserveClientPagination: true,
+                    })} />
+
+                    <AdminBroadcastsPanel />
+
+                    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                        <SummaryMetric
+                            label="Users"
+                            value={totalUsers}
+                            detail={latestWelcomeDeliverySummary ?? 'No recent welcome deliveries'}
+                        />
+                        <SummaryMetric
+                            label="Subscriptions"
+                            value={totalSubscriptions}
+                            detail={`${enabledSubscriptions} enabled`}
+                        />
+                        <SummaryMetric
+                            label="Deliveries"
+                            value={totalDeliveries}
+                            detail={
+                                latestStat
+                                    ? `Sent ${latestStat.sentTotal} on ${formatDateOnly(latestStat.statsDate)}`
+                                    : 'No daily stats yet'
+                            }
+                        />
+                        <SummaryMetric
+                            label="Dead Letters"
+                            value={totalDeadLetters}
+                            detail={
+                                latestStat
+                                    ? `Dead ${latestStat.deadTotal} on ${formatDateOnly(latestStat.statsDate)}`
+                                    : 'No dead-letter stats yet'
+                            }
+                        />
                     </section>
                 </>
             )}

@@ -191,7 +191,7 @@ export function useAdminDashboard() {
                 } else {
                     setStatusMessage(
                         message ??
-                        `Loaded ${loadedSummary.totalUsers} users, ${loadedSummary.totalDeliveries} deliveries, and ${loadedSummary.totalDeadLetters} dead letters.`,
+                        `Loaded ${loadedSummary.totalUsers} users / ${loadedSummary.enabledSubscriptions} active subs / ${loadedSummary.totalDeliveries} deliveries / ${loadedSummary.totalDeadLetters} dead letters.`,
                     )
                 }
             } catch (error) {
