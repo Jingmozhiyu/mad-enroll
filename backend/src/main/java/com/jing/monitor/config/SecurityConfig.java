@@ -126,6 +126,33 @@ public class SecurityConfig {
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration visitConfiguration = getVisitConfiguration();
+        CorsConfiguration configuration = getCorsConfiguration();
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+                "/api/visit/mysite",
+                visitConfiguration
+        );
+
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    private static CorsConfiguration getVisitConfiguration(){
+        CorsConfiguration visitConfiguration = new CorsConfiguration();
+        visitConfiguration.setAllowedOrigins(
+                List.of("https://pages.cs.wisc.edu")
+        );
+        visitConfiguration.setAllowedMethods(List.of("POST"));
+        visitConfiguration.setAllowedHeaders(List.of("*"));
+        visitConfiguration.setAllowCredentials(false);
+        return visitConfiguration;
+    }
+
+    private static CorsConfiguration getCorsConfiguration() {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Allow requests from all origin patterns
@@ -143,10 +170,6 @@ public class SecurityConfig {
         // Disable credentials (cookies, authorization headers, or TLS client certificates)
         // Must be false if allowed origins is "*"
         configuration.setAllowCredentials(false);
-
-        // Apply this configuration to all paths
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+        return configuration;
     }
 }
