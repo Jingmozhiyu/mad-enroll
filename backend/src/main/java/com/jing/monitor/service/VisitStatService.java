@@ -14,8 +14,14 @@ public class VisitStatService {
 
     public final VisitStatRepository visitStatRepository;
 
-    public void visitFromPersonalWebsite(){
+    /**
+     * Record a personal website visit with the visitor's IP address.
+     *
+     * @param ip visitor IPv4 or IPv6 address
+     */
+    public void visitFromPersonalWebsite(String ip){
         VisitStat stat = new VisitStat();
+        stat.setIp(ip);
         visitStatRepository.save(stat);
     }
 }

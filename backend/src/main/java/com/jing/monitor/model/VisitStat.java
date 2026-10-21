@@ -1,9 +1,13 @@
 package com.jing.monitor.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
@@ -21,4 +25,8 @@ public class VisitStat {
 
     @Column(name = "visit_time", nullable = false, updatable = false)
     private LocalDateTime visitedAt = LocalDateTime.now();
+
+    // Nullable so existing visit records remain valid when ddl-auto adds the column.
+    @Column(name = "ip", length = 45, updatable = false)
+    private String ip;
 }
