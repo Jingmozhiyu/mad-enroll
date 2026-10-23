@@ -25,6 +25,7 @@ export type MadgradesCourseSuggestion = {
     uuid: string
     name: string
     displayLine: string
+    path: string
 }
 
 export type MadgradesPaginatedResponse<T> = {

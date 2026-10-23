@@ -12,17 +12,14 @@ import {
     YAxis,
 } from 'recharts'
 import type {GradeDistribution} from '@/lib/madgrades/types'
-import {getGradeLabel, numberWithCommas} from '@/lib/madgrades/utils'
-
-const GRADE_KEYS = [
-    'aCount',
-    'abCount',
-    'bCount',
-    'bcCount',
-    'cCount',
-    'dCount',
-    'fCount',
-] as const
+import {
+    getGradeLabel,
+    getGradePercentage,
+    getLetterGradeCount,
+    getNonLetterGradeCount,
+    LETTER_GRADE_KEYS,
+    numberWithCommas,
+} from '@/lib/madgrades/utils'
 
 export type GradeDistributionChartProps = {
     title?: string
@@ -73,6 +70,10 @@ function DistributionLabel({
                                labelYOffset,
                                rows,
                            }: DistributionLabelProps) {
+    if (value === null || value === undefined) {
+        return null
+    }
+
     const numericX = typeof x === 'number' ? x : Number(x ?? 0)
     const numericY = typeof y === 'number' ? y : Number(y ?? 0)
     const numericWidth = typeof width === 'number' ? width : Number(width ?? 0)
@@ -124,19 +125,20 @@ export function GradeDistributionChart({
                                            countFontSize = 10,
                                            labelYOffset = 18,
                                        }: GradeDistributionChartProps) {
-    const data = GRADE_KEYS.map((key) => {
+    const primaryLetterCount = primary ? getLetterGradeCount(primary) : 0
+    const secondaryLetterCount = secondary ? getLetterGradeCount(secondary) : 0
+    const hasLetterGrades = primaryLetterCount > 0 || secondaryLetterCount > 0
+    const data = LETTER_GRADE_KEYS.map((key) => {
         const primaryCount = primary?.[key] ?? 0
-        const primaryPercent = primary ? (primaryCount / Math.max(primary.total, 1)) * 100 : 0
+        const primaryPercent = primary ? getGradePercentage(primary, key) : null
         const secondaryCount = secondary?.[key] ?? 0
-        const secondaryPercent = secondary
-            ? (secondaryCount / Math.max(secondary.total, 1)) * 100
-            : 0
+        const secondaryPercent = secondary ? getGradePercentage(secondary, key) : null
 
         return {
             grade: getGradeLabel(key),
-            primaryPercent: Number(primaryPercent.toFixed(1)),
+            primaryPercent: primaryPercent === null ? null : Number(primaryPercent.toFixed(1)),
             primaryCount,
-            secondaryPercent: Number(secondaryPercent.toFixed(1)),
+            secondaryPercent: secondaryPercent === null ? null : Number(secondaryPercent.toFixed(1)),
             secondaryCount,
         }
     })
@@ -150,7 +152,7 @@ export function GradeDistributionChart({
                 </div>
             ) : null}
 
-            <div className={`${heightClassName} min-w-0 w-full`}>
+            {hasLetterGrades ? <div className={`${heightClassName} min-w-0 w-full`}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <BarChart
                         barCategoryGap={barCategoryGap}
@@ -179,7 +181,7 @@ export function GradeDistributionChart({
                         <YAxis
                             domain={[0, 100]}
                             label={{
-                                value: 'Students (%)',
+                                value: 'Letter grades (%)',
                                 angle: -90,
                                 position: 'insideLeft',
                                 fill: 'var(--chart-axis)',
@@ -264,6 +266,25 @@ export function GradeDistributionChart({
                         ) : null}
                     </BarChart>
                 </ResponsiveContainer>
+            </div> : (
+                <p className="py-8 text-center text-sm text-[var(--color-ink-soft)]">
+                    No letter grades are available for this selection.
+                </p>
+            )}
+            <div className="mt-3 space-y-1 text-xs text-[var(--color-ink-soft)]">
+                <p>Percentages use A–F grades only, including AB and BC. Other grades are excluded.</p>
+                {primary ? (
+                    <p>
+                        {primaryLabel}: {numberWithCommas(primaryLetterCount)} letter grades;
+                        {' '}{numberWithCommas(getNonLetterGradeCount(primary))} other grades.
+                    </p>
+                ) : null}
+                {secondary ? (
+                    <p>
+                        {secondaryLabel ?? 'Comparison'}: {numberWithCommas(secondaryLetterCount)} letter grades;
+                        {' '}{numberWithCommas(getNonLetterGradeCount(secondary))} other grades.
+                    </p>
+                ) : null}
             </div>
         </div>
     )

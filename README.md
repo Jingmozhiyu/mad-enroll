@@ -36,6 +36,8 @@ Subscribe courses after registering by email address. Users will receive email a
 
 API contracts: [Backend — English](backend/docs/en-us/api-reference.md) / [后端 — 简体中文](backend/docs/zh-cn/api-reference.md)
 
+Course grade pages: [English](docs/en-us/course-grades.md) / [简体中文](docs/zh-cn/course-grades.md)
+
 ### Future
 
 - Dockerfile Deployment

@@ -10,7 +10,7 @@ import type {
     MadgradesSubject,
 } from '@/lib/madgrades/types'
 
-const GPA_KEYS = [
+export const LETTER_GRADE_KEYS = [
     'aCount',
     'abCount',
     'bCount',
@@ -21,7 +21,7 @@ const GPA_KEYS = [
 ] as const
 
 const ALL_GRADE_KEYS = [
-    ...GPA_KEYS,
+    ...LETTER_GRADE_KEYS,
     'sCount',
     'ubCount',
     'crCount',
@@ -44,7 +44,7 @@ const GRADE_NAME_MAP: Record<GradeKey, string> = {
     dCount: 'D',
     fCount: 'F',
     sCount: 'S',
-    ubCount: 'UB',
+    ubCount: 'U',
     crCount: 'CR',
     nCount: 'N',
     pCount: 'P',
@@ -115,13 +115,11 @@ export function normalizeGradeDistribution(
     const source = input ?? {}
 
     for (const key of ALL_GRADE_KEYS) {
-        const rawCamelValue = source[key]
-        const rawSnakeValue =
-            source[
-                Object.keys(RAW_TO_CAMEL_KEY).find(
-                    (rawKey) => RAW_TO_CAMEL_KEY[rawKey] === key,
-                ) as keyof typeof source
-                ]
+        const rawCamelValue = key === 'ubCount' ? source.uCount ?? source.ubCount : source[key]
+        const rawKey = Object.keys(RAW_TO_CAMEL_KEY).find(
+            (candidate) => RAW_TO_CAMEL_KEY[candidate] === key && typeof source[candidate] === 'number',
+        )
+        const rawSnakeValue = rawKey ? source[rawKey] : undefined
 
         const value =
             typeof rawCamelValue === 'number'
@@ -168,8 +166,31 @@ export function combineAllDistributions(distributions: GradeDistribution[]) {
     )
 }
 
+/** Returns the number of reported A–F grades, including AB and BC. */
+export function getLetterGradeCount(distribution: GradeDistribution): number {
+    return LETTER_GRADE_KEYS.reduce((sum, key) => sum + distribution[key], 0)
+}
+
+/** Returns a grade's percentage among letter grades, or null when none exist. */
+export function getGradePercentage(
+    distribution: GradeDistribution,
+    key: (typeof LETTER_GRADE_KEYS)[number],
+): number | null {
+    const count = getLetterGradeCount(distribution)
+    return count === 0 ? null : (distribution[key] / count) * 100
+}
+
+/** Returns reported non-letter grades without including them in GPA or percentages. */
+export function getNonLetterGradeCount(distribution: GradeDistribution): number {
+    return ALL_GRADE_KEYS.reduce(
+        (sum, key) => sum + distribution[key],
+        0,
+    ) - getLetterGradeCount(distribution)
+}
+
+/** Calculates the count-weighted mean grade point using letter grades only. */
 export function calculateGpa(distribution: GradeDistribution) {
-    const count = GPA_KEYS.reduce((sum, key) => sum + distribution[key], 0)
+    const count = getLetterGradeCount(distribution)
     if (count === 0) {
         return NaN
     }

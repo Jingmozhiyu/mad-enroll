@@ -1,13 +1,17 @@
+import {ProgressLink} from '@/components/navigation-progress'
+
 type PaginationProps = {
     currentPage: number
     totalPages: number
     onPageChange: (page: number) => void
+    getPageHref?: (page: number) => string
 }
 
 export function Pagination({
                                currentPage,
                                totalPages,
                                onPageChange,
+                               getPageHref,
                            }: PaginationProps) {
     if (totalPages <= 1) {
         return null
@@ -21,38 +25,44 @@ export function Pagination({
         pages.push(page)
     }
 
-    return (
-        <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-                className="button-ghost min-w-[108px]"
-                disabled={currentPage <= 1}
-                onClick={() => onPageChange(currentPage - 1)}
-                type="button"
-            >
-                Previous
-            </button>
+    function renderPage(page: number, label: string | number, disabled = false) {
+        const className = typeof label === 'number'
+            ? page === currentPage ? 'button-primary min-w-[48px]' : 'button-ghost min-w-[48px]'
+            : 'button-ghost min-w-[108px]'
 
-            {pages.map((page) => (
-                <button
-                    key={page}
-                    className={
-                        page === currentPage ? 'button-primary min-w-[48px]' : 'button-ghost min-w-[48px]'
-                    }
-                    onClick={() => onPageChange(page)}
-                    type="button"
+        if (getPageHref && !disabled) {
+            return (
+                <ProgressLink
+                    key={label}
+                    aria-current={page === currentPage ? 'page' : undefined}
+                    className={className}
+                    href={getPageHref(page)}
+                    prefetch={false}
                 >
-                    {page}
-                </button>
-            ))}
+                    {label}
+                </ProgressLink>
+            )
+        }
 
+        return (
             <button
-                className="button-ghost min-w-[108px]"
-                disabled={currentPage >= totalPages}
-                onClick={() => onPageChange(currentPage + 1)}
+                key={label}
+                aria-current={page === currentPage && !disabled ? 'page' : undefined}
+                className={className}
+                disabled={disabled}
+                onClick={() => onPageChange(page)}
                 type="button"
             >
-                Next
+                {label}
             </button>
-        </div>
+        )
+    }
+
+    return (
+        <nav aria-label="Pagination" className="flex flex-wrap items-center justify-center gap-2">
+            {renderPage(currentPage - 1, 'Previous', currentPage <= 1)}
+            {pages.map((page) => renderPage(page, page))}
+            {renderPage(currentPage + 1, 'Next', currentPage >= totalPages)}
+        </nav>
     )
 }

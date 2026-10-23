@@ -3,7 +3,7 @@
 import {startTransition, useState, useTransition} from 'react'
 import {usePathname} from 'next/navigation'
 import {EmptyState} from '@/components/empty-state'
-import {useProgressRouter} from '@/components/navigation-progress'
+import {ProgressLink, useProgressRouter} from '@/components/navigation-progress'
 import {SearchResultsSkeleton} from '@/components/page-skeletons'
 import {CourseQueryInput} from '@/components/course-query-input'
 import {
@@ -20,6 +20,7 @@ import type {
     MadgradesPaginatedResponse,
 } from '@/lib/madgrades/types'
 import {getCourseDisplayLine} from '@/lib/madgrades/utils'
+import {getCoursePath} from '@/lib/madgrades/identifiers'
 
 function buildSearchParams(
     query: string,
@@ -66,16 +67,10 @@ type SearchFilterState = {
 }
 
 function CourseResultCard({course}: { course: MadgradesCourse }) {
-    const router = useProgressRouter()
-    const href = `/courses/${course.uuid}`
-
     return (
-        <button
-            className="glass-card hover-elevated w-full px-5 py-5 text-left transition hover:-translate-y-0.5"
-            onFocus={() => router.prefetch(href)}
-            onMouseEnter={() => router.prefetch(href)}
-            onClick={() => router.push(href)}
-            type="button"
+        <ProgressLink
+            className="glass-card hover-elevated block w-full px-5 py-5 text-left transition hover:-translate-y-0.5"
+            href={getCoursePath(course)}
         >
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
@@ -83,7 +78,7 @@ function CourseResultCard({course}: { course: MadgradesCourse }) {
                     <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{getCourseDisplayLine(course)}</p>
                 </div>
             </div>
-        </button>
+        </ProgressLink>
     )
 }
 
@@ -135,7 +130,7 @@ export function MadgradesSearchPage({
                             <span className="text-sm font-bold text-[var(--color-ink-soft)]">Search</span>
                             <CourseQueryInput
                                 inputClassName="input-shell search-input-accent h-12 w-full px-4"
-                                onSelectSuggestion={(suggestion) => router.push(`/courses/${suggestion.uuid}`)}
+                                onSelectSuggestion={(suggestion) => router.push(suggestion.path)}
                                 onSubmit={(nextValue) => updateUrl(1, nextValue)}
                                 onValueChange={(query) => updateFilters({query})}
                                 placeholder="ECON 101, Math 234, Algorithms..."
@@ -238,6 +233,10 @@ export function MadgradesSearchPage({
                                 <Pagination
                                     currentPage={initialResults.currentPage}
                                     onPageChange={(page) => updateUrl(page)}
+                                    getPageHref={(page) => {
+                                        const query = buildSearchParams(initialQuery, initialSubjects, initialInstructors, initialSort, page)
+                                        return query ? `${pathname}?${query}` : pathname
+                                    }}
                                     totalPages={initialResults.totalPages}
                                 />
                             </section>
