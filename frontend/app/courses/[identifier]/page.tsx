@@ -8,6 +8,7 @@ import {fetchMadgradesCourseGrades, hasMadgradesToken, resolveMadgradesCourse} f
 import {getCourseChartPath, getCoursePath, getCourseSlug} from '@/lib/madgrades/identifiers'
 import type {CourseCompareState} from '@/lib/madgrades/types'
 import {getCourseDisplayLine} from '@/lib/madgrades/utils'
+import {SITE_URL} from '@/lib/seo'
 
 type CoursePageProps = {
     params: Promise<{identifier: string}>
@@ -36,7 +37,7 @@ export async function generateMetadata({params}: CoursePageProps): Promise<Metad
     const course = await getCourse(identifier)
     const displayLine = getCourseDisplayLine(course)
     const title = `${displayLine}: ${course.name} — Grade Distribution & GPA | UW–Madison | MadEnroll`
-    const description = `Historical grade distributions and GPA for ${displayLine}, ${course.name}, at UW–Madison. Compare grade counts, A rates and semester results, with data from Madgrades.`
+    const description = `Historical grade distributions and GPA for ${displayLine}, ${course.name}, at UW–Madison. Compare grade counts, A rates and semester results on MadEnroll.`
 
     return {
         title,
@@ -77,6 +78,20 @@ export default async function CoursePage({params, searchParams}: CoursePageProps
 
     return (
         <div className="grid min-w-0 gap-5">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'Dataset',
+                name: `${getCourseDisplayLine(course)}: ${course.name} — UW–Madison grade distribution`,
+                description: `Historical grade counts, GPA, A rates and semester results for ${getCourseDisplayLine(course)}, available on MadEnroll.`,
+                identifier: getCourseSlug(course),
+                url: `${SITE_URL}${getCoursePath(course)}`,
+                provider: {'@type': 'Organization', name: 'MadEnroll', url: SITE_URL},
+                distribution: {
+                    '@type': 'DataDownload',
+                    encodingFormat: 'application/json',
+                    contentUrl: `${SITE_URL}/api/grades/courses/${encodeURIComponent(getCourseSlug(course))}`,
+                },
+            }).replaceAll('<', '\\u003c')}}/>
             <div className="flex justify-end text-sm text-[var(--color-ink-soft)]">
                 <Link className="course-data-link underline underline-offset-4" href={getCourseChartPath(course)} prefetch={false}>
                     Interactive charts

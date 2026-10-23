@@ -1,6 +1,16 @@
+import type {Metadata} from 'next'
 import {MonitorClientPage} from '@/components/monitor/monitor-client-page'
 import {backendFetchSubscriptions} from '@/lib/api/server/subscriptions'
 import {getServerSession} from '@/lib/auth/session.server'
+import {MONITOR_DESCRIPTION, MONITOR_TITLE} from '@/lib/seo'
+
+export const metadata: Metadata = {
+    title: MONITOR_TITLE,
+    description: MONITOR_DESCRIPTION,
+    alternates: {canonical: '/monitor'},
+    openGraph: {title: MONITOR_TITLE, description: MONITOR_DESCRIPTION, url: '/monitor', siteName: 'MadEnroll'},
+    twitter: {card: 'summary', title: MONITOR_TITLE, description: MONITOR_DESCRIPTION},
+}
 
 type MonitorPageProps = {
     searchParams?: Promise<Record<string, string | string[] | undefined>>

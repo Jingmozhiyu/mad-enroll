@@ -31,9 +31,15 @@ export async function generateMetadata({searchParams}: DirectoryPageProps): Prom
     const query = await searchParams
     const subjectCode = singleValue(query.subject)
     const page = Number(singleValue(query.page) || '1')
+    const subject = subjectCode ? (await fetchMadgradesSubjectCatalog()).find((item) => item.code === subjectCode) : null
+    const title = subject
+        ? `${subject.name} Grade Distributions${page > 1 ? ` — Page ${page}` : ''} | UW–Madison | MadEnroll`
+        : 'UW–Madison Grade Distribution Dataset | MadEnroll'
     return {
-        title: 'UW–Madison Grade Distribution Dataset | MadEnroll',
-        description: 'A public reference directory of UW–Madison historical grade distributions, GPA, semester statistics and source information from Madgrades.',
+        title,
+        description: subject
+            ? `Browse UW–Madison ${subject.name} courses and historical grade distributions, GPA and semester results.`
+            : 'A public reference directory of UW–Madison historical grade distributions, GPA, semester statistics and source information.',
         alternates: {canonical: subjectCode ? directoryPath(subjectCode, page) : '/course'},
     }
 }
@@ -67,8 +73,7 @@ export default async function CourseDirectoryPage({searchParams}: DirectoryPageP
             <header className="grid max-w-[75ch] gap-4 leading-7">
                 <h1 className="text-3xl font-semibold leading-tight">UW–Madison Grade Distribution Dataset</h1>
                 <p>
-                    A public reference directory of historical grade counts, GPA and semester statistics,
-                    sourced from <a className={LINK_CLASS} href="https://madgrades.com/">Madgrades</a>.
+                    MadEnroll’s public reference directory of historical grade counts, GPA and semester statistics.
                     Browse the data for research, citations or automated access.
                 </p>
                 <p className="text-sm text-[var(--color-ink-soft)]">
@@ -131,7 +136,7 @@ export default async function CourseDirectoryPage({searchParams}: DirectoryPageP
                 <h2 className="text-lg font-semibold text-[var(--color-ink)]" id="directory-source-heading">Data coverage and sources</h2>
                 <p>
                     Each course page reports its available grade terms, sample counts and calculation methods.
-                    Coverage depends on Madgrades and may differ by course. GPA and A rates use letter-grade
+                    Coverage may differ by course. GPA and A rates use letter-grade
                     records; non-letter grades are listed separately.
                 </p>
                 <p>

@@ -77,7 +77,7 @@ export function CourseSummary({course, grades}: CourseSummaryProps) {
                             of Wisconsin–Madison. Average GPA and A rate are not available.
                         </>
                     )}{' '}
-                    Madgrades reports {numberWithCommas(cumulative.total)} total grade records;
+                    There are {numberWithCommas(cumulative.total)} total grade records;
                     the non-letter categories contain {numberWithCommas(nonLetterCount)} records.
                 </p>
                 <p className="max-w-[72ch] text-sm leading-6 text-[var(--color-ink-soft)]">
@@ -206,13 +206,9 @@ export function CourseSummary({course, grades}: CourseSummaryProps) {
             </section>
 
             <section aria-labelledby="grade-methodology-heading" className="grid max-w-[72ch] gap-3 leading-7">
-                <h2 className="text-xl font-semibold" id="grade-methodology-heading">Sources and methodology</h2>
+                <h2 className="text-xl font-semibold" id="grade-methodology-heading">Data and methodology</h2>
                 <p>
-                    Grade counts come from{' '}
-                    <a className={LINK_CLASS} href={`https://madgrades.com/courses/${course.uuid}`}>
-                        Madgrades&apos; {courseCode} record
-                    </a>.
-                    The university publishes the underlying{' '}
+                    The university publishes{' '}
                     <a className={LINK_CLASS} href="https://registrar.wisc.edu/grade-reports/">
                         UW–Madison grade-distribution reports
                     </a>.
@@ -224,7 +220,7 @@ export function CourseSummary({course, grades}: CourseSummaryProps) {
                     averages of grade records, not credit-weighted student GPAs.
                 </p>
                 <p>
-                    Cumulative and term totals use the aggregates supplied by Madgrades; where an aggregate
+                    Cumulative and term totals use reported aggregates; where an aggregate
                     is absent, available lower-level records are summed. Course totals do not add section
                     totals again. Coverage reflects the records available from this source, not a complete
                     history of every offering. Missing or unpublished records are not evidence of zero grades.

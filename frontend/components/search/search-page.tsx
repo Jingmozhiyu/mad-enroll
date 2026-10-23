@@ -57,6 +57,7 @@ type MadgradesSearchPageProps = {
     initialSort: string
     initialResults: MadgradesPaginatedResponse<MadgradesCourse> | null
     error: string | null
+    isFeatured: boolean
 }
 
 type SearchFilterState = {
@@ -90,6 +91,7 @@ export function MadgradesSearchPage({
                                         initialSort,
                                         initialResults,
                                         error,
+                                        isFeatured,
                                     }: MadgradesSearchPageProps) {
     const router = useProgressRouter()
     const pathname = usePathname()
@@ -210,7 +212,7 @@ export function MadgradesSearchPage({
                 <div className="grid content-start gap-4">
                     <div className="px-1">
                         <h2 className="text-3xl font-semibold text-[var(--color-ink)]">
-                            {initialResults ? `${initialResults.totalCount} results` : 'Results'}
+                            {isFeatured ? 'Popular courses' : initialResults ? `${initialResults.totalCount} results` : 'Results'}
                         </h2>
                         {error ? (
                             <div
@@ -230,7 +232,7 @@ export function MadgradesSearchPage({
                                 ))}
                             </section>
 
-                            <section className="px-2 py-2">
+                            {!isFeatured ? <section className="px-2 py-2">
                                 <Pagination
                                     currentPage={initialResults.currentPage}
                                     onPageChange={(page) => updateUrl(page)}
@@ -240,7 +242,7 @@ export function MadgradesSearchPage({
                                     }}
                                     totalPages={initialResults.totalPages}
                                 />
-                            </section>
+                            </section> : null}
                         </>
                     ) : (
                         <section className="glass-card px-6 py-8">
