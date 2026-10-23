@@ -6,6 +6,7 @@ import '@/app/globals.css'
 import {Providers} from '@/components/providers'
 import {SiteShell} from '@/components/site-shell'
 import {getServerSession} from '@/lib/auth/session.server'
+import {SITE_DESCRIPTION, SITE_TITLE, SITE_URL} from '@/lib/seo'
 
 const hanyiWenHei = localFont({
     src: [
@@ -22,9 +23,11 @@ const hanyiWenHei = localFont({
 })
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://madenroll.com'),
-    title: 'MadEnroll',
-    description: 'Seat alerts for UW–Madison courses, with grade distributions.',
+    metadataBase: new URL(SITE_URL),
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    applicationName: 'MadEnroll',
+    openGraph: {siteName: 'MadEnroll', locale: 'en_US', type: 'website'},
     icons: {
         icon: '/shamrock_6ccb20.svg',
     },
@@ -39,6 +42,9 @@ export default async function RootLayout({
 
     return (
         <html lang="en">
+            <head>
+                <link rel="service-desc" type="application/vnd.oai.openapi+json" href="/openapi.json"/>
+            </head>
             <body className={`${hanyiWenHei.className} ${GeistSans.variable}`}>
                 <Providers initialSession={session} initialSessionResolved>
                     <SiteShell>{children}</SiteShell>

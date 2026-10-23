@@ -71,7 +71,7 @@ export function CourseQueryInput({
 
     useEffect(() => {
         visibleSuggestions.slice(0, 4).forEach((suggestion) => {
-            router.prefetch(`/courses/${suggestion.uuid}`)
+            router.prefetch(suggestion.path)
         })
     }, [router, visibleSuggestions])
 
@@ -169,7 +169,7 @@ export function CourseQueryInput({
                                         active ? 'interactive-row-active' : '',
                                     ].join(' ')}
                                     onClick={() => selectSuggestion(suggestion)}
-                                    onFocus={() => router.prefetch(`/courses/${suggestion.uuid}`)}
+                                    onFocus={() => router.prefetch(suggestion.path)}
                                     onMouseEnter={() => setActiveIndex(index)}
                                     type="button"
                                 >

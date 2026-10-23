@@ -57,6 +57,10 @@ export function WelcomeHero() {
                         <span className={styles.line}><span>UW<span className={styles.dash}>-</span>Madison</span> course seats.</span>
                     </h1>
 
+                    <p className={styles.description}>
+                        Plan enrollment with seat alerts and historical UW–Madison grade distributions.
+                    </p>
+
                     <aside className={styles.proof} aria-label="Enrollment update">
                         <div className={styles.proofMark} aria-hidden="true">↗</div>
                         <p>We have sent <strong>1,800+ email alerts</strong> during Fall 2026 enrollment.</p>

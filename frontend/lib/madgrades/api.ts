@@ -1,5 +1,13 @@
 import 'server-only'
 
+import {cache} from 'react'
+import {
+    findCourseIdentifierMatches,
+    getCourseChartPath,
+    getSubjectIdentifier,
+    normalizeSubjectIdentifier,
+    parseCourseIdentifier,
+} from '@/lib/madgrades/identifiers'
 import type {
     MadgradesCourse,
     MadgradesCourseGrades,
@@ -19,6 +27,21 @@ import {
 const MADGRADES_API_BASE =
     process.env.MADGRADES_API ?? 'https://api.madgrades.com/'
 const MADGRADES_API_TOKEN = process.env.MADGRADES_API_TOKEN ?? ''
+const CATALOG_REVALIDATE_SECONDS = 86_400
+const CATALOG_PAGE_SIZE = 100
+const MAX_CATALOG_PAGES = 10
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** An upstream failure with a safe public message and the HTTP status needed by callers. */
+export class MadgradesApiError extends Error {
+    readonly status: number
+
+    constructor(status: number, message = 'Course data is temporarily unavailable. Please try again later.') {
+        super(message)
+        this.name = 'MadgradesApiError'
+        this.status = status
+    }
+}
 
 function buildUrl(path: string, params?: Record<string, string | number | undefined>) {
     const url = new URL(`v1/${path}`, MADGRADES_API_BASE)
@@ -32,21 +55,71 @@ function buildUrl(path: string, params?: Record<string, string | number | undefi
     return url.toString()
 }
 
-async function madgradesFetch<T>(path: string, params?: Record<string, string | number | undefined>) {
-    const response = await fetch(buildUrl(path, params), {
-        method: 'GET',
-        headers: {
-            Authorization: `Token token=${MADGRADES_API_TOKEN}`,
-        },
-        cache: 'no-store',
-    })
-
-    if (!response.ok) {
-        const text = await response.text()
-        throw new Error(text || `Madgrades request failed with ${response.status}.`)
+async function madgradesFetch<T>(
+    path: string,
+    params?: Record<string, string | number | undefined>,
+    cacheCatalog = false,
+) {
+    let response: Response
+    try {
+        response = await fetch(buildUrl(path, params), {
+            method: 'GET',
+            headers: {
+                Authorization: `Token token=${MADGRADES_API_TOKEN}`,
+            },
+            ...(cacheCatalog ? {next: {revalidate: CATALOG_REVALIDATE_SECONDS}} : {cache: 'no-store'}),
+        })
+    } catch {
+        throw new MadgradesApiError(503)
     }
 
-    return (await response.json()) as T
+    if (!response.ok) {
+        throw new MadgradesApiError(response.status)
+    }
+
+    try {
+        return (await response.json()) as T
+    } catch {
+        throw new MadgradesApiError(502)
+    }
+}
+
+async function fetchCatalogPages(
+    path: string,
+    params?: Record<string, string | number | undefined>,
+) {
+    const results: Record<string, unknown>[] = []
+    let totalPages = 1
+    for (let page = 1; page <= totalPages; page += 1) {
+        const response = await madgradesFetch<MadgradesPaginatedResponse<Record<string, unknown>>>(
+            path,
+            {...params, page, per_page: CATALOG_PAGE_SIZE},
+            true,
+        )
+        if (!Number.isInteger(response.totalPages) || response.totalPages < 0 ||
+            response.totalPages > MAX_CATALOG_PAGES || !Array.isArray(response.results)) {
+            throw new MadgradesApiError(502)
+        }
+        totalPages = response.totalPages
+        results.push(...response.results)
+    }
+    return results
+}
+
+/** Returns the complete cached subject catalog for course resolution and the data directory. */
+export const fetchMadgradesSubjectCatalog = cache(async () => {
+    const subjects = await fetchCatalogPages('subjects')
+    return subjects.map(normalizeSubject)
+})
+
+/** Returns one cached page of courses belonging to a subject in the data directory. */
+export async function fetchMadgradesCourseDirectory(subjectCode: string, page = 1) {
+    const response = await madgradesFetch<MadgradesPaginatedResponse<Record<string, unknown>>>(
+        'courses',
+        {subject: subjectCode, sort: 'number', order: 'ASC', page, per_page: CATALOG_PAGE_SIZE},
+        true,
+    )
+    return {...response, results: response.results.map(normalizeCourse)}
 }
 
 export function hasMadgradesToken() {
@@ -87,6 +160,7 @@ export async function searchMadgradesCourseSuggestions(query: string, limit = 8)
     return response.results.slice(0, limit).map((course) => ({
         uuid: course.uuid,
         name: course.name,
+        path: getCourseChartPath(course),
         displayLine: `${course.subjects
             .map((subject) => subject.abbreviation || subject.code || subject.name)
             .join(', ')} ${course.number}`.trim(),
@@ -125,22 +199,77 @@ export async function searchMadgradesInstructors(query: string, page = 1) {
     } satisfies MadgradesPaginatedResponse<MadgradesInstructor>
 }
 
-export async function fetchMadgradesCourse(uuid: string) {
-    const response = await madgradesFetch<Record<string, unknown>>(`courses/${uuid}`)
+export const fetchMadgradesCourse = cache(async (uuid: string) => {
+    const response = await madgradesFetch<Record<string, unknown>>(
+        `courses/${encodeURIComponent(uuid)}`, undefined, true,
+    )
     return normalizeCourse(response)
-}
+})
 
 export async function fetchMadgradesSubject(code: string) {
-    const response = await madgradesFetch<Record<string, unknown>>(`subjects/${code}`)
+    const response = await madgradesFetch<Record<string, unknown>>(
+        `subjects/${encodeURIComponent(code)}`, undefined, true,
+    )
     return normalizeSubject(response)
 }
 
 export async function fetchMadgradesInstructor(id: number) {
-    const response = await madgradesFetch<Record<string, unknown>>(`instructors/${id}`)
+    const response = await madgradesFetch<Record<string, unknown>>(`instructors/${id}`, undefined, true)
     return normalizeInstructor(response)
 }
 
-export async function fetchMadgradesCourseGrades(uuid: string) {
-    const response = await madgradesFetch<Record<string, unknown>>(`courses/${uuid}/grades`)
+export const fetchMadgradesCourseGrades = cache(async (uuid: string) => {
+    const response = await madgradesFetch<Record<string, unknown>>(
+        `courses/${encodeURIComponent(uuid)}/grades`, undefined, true,
+    )
     return normalizeCourseGrades(response) satisfies MadgradesCourseGrades
-}
+})
+
+/** Resolves UUIDs or readable course codes without treating fuzzy search results as identities. */
+export const resolveMadgradesCourse = cache(async (identifier: string): Promise<MadgradesCourse | null> => {
+    if (UUID_PATTERN.test(identifier)) {
+        try {
+            return await fetchMadgradesCourse(identifier.toLowerCase())
+        } catch (error) {
+            if (error instanceof MadgradesApiError && error.status === 404) {
+                return null
+            }
+            throw error
+        }
+    }
+
+    const parsed = parseCourseIdentifier(identifier)
+    if (!parsed) {
+        return null
+    }
+
+    const catalog = await fetchMadgradesSubjectCatalog()
+    const subjectCodes: string[] = []
+    for (const identifier of parsed.subjects) {
+        const matches = catalog.filter((subject) =>
+            getSubjectIdentifier(subject) === identifier ||
+            normalizeSubjectIdentifier(subject.code) === identifier)
+        const codes = [...new Set(matches.map((subject) => subject.code))]
+        if (codes.length === 0) {
+            return null
+        }
+        if (codes.length > 1) {
+            throw new MadgradesApiError(409, 'This course code is ambiguous. Please search for the course.')
+        }
+        subjectCodes.push(codes[0])
+    }
+
+    // Madgrades supports exact number + subject filtering; its query parameter is fuzzy search.
+    const candidates = await fetchCatalogPages('courses', {
+        subject: subjectCodes[0],
+        number: parsed.number,
+        sort: 'name',
+        order: 'ASC',
+    })
+    const matches = findCourseIdentifierMatches(candidates.map(normalizeCourse), subjectCodes, parsed.number)
+    if (matches.length > 1) {
+        throw new MadgradesApiError(409, 'This course code is ambiguous. Please search for the course.')
+    }
+
+    return matches[0] ?? null
+})

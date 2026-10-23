@@ -8,6 +8,7 @@ import {CourseSelectionControls} from '@/components/courses/course-selection-con
 import {GpaChart} from '@/components/courses/gpa-chart'
 import {GradeDistributionChart} from '@/components/courses/grade-distribution-chart'
 import {useProgressRouter} from '@/components/navigation-progress'
+import {getCoursePath} from '@/lib/madgrades/identifiers'
 import type {
     CourseCompareState,
     MadgradesCourse,
@@ -22,7 +23,6 @@ import {
 } from '@/lib/madgrades/utils'
 
 type MadgradesCoursePageProps = {
-    uuid: string
     course: MadgradesCourse | null
     grades: MadgradesCourseGrades | null
     initialSelection: CourseCompareState
@@ -41,7 +41,7 @@ function CoursePageSearch() {
     return (
         <CourseQueryInput
             inputClassName="input-shell search-input-accent h-11 w-full px-4"
-            onSelectSuggestion={(suggestion) => router.push(`/courses/${suggestion.uuid}`)}
+            onSelectSuggestion={(suggestion) => router.push(suggestion.path)}
             onSubmit={openSearch}
             onValueChange={setSearchDraft}
             placeholder="Search..."
@@ -62,14 +62,18 @@ const COURSE_DISTRIBUTION_COUNT_FONT_SIZE = 10
 const COURSE_DISTRIBUTION_LABEL_OFFSET = 18
 
 function parseState(searchParams: URLSearchParams): CourseCompareState {
+    function positiveInteger(value: string | null) {
+        const parsed = Number(value)
+        return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 0
+    }
+
     return {
-        instructorId: Number(searchParams.get('instructorId') ?? '0'),
-        termCode: Number(searchParams.get('termCode') ?? '0'),
+        instructorId: positiveInteger(searchParams.get('instructorId')),
+        termCode: positiveInteger(searchParams.get('termCode')),
     }
 }
 
 export function MadgradesCoursePage({
-                                        uuid,
                                         course,
                                         grades,
                                         initialSelection,
@@ -106,6 +110,10 @@ export function MadgradesCoursePage({
     )
 
     function updateSelection(nextState: CourseCompareState) {
+        if (!course) {
+            return
+        }
+
         const params = new URLSearchParams(searchParams.toString())
         if (nextState.instructorId > 0) {
             params.set('instructorId', String(nextState.instructorId))
@@ -119,8 +127,9 @@ export function MadgradesCoursePage({
             params.delete('termCode')
         }
 
+        const coursePath = getCoursePath(course)
         router.replace(
-            params.toString() ? `/courses/${uuid}?${params.toString()}` : `/courses/${uuid}`,
+            params.toString() ? `${coursePath}?${params.toString()}` : coursePath,
             {scroll: false},
         )
     }

@@ -109,25 +109,7 @@ export function AboutHero() {
                     >
                     Cole Nelson
                   </a>,{' '}
-                    for special guidance on Web Dev;<span><br/></span>{' '}
-                    <a
-                        className="about-inline-link"
-                        href="https://madgrades.com/"
-                        rel="noreferrer"
-                        target="_blank"
-                    >
-                    Madgrades.com
-                  </a>,{' '}
-                    for providing the{' '}
-                    <a
-                        className="about-inline-link"
-                        href="https://api.madgrades.com/"
-                        rel="noreferrer"
-                        target="_blank"
-                    >
-                    API
-                  </a>{' '}
-                    and Linking Card that powers this project.
+                    for special guidance on Web Dev.
                 </span>
                             </p>
                         </div>
