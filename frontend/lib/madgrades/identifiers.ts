@@ -32,6 +32,11 @@ export function getCoursePath(course: MadgradesCourse) {
     return `/courses/${encodeURIComponent(getCourseSlug(course))}`
 }
 
+/** Opens the interactive view without changing the course's canonical data URL. */
+export function getCourseChartPath(course: MadgradesCourse) {
+    return `${getCoursePath(course)}?view=charts`
+}
+
 /** Parses readable course identifiers; route parameters are already URL-decoded by Next.js. */
 export function parseCourseIdentifier(identifier: string): CourseIdentifier | null {
     const parts = identifier.trim().split('_')

@@ -3,7 +3,7 @@ import 'server-only'
 import {cache} from 'react'
 import {
     findCourseIdentifierMatches,
-    getCoursePath,
+    getCourseChartPath,
     getSubjectIdentifier,
     normalizeSubjectIdentifier,
     parseCourseIdentifier,
@@ -106,10 +106,21 @@ async function fetchCatalogPages(
     return results
 }
 
-const fetchSubjectCatalog = cache(async () => {
+/** Returns the complete cached subject catalog for course resolution and the data directory. */
+export const fetchMadgradesSubjectCatalog = cache(async () => {
     const subjects = await fetchCatalogPages('subjects')
     return subjects.map(normalizeSubject)
 })
+
+/** Returns one cached page of courses belonging to a subject in the data directory. */
+export async function fetchMadgradesCourseDirectory(subjectCode: string, page = 1) {
+    const response = await madgradesFetch<MadgradesPaginatedResponse<Record<string, unknown>>>(
+        'courses',
+        {subject: subjectCode, sort: 'number', order: 'ASC', page, per_page: CATALOG_PAGE_SIZE},
+        true,
+    )
+    return {...response, results: response.results.map(normalizeCourse)}
+}
 
 export function hasMadgradesToken() {
     return Boolean(MADGRADES_API_TOKEN)
@@ -149,7 +160,7 @@ export async function searchMadgradesCourseSuggestions(query: string, limit = 8)
     return response.results.slice(0, limit).map((course) => ({
         uuid: course.uuid,
         name: course.name,
-        path: getCoursePath(course),
+        path: getCourseChartPath(course),
         displayLine: `${course.subjects
             .map((subject) => subject.abbreviation || subject.code || subject.name)
             .join(', ')} ${course.number}`.trim(),
@@ -232,7 +243,7 @@ export const resolveMadgradesCourse = cache(async (identifier: string): Promise<
         return null
     }
 
-    const catalog = await fetchSubjectCatalog()
+    const catalog = await fetchMadgradesSubjectCatalog()
     const subjectCodes: string[] = []
     for (const identifier of parsed.subjects) {
         const matches = catalog.filter((subject) =>

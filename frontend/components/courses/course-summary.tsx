@@ -31,7 +31,7 @@ const NON_LETTER_GRADE_KEYS = [
 
 const CELL_CLASS = 'whitespace-nowrap px-4 py-3'
 const ROW_CLASS = 'border-b border-[var(--surface-divider)]'
-const LINK_CLASS = 'underline decoration-[var(--about-inline-decoration)] underline-offset-4 hover:decoration-[var(--color-deep-teal)]'
+const LINK_CLASS = 'course-data-link underline decoration-[var(--about-inline-decoration)] underline-offset-4 hover:decoration-[var(--color-deep-teal)]'
 
 function formatPercentage(value: number | null) {
     return value === null ? 'N/A' : `${value.toFixed(1)}%`

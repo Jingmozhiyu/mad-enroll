@@ -1,10 +1,11 @@
 import type {Metadata} from 'next'
+import Link from 'next/link'
 import {notFound, permanentRedirect} from 'next/navigation'
 import {cache} from 'react'
 import {CourseSummary} from '@/components/courses/course-summary'
-import {CourseViews} from '@/components/courses/course-views'
+import {CourseCharts} from '@/components/courses/course-views'
 import {fetchMadgradesCourseGrades, hasMadgradesToken, resolveMadgradesCourse} from '@/lib/madgrades/api'
-import {getCoursePath, getCourseSlug} from '@/lib/madgrades/identifiers'
+import {getCourseChartPath, getCoursePath, getCourseSlug} from '@/lib/madgrades/identifiers'
 import type {CourseCompareState} from '@/lib/madgrades/types'
 import {getCourseDisplayLine} from '@/lib/madgrades/utils'
 
@@ -69,9 +70,19 @@ export default async function CoursePage({params, searchParams}: CoursePageProps
         termCode: getSelectionValue(query.termCode),
     }
 
+    const view = Array.isArray(query.view) ? query.view[0] : query.view
+    if (view === 'charts') {
+        return <CourseCharts course={course} grades={grades} initialSelection={initialSelection}/>
+    }
+
     return (
-        <CourseViews key={course.uuid} course={course} grades={grades} initialSelection={initialSelection}>
+        <div className="grid min-w-0 gap-5">
+            <div className="flex justify-end text-sm text-[var(--color-ink-soft)]">
+                <Link className="course-data-link underline underline-offset-4" href={getCourseChartPath(course)} prefetch={false}>
+                    Interactive charts
+                </Link>
+            </div>
             <CourseSummary course={course} grades={grades}/>
-        </CourseViews>
+        </div>
     )
 }

@@ -15,8 +15,6 @@ import type {GradeDistribution} from '@/lib/madgrades/types'
 import {
     getGradeLabel,
     getGradePercentage,
-    getLetterGradeCount,
-    getNonLetterGradeCount,
     LETTER_GRADE_KEYS,
     numberWithCommas,
 } from '@/lib/madgrades/utils'
@@ -125,9 +123,6 @@ export function GradeDistributionChart({
                                            countFontSize = 10,
                                            labelYOffset = 18,
                                        }: GradeDistributionChartProps) {
-    const primaryLetterCount = primary ? getLetterGradeCount(primary) : 0
-    const secondaryLetterCount = secondary ? getLetterGradeCount(secondary) : 0
-    const hasLetterGrades = primaryLetterCount > 0 || secondaryLetterCount > 0
     const data = LETTER_GRADE_KEYS.map((key) => {
         const primaryCount = primary?.[key] ?? 0
         const primaryPercent = primary ? getGradePercentage(primary, key) : null
@@ -152,7 +147,7 @@ export function GradeDistributionChart({
                 </div>
             ) : null}
 
-            {hasLetterGrades ? <div className={`${heightClassName} min-w-0 w-full`}>
+            <div className={`${heightClassName} min-w-0 w-full`}>
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <BarChart
                         barCategoryGap={barCategoryGap}
@@ -181,7 +176,7 @@ export function GradeDistributionChart({
                         <YAxis
                             domain={[0, 100]}
                             label={{
-                                value: 'Letter grades (%)',
+                                value: 'Students (%)',
                                 angle: -90,
                                 position: 'insideLeft',
                                 fill: 'var(--chart-axis)',
@@ -266,25 +261,6 @@ export function GradeDistributionChart({
                         ) : null}
                     </BarChart>
                 </ResponsiveContainer>
-            </div> : (
-                <p className="py-8 text-center text-sm text-[var(--color-ink-soft)]">
-                    No letter grades are available for this selection.
-                </p>
-            )}
-            <div className="mt-3 space-y-1 text-xs text-[var(--color-ink-soft)]">
-                <p>Percentages use A–F grades only, including AB and BC. Other grades are excluded.</p>
-                {primary ? (
-                    <p>
-                        {primaryLabel}: {numberWithCommas(primaryLetterCount)} letter grades;
-                        {' '}{numberWithCommas(getNonLetterGradeCount(primary))} other grades.
-                    </p>
-                ) : null}
-                {secondary ? (
-                    <p>
-                        {secondaryLabel ?? 'Comparison'}: {numberWithCommas(secondaryLetterCount)} letter grades;
-                        {' '}{numberWithCommas(getNonLetterGradeCount(secondary))} other grades.
-                    </p>
-                ) : null}
             </div>
         </div>
     )

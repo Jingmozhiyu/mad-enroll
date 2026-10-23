@@ -16,12 +16,20 @@ URL excludes interactive filter parameters.
 
 The default response contains server-rendered course information, grade counts,
 letter-grade percentages, semester statistics, coverage and source references.
-Reading these tables does not require JavaScript. Select **View interactive
-charts** to load the existing instructor and semester comparison charts, or
-**View grade tables** to return. A fresh page load starts with the tables.
+Reading these tables does not require JavaScript. An understated **Interactive
+charts** link opens `?view=charts`, which loads the original instructor and
+semester comparison interface. The chart view has no data-view switch or added
+explanatory text. Its canonical URL remains the course URL without parameters.
 
-Search results and pagination expose ordinary links to course pages. Instructor
-and semester chart filters retain the readable course path.
+Search results and autocomplete open chart URLs directly, preserving the search
+workflow. Instructor and semester filters retain `view=charts` on the readable
+course path. Results and pagination use ordinary links with their existing visual
+appearance.
+
+The `/course` dataset directory is linked from the footer. It describes the data
+and offers links to interactive course search and seat alerts. Subject links and
+paginated course lists lead to HTML data pages, so the directory can be traversed
+without JavaScript.
 
 ## Data and calculations
 

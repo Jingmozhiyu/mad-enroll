@@ -68,6 +68,8 @@ test('default raw HTML includes citable statistics, semantic tables and canonica
     assert.match(visibleHtml, /Fall 2024/)
     assert.match(visibleHtml, /Spring 2025/)
     assert.match(visibleHtml, /Sources and methodology/)
+    assert.match(visibleHtml, /<a[^>]*class="[^"]*underline[^"]*"[^>]*href="\/courses\/COMPSCI_300\?view=charts"/)
+    assert.doesNotMatch(visibleHtml, /View grade tables|View interactive charts/)
     assert.doesNotMatch(visibleHtml, /recharts-wrapper|recharts-surface/)
 })
 
@@ -111,16 +113,44 @@ test('upstream failures and ambiguous historical identities cannot become succes
     }
 })
 
-test('search results and pagination expose actual hrefs, and suggestions use readable paths', async () => {
+test('search results and suggestions open charts directly, with normal pagination links', async () => {
     const {response, html} = await page('/search')
     assert.equal(response.status, 200)
-    assert.match(html, /href="\/courses\/COMPSCI_300"/)
-    assert.match(html, /href="\/courses\/COMPSCI_ECE_354"/)
+    assert.match(html, /href="\/courses\/COMPSCI_300\?view=charts"/)
+    assert.match(html, /href="\/courses\/COMPSCI_ECE_354\?view=charts"/)
     const paginationUrls = [...html.matchAll(/href="([^" ]+)"/g)]
         .map((match) => new URL(match[1].replaceAll('&amp;', '&'), origin))
     assert.ok(paginationUrls.some((url) => url.pathname === '/search' && url.searchParams.get('page') === '2'))
     const suggestions = await (await fetch(origin + '/api/madgrades/course-suggestions?query=programming')).json()
-    assert.equal(suggestions[0].path, '/courses/COMPSCI_300')
+    assert.equal(suggestions[0].path, '/courses/COMPSCI_300?view=charts')
+})
+
+test('chart URLs retain the data canonical without added switches or dataset copy', async () => {
+    const {response, html} = await page('/courses/COMPSCI_300?view=charts&termCode=1254')
+    assert.equal(response.status, 200)
+    const visibleHtml = withoutScripts(html)
+    assert.match(visibleHtml, /rel="canonical" href="https:\/\/madenroll.com\/courses\/COMPSCI_300"/)
+    assert.doesNotMatch(visibleHtml, /View grade tables|View interactive charts|Sources and methodology|Letter-grade distribution/)
+    assert.doesNotMatch(visibleHtml, /Grade coverage varies by course/)
+    assert.match(visibleHtml, /Courses updated <span[^>]*>Spring 2027<\/span>\./)
+})
+
+test('the dataset directory links subjects to HTML course records and guides interactive visitors', async () => {
+    const {response, html} = await page('/course')
+    assert.equal(response.status, 200)
+    const visibleHtml = withoutScripts(html)
+    assert.match(visibleHtml, /UW–Madison Grade Distribution Dataset/)
+    assert.match(visibleHtml, /href="\/search"/)
+    assert.match(visibleHtml, /href="\/monitor"/)
+    assert.match(visibleHtml, /href="\/course\?subject=266"/)
+    const subject = await page('/course?subject=266')
+    assert.equal(subject.response.status, 200)
+    assert.match(subject.html, /href="\/courses\/COMPSCI_300"/)
+    assert.match(subject.html, /href="\/courses\/COMPSCI_ECE_354"/)
+    assert.doesNotMatch(subject.html, /href="\/courses\/COMPSCI_300\?view=charts"/)
+    for (const path of ['/course?subject=unknown', '/course?subject=266&page=999', '/course?page=-1']) {
+        assert.equal((await page(path)).response.status, 404, path)
+    }
 })
 
 test('repeated public grade requests reuse the upstream fetch cache', async () => {

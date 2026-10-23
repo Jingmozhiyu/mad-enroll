@@ -20,7 +20,7 @@ import type {
     MadgradesPaginatedResponse,
 } from '@/lib/madgrades/types'
 import {getCourseDisplayLine} from '@/lib/madgrades/utils'
-import {getCoursePath} from '@/lib/madgrades/identifiers'
+import {getCourseChartPath} from '@/lib/madgrades/identifiers'
 
 function buildSearchParams(
     query: string,
@@ -70,7 +70,8 @@ function CourseResultCard({course}: { course: MadgradesCourse }) {
     return (
         <ProgressLink
             className="glass-card hover-elevated block w-full px-5 py-5 text-left transition hover:-translate-y-0.5"
-            href={getCoursePath(course)}
+            href={getCourseChartPath(course)}
+            prefetch={false}
         >
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
@@ -234,7 +235,7 @@ export function MadgradesSearchPage({
                                     currentPage={initialResults.currentPage}
                                     onPageChange={(page) => updateUrl(page)}
                                     getPageHref={(page) => {
-                                        const query = buildSearchParams(initialQuery, initialSubjects, initialInstructors, initialSort, page)
+                                        const query = buildSearchParams(filters.query, filters.selectedSubjects, filters.selectedInstructors, filters.sort, page)
                                         return query ? `${pathname}?${query}` : pathname
                                     }}
                                     totalPages={initialResults.totalPages}

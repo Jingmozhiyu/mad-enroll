@@ -37,6 +37,12 @@ export function Pagination({
                     aria-current={page === currentPage ? 'page' : undefined}
                     className={className}
                     href={getPageHref(page)}
+                    onClick={(event) => {
+                        if (event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+                            event.preventDefault()
+                            onPageChange(page)
+                        }
+                    }}
                     prefetch={false}
                 >
                     {label}

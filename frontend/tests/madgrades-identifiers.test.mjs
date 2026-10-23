@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
     findCourseIdentifierMatches,
+    getCourseChartPath,
     getCoursePath,
     getCourseSlug,
     parseCourseIdentifier,
@@ -20,6 +21,7 @@ test('canonical cross-listings follow numeric subject codes regardless of upstre
     assert.equal(getCourseSlug(course('course-1', [computerScience, electricalEngineering])), 'COMPSCI_ECE_354')
     assert.deepEqual(source.subjects, [electricalEngineering, computerScience])
     assert.equal(getCourseSlug(course('course-2', [computerScience], 300)), 'COMPSCI_300')
+    assert.equal(getCourseChartPath(source), '/courses/COMPSCI_ECE_354?view=charts')
 })
 
 test('numeric ordering is stable for subject codes of different lengths', () => {

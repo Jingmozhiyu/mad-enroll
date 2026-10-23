@@ -91,7 +91,8 @@ export function SiteShell({children}: { children: ReactNode }) {
 
                     <footer
                         className="mt-16 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-[var(--surface-divider)] pt-5 pb-2 text-sm text-[var(--color-ink-soft)]">
-                            <span>Course catalog: <span style={{color:"#4183C4"}}>Spring 2027</span>. Grade coverage varies by course.</span>
+                            <span>Courses updated <span style={{color:"#4183C4"}}>Spring 2027</span>.</span>
+                        <ProgressLink className="course-data-link underline underline-offset-4" href="/course" prefetch={false}>Grade Dataset</ProgressLink>
                         <a
                             className="inline-flex items-center gap-1.5 font-semibold text-[var(--color-ink)] underline decoration-[var(--color-shizuku)] decoration-2 underline-offset-4 transition hover:decoration-[var(--color-miku)]"
                             href="https://github.com/jingmozhiyu/mad-enroll"
