@@ -15,7 +15,9 @@ URL excludes interactive filter parameters.
 ## HTML and charts
 
 The default response contains server-rendered course information, grade counts,
-letter-grade percentages, semester statistics, coverage and source references.
+letter-grade percentages, semester statistics and coverage. The HTML page omits
+the separate non-letter-grade table and methodology section; calculation details
+remain in the API reference and this documentation.
 Reading these tables does not require JavaScript. An understated **Interactive
 charts** link opens `?view=charts`, which loads the original instructor and
 semester comparison interface. The chart view has no data-view switch or added
