@@ -212,7 +212,7 @@ export function MadgradesSearchPage({
                 <div className="grid content-start gap-4">
                     <div className="px-1">
                         <h2 className="text-3xl font-semibold text-[var(--color-ink)]">
-                            {isFeatured ? 'Popular courses' : initialResults ? `${initialResults.totalCount} results` : 'Results'}
+                            {isFeatured ? 'Popular (EASY) courses' : initialResults ? `${initialResults.totalCount} results` : 'Results'}
                         </h2>
                         {error ? (
                             <div
