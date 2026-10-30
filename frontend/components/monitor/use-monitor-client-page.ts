@@ -42,11 +42,10 @@ export type MonitorClientPageProps = {
 
 type SearchStage = 'courses' | 'sections'
 
+// The backend returns course hits 50 at a time; the panel shows them 8 per page.
 const COURSE_RESULTS_PER_BACKEND_PAGE = 50
 const COURSE_RESULTS_PER_UI_PAGE = 10
-const UI_PAGES_PER_BACKEND_PAGE =
-    COURSE_RESULTS_PER_BACKEND_PAGE / COURSE_RESULTS_PER_UI_PAGE
-const INITIAL_SEARCH_MESSAGE = 'Search for a course to view sections.'
+const INITIAL_SEARCH_MESSAGE = 'Ready to search!'
 
 function getActiveTasks(tasks: Subscription[]) {
     return sortTasks(tasks.filter((task) => task.enabled !== false))
@@ -103,30 +102,32 @@ export function useMonitorClientPage({
     const [addingDocId, setAddingDocId] = useState<string | null>(null)
     const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
 
-    const highestLoadedBackendPage = useMemo(() => {
-        const loadedPages = Object.keys(courseSearchPages)
-            .map((page) => Number(page))
-            .filter((page) => Number.isFinite(page) && page > 0)
-
-        return loadedPages.length > 0 ? Math.max(...loadedPages) : 0
+    // Backend pages are fetched in order, so the loaded hits are pages 1..n joined end to end.
+    const {loadedBackendPages, loadedCourseResults} = useMemo(() => {
+        const results: SearchCourseHit[] = []
+        let pages = 0
+        while (courseSearchPages[pages + 1]) {
+            pages += 1
+            results.push(...courseSearchPages[pages])
+        }
+        return {loadedBackendPages: pages, loadedCourseResults: results}
     }, [courseSearchPages])
 
-    const highestLoadedCourseResults =
-        highestLoadedBackendPage > 0 ? courseSearchPages[highestLoadedBackendPage] ?? [] : []
-    const knownCoursePages =
-        highestLoadedBackendPage > 0
-            ? (highestLoadedBackendPage - 1) * UI_PAGES_PER_BACKEND_PAGE +
-            Math.ceil(highestLoadedCourseResults.length / COURSE_RESULTS_PER_UI_PAGE)
-            : 0
+    // A partly filled last page is only final once the backend has no more hits.
+    const knownCoursePages = hasMoreCoursePages
+        ? Math.floor(loadedCourseResults.length / COURSE_RESULTS_PER_UI_PAGE)
+        : Math.ceil(loadedCourseResults.length / COURSE_RESULTS_PER_UI_PAGE)
     const totalCoursePages = knownCoursePages + (hasMoreCoursePages ? 1 : 0)
-    const currentCourseBackendPage = Math.ceil(currentCoursePage / UI_PAGES_PER_BACKEND_PAGE)
-    const currentCourseChunk = courseSearchPages[currentCourseBackendPage] ?? []
-    const currentCourseChunkPageIndex =
-        (currentCoursePage - 1) % UI_PAGES_PER_BACKEND_PAGE
-    const visibleCourseResults = currentCourseChunk.slice(
-        currentCourseChunkPageIndex * COURSE_RESULTS_PER_UI_PAGE,
-        (currentCourseChunkPageIndex + 1) * COURSE_RESULTS_PER_UI_PAGE,
+    const visibleCourseResults = loadedCourseResults.slice(
+        (currentCoursePage - 1) * COURSE_RESULTS_PER_UI_PAGE,
+        currentCoursePage * COURSE_RESULTS_PER_UI_PAGE,
     )
+
+    function isCoursePageLoaded(page: number) {
+        const start = (page - 1) * COURSE_RESULTS_PER_UI_PAGE
+        return start < loadedCourseResults.length
+            && (page * COURSE_RESULTS_PER_UI_PAGE <= loadedCourseResults.length || !hasMoreCoursePages)
+    }
 
     function resetSearchFlow() {
         setBusyAction(null)
@@ -339,18 +340,16 @@ export function useMonitorClientPage({
             return
         }
 
-        const backendPage = Math.ceil(targetPage / UI_PAGES_PER_BACKEND_PAGE)
         const isNewQuery = query !== searchedQuery || selectedTermId !== searchedTermId
-        const cachedResults = !isNewQuery && !force ? courseSearchPages[backendPage] : undefined
+        // A new search starts at backend page 1; paging forward fetches the next unloaded one.
+        const backendPage = isNewQuery || force ? 1 : loadedBackendPages + 1
 
-        if (cachedResults) {
+        if (!isNewQuery && !force && isCoursePageLoaded(targetPage)) {
             setCurrentCoursePage(targetPage)
             setSearchStage('courses')
             setSelectedCourse(null)
             setSectionResults([])
-            setSearchMessage(
-                cachedResults.length === 0 ? COURSE_SEARCH_NOT_FOUND_MESSAGE : COURSE_SELECTION_MESSAGE,
-            )
+            setSearchMessage(COURSE_SELECTION_MESSAGE)
             return
         }
 
@@ -418,8 +417,7 @@ export function useMonitorClientPage({
             return
         }
 
-        const backendPage = Math.ceil(page / UI_PAGES_PER_BACKEND_PAGE)
-        if (searchedTermId === selectedTermId && courseSearchPages[backendPage]) {
+        if (searchedTermId === selectedTermId && isCoursePageLoaded(page)) {
             setCurrentCoursePage(page)
             return
         }
@@ -542,7 +540,8 @@ export function useMonitorClientPage({
             isLoggedIn,
             onOpenAuth: () => setIsAuthOpen(true),
             onLogout: () => void handleLogout(),
-            onOpenSearch: () => { setIsSearchOpen(true); setTermRefreshVersion(value => value + 1) },
+            // Terms are loaded once when the page opens, so the panel opens without a loading flash.
+            onOpenSearch: () => setIsSearchOpen(true),
             searchDisabled,
             ready,
             searchTriggerRef,

@@ -2,6 +2,7 @@
 
 import {useEffect, useRef} from 'react'
 import {createPortal} from 'react-dom'
+import {CornerCloseButton} from '@/components/corner-close-button'
 import {Pagination} from '@/components/pagination'
 import {StatusBadge} from '@/components/monitor/monitor-sections'
 import {
@@ -110,16 +111,11 @@ export function SearchOverlay({
         <div
             className="overlay-backdrop fixed inset-0 z-50 flex items-start justify-center px-4 py-6 backdrop-blur-sm md:py-10">
             <div className="glass-card relative max-h-[90vh] w-full max-w-5xl overflow-hidden">
-                <div
-                    className="subtle-panel-divider flex items-start justify-between gap-4 border-b px-6 py-4 md:px-8 md:py-5">
-                    <div>
-                        <h2 className="text-2xl font-semibold text-[var(--color-ink)] md:text-3xl mt-2">
-                            Search Courses
-                        </h2>
-                    </div>
-                    <button className="button-ghost min-w-[96px]" onClick={onClose} type="button">
-                        Close
-                    </button>
+                <CornerCloseButton onClose={onClose}/>
+                <div className="subtle-panel-divider border-b py-4 pr-14 pl-6 md:py-5 md:pl-8">
+                    <h2 className="text-2xl font-semibold text-[var(--color-ink)] md:text-3xl mt-2">
+                        Search Courses
+                    </h2>
                 </div>
 
                 <div className="flex max-h-[calc(90vh-6rem)] flex-col gap-4 overflow-y-auto px-6 py-4 md:px-8 md:py-5">
@@ -136,7 +132,7 @@ export function SearchOverlay({
               </span>
                             <input
                                 ref={searchInputRef}
-                                className="input-shell"
+                                className="input-shell h-12"
                                 onChange={(event) => onSearchValueChange(event.target.value)}
                                 placeholder="COMP SCI 571"
                                 value={searchValue}
@@ -144,7 +140,7 @@ export function SearchOverlay({
                         </label>
                         <div className="flex flex-col items-stretch justify-end">
                             <button
-                                className="button-primary w-full min-w-[140px]"
+                                className="button-primary h-12 w-full min-w-[140px]"
                                 disabled={isSearchingCourses || isLoadingSections || termsLoading || !!termsError || !selectedTermId || !!addingDocId}
                                 type="submit"
                             >
@@ -191,7 +187,7 @@ export function SearchOverlay({
                                     })}
                                 </div>
                             </div>
-                            <span className="pill">
+                            <span className="text-sm font-semibold text-[var(--color-ink-soft)]">
                 {searchStage === 'courses'
                     ? `${courseResults.length} course${courseResults.length === 1 ? '' : 's'}`
                     : `${sectionResults.length} section${sectionResults.length === 1 ? '' : 's'}`}
@@ -208,7 +204,11 @@ export function SearchOverlay({
                                 </p>
                                 <p className="mt-1 text-sm text-[var(--color-ink-soft)]">{selectedCourse.title}</p>
                             </div>
-                            <button className="button-ghost min-w-[132px]" onClick={onBackToCourses} type="button">
+                            <button
+                                className="bg-transparent p-0 text-sm font-semibold text-[var(--color-deep-teal)] underline underline-offset-4 transition hover:text-[var(--color-ink)]"
+                                onClick={onBackToCourses}
+                                type="button"
+                            >
                                 Back to Courses
                             </button>
                         </div>
@@ -223,34 +223,37 @@ export function SearchOverlay({
                         {searchStage === 'courses' ? (
                             courseResults.length === 0 ? (
                                 <div
-                                    className="surface-panel-dashed rounded-[14px] px-5 py-9 text-center text-sm text-[var(--color-ink-soft)]">
-                                    Search for a course to browse matching UW course entries here.
+                                    className="surface-panel-dashed rounded-[14px] px-5 py-9 text-center text-md text-[var(--color-ink-soft)]">
+                                    Nothing here now...
                                 </div>
                             ) : (
                                 <>
                                     <div className="grid gap-4 md:grid-cols-2">
                                         {courseResults.map((course) => (
-                                            <article
+                                            // The whole card opens the course's sections.
+                                            <button
                                                 key={`${course.subjectId}-${course.courseId}-${course.courseDesignation}`}
-                                                className="surface-panel rounded-[14px] px-4 py-4 transition-colors hover:bg-[var(--surface-hover)]"
+                                                className="surface-panel group flex w-full overflow-hidden rounded-[14px] text-left transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-deep-teal)] disabled:cursor-wait disabled:opacity-60"
+                                                disabled={isLoadingSections}
+                                                onClick={() => onOpenSections(course)}
+                                                type="button"
                                             >
-                                                <div className="grid gap-1.5">
-                                                    <div className="flex items-start justify-between gap-3">
-                                                        <h3 className="min-w-0 flex-1 text-lg font-semibold leading-6 text-[var(--color-ink)]">
-                                                            {course.courseDesignation}
-                                                        </h3>
-                                                        <button
-                                                            className="shrink-0 rounded-none bg-transparent px-0 py-0 text-sm font-semibold text-[var(--color-deep-teal)] underline-offset-4 transition hover:text-[var(--color-ink)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--field-focus-ring)]"
-                                                            disabled={isLoadingSections}
-                                                            onClick={() => onOpenSections(course)}
-                                                            type="button"
-                                                        >
-                                                            {isLoadingSections ? 'Loading...' : 'See Sections'}
-                                                        </button>
-                                                    </div>
-                                                    <p className="text-sm leading-6 text-[var(--color-ink-soft)]">{course.title}</p>
-                                                </div>
-                                            </article>
+                                                {/* Spans, not div/h3: a button may only hold phrasing content. */}
+                                                <span className="grid min-w-0 flex-1 gap-1.5 px-4 py-4">
+                                                    <span className="text-lg font-semibold leading-6 text-[var(--color-ink)]">
+                                                        {course.courseDesignation}
+                                                    </span>
+                                                    <span className="text-sm leading-6 text-[var(--color-ink-soft)]">{course.title}</span>
+                                                </span>
+                                                {/* Full-height strip on the card's right edge marks it as clickable. */}
+                                                <span aria-hidden="true"
+                                                      className="flex w-11 shrink-0 items-center justify-center bg-[#66ddcc] text-white transition-colors group-hover:bg-[#4dd4c3]">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                         stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="m9 5 7 7-7 7"/>
+                                                    </svg>
+                                                </span>
+                                            </button>
                                         ))}
                                     </div>
 

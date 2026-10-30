@@ -75,22 +75,15 @@ function GoogleMarkIcon() {
     )
 }
 
-function SearchIcon() {
+function SearchTriggerHint() {
     return (
-        <svg
-            aria-hidden="true"
-            className="h-5 w-5 text-[var(--search-trigger-text)]"
-            fill="none"
-            viewBox="0 0 20 20"
-        >
-            <circle cx="8.5" cy="8.5" r="4.75" stroke="currentColor" strokeWidth="1.8"/>
-            <path
-                d="m12.2 12.2 4.1 4.1"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeWidth="1.8"
-            />
-        </svg>
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[var(--search-trigger-hint-text)]">
+            Enter
+            <svg aria-hidden="true" className="h-[0.8em] w-[0.8em]" fill="none" viewBox="0 0 16 16">
+                <circle cx="6.75" cy="6.75" r="5" stroke="currentColor" strokeWidth="2"/>
+                <path d="m10.5 10.5 4 4" stroke="currentColor" strokeLinecap="round" strokeWidth="2"/>
+            </svg>
+        </span>
     )
 }
 
@@ -217,15 +210,10 @@ export function MonitorPageHeader({
                         disabled={searchDisabled}
                         type="button"
                     >
-                        <span className="flex min-w-0 items-center gap-3">
-                            <SearchIcon/>
-                            <span className="truncate text-[var(--search-trigger-text-muted)]">
-                                Search courses...
-                            </span>
+                        <span className="min-w-0 truncate text-[var(--search-trigger-text-muted)]">
+                            Search courses...
                         </span>
-                        <span className="rounded-full border border-[var(--search-trigger-hint-border)] bg-[var(--search-trigger-hint-background)] px-2.5 py-1 text-xs font-semibold text-[var(--search-trigger-hint-text)]">
-                            Enter
-                        </span>
+                        <SearchTriggerHint/>
                     </button>
                 ) : null}
             </div>
@@ -281,9 +269,9 @@ export function MonitorTaskList({
                 description={termsLoading
                     ? 'Your alerts will appear here.'
                     : canSearch
-                        ? 'Search for a course to add your first alert.'
+                        ? 'Search for a course first!'
                         : 'New alerts are unavailable right now.'}
-                title="No alerts yet"
+                title="Your watchlist is empty."
             />
         )
     }

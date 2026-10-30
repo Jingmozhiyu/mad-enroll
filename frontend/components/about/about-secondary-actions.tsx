@@ -4,6 +4,7 @@ import Image from 'next/image'
 import {useEffect, useSyncExternalStore, type ReactNode} from 'react'
 import {createPortal} from 'react-dom'
 import {useAboutPanels, type PanelKey} from '@/components/about/use-about-panels'
+import {CornerCloseButton} from '@/components/corner-close-button'
 
 export type {PanelKey}
 
@@ -84,20 +85,11 @@ function ModalShell({
         <div
             className="overlay-backdrop fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm">
             <div className="surface-panel-strong relative max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[14px]">
-                <div
-                    className="subtle-panel-divider flex items-center justify-between gap-4 border-b px-6 py-4 md:px-8">
-                    <div>
-                        <h2 className="text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
-                            {title}
-                        </h2>
-                    </div>
-                    <button
-                        className="button-ghost min-w-[96px] focus:outline-none focus-visible:outline-none"
-                        onClick={onClose}
-                        type="button"
-                    >
-                        Close
-                    </button>
+                <CornerCloseButton onClose={onClose}/>
+                <div className="subtle-panel-divider border-b py-4 pr-14 pl-6 md:pl-8">
+                    <h2 className="text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
+                        {title}
+                    </h2>
                 </div>
 
                 <div className="max-h-[calc(88vh-5.75rem)] overflow-y-auto px-6 py-5 md:px-8">

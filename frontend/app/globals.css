@@ -587,7 +587,7 @@ button {
     justify-content: space-between;
     gap: 14px;
     min-height: 48px;
-    border: 1px solid var(--surface-border-strong);
+    border: 1px solid var(--color-mmj);
     border-radius: 12px;
     padding: 0 18px;
     background: #ffffff;
@@ -600,7 +600,7 @@ button {
 }
 
 .search-trigger-shell:hover {
-    border-color: #b7d3ce;
+    border-color: #5cb81a;
     box-shadow: var(--surface-shadow);
 }
 
