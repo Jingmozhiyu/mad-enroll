@@ -47,9 +47,15 @@ export function MonitorAuthOverlay({open, onClose, authCardProps}: MonitorAuthOv
             }}
             ref={dialogRef}
         >
-            <div className="flex items-center justify-between gap-4 border-b border-[var(--surface-divider)] px-5 py-4 md:px-6">
-                <h2 id="monitor-auth-heading" className="text-xl font-semibold text-[var(--color-ink)]">Log in or register</h2>
-                <button className="button-ghost" onClick={onClose} type="button">Close</button>
+            <button aria-label="Close" className="dialog-corner-close" onClick={onClose} type="button">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                     strokeWidth="2" strokeLinecap="round">
+                    <path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/>
+                </svg>
+            </button>
+            {/* Right padding keeps the title clear of the corner close tab. */}
+            <div className="border-b border-[var(--surface-divider)] py-4 pr-12 pl-5 md:pl-6">
+                <h2 id="monitor-auth-heading" className="text-xl font-semibold text-[var(--color-ink)]">Welcome!</h2>
             </div>
             <div className="px-5 py-6 md:px-6">
                 <MonitorAuthCard {...authCardProps}/>

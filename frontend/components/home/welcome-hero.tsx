@@ -19,6 +19,9 @@ const clovers = [
     {side: 'right', top: '87%', inset: '-18px', size: 72, angle: -18, opacity: 0.12, duration: 20, delay: -14},
 ]
 
+// Clover decoration is kept but currently hidden; set to true to bring it back.
+const SHOW_CLOVERS = true
+
 function CloverBackground() {
     return (
         <div className={styles.cloverBackground} aria-hidden="true">
@@ -48,7 +51,7 @@ function CloverBackground() {
 export function WelcomeHero() {
     return (
         <div className={`welcome-hero ${styles.home}`}>
-            <CloverBackground/>
+            {SHOW_CLOVERS ? <CloverBackground/> : null}
             <section className={styles.hero} aria-labelledby="welcome-title">
                 <div className={styles.copy}>
                     {/* Two fixed lines; the trailing space keeps the text readable when copied or crawled. */}

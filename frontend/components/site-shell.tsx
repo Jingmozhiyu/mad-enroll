@@ -54,15 +54,23 @@ export function SiteShell({children}: { children: ReactNode }) {
 
     return (
         <RouteProgressProvider shouldTrackNavigation={shouldTrackNavigation}>
-            <div className="min-h-screen">
-                <div className="mx-auto flex min-h-screen w-full max-w-[1200px] flex-col px-4 py-4 md:px-6 md:py-6">
-                    <header
-                        className="mb-8 flex flex-col gap-5 border-b border-[var(--surface-divider)] px-0 pb-4 md:flex-row md:items-center md:justify-between">
-                        <div className="flex items-center">
+            <div className="flex min-h-screen flex-col">
+                {/* Full-width bar in the same slightly-darker white as clickable cards. */}
+                <header
+                    className="relative z-30 w-full bg-[var(--nav-background)] shadow-[var(--nav-shadow)] backdrop-blur-[12px] backdrop-saturate-150 md:sticky md:top-0">
+                    <div
+                        className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-4 md:h-[var(--nav-height)] md:flex-row md:items-center md:justify-between md:px-6 md:py-0">
+                        {/* Fixed-height slot so the wordmark (home) and the clover (elsewhere) give the same bar height. */}
+                        <div className="flex h-11 items-center">
                             <ProgressLink aria-label="Go to homepage" className="brand-mark-link" href="/">
-                                <h1 className="font-geist-brand text-3xl leading-[1.16] tracking-tight text-[var(--color-ink)] md:text-4xl">
-                                    <BrandMark variant={pathname === '/about' ? 'colorful' : 'default'}/>
-                                </h1>
+                                {/* Wordmark on the home page; elsewhere the clover is the way back home. */}
+                                {pathname === '/' ? (
+                                    <span className="font-geist-brand text-3xl leading-[1.16] tracking-tight text-[var(--color-ink)] md:text-4xl">
+                                        <BrandMark/>
+                                    </span>
+                                ) : (
+                                    <span aria-hidden="true" className="nav-clover"/>
+                                )}
                             </ProgressLink>
                         </div>
 
@@ -85,8 +93,10 @@ export function SiteShell({children}: { children: ReactNode }) {
                                 )
                             })}
                         </nav>
-                    </header>
+                    </div>
+                </header>
 
+                <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-4 pt-8 pb-4 md:px-6 md:pb-6">
                     <main className="flex-1 pt-1">{children}</main>
 
                     <footer

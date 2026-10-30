@@ -162,7 +162,7 @@ export function MonitorAuthCard({
                     </div>
 
                     <div className="auth-divider" role="presentation">
-                        <span>OR</span>
+                        <span>Other Options</span>
                     </div>
 
                     <button
@@ -244,7 +244,7 @@ export function MonitorPageHeader({
                     </div>
                 ) : (
                     <button className="login-text-link" onClick={onOpenAuth} type="button">
-                        Log in
+                        Log in..
                     </button>
                 )}
             </div>

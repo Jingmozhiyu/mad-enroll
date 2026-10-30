@@ -64,10 +64,10 @@ export function MonitorClientPage(props: MonitorClientPageProps) {
                 ) : (
                     <MonitorPreview>
                         <h2 className="text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">
-                            Log in to see your alerts
+                            Sign in to see your alerts
                         </h2>
                         <p className="text-base leading-7 text-[var(--color-ink-soft)]">
-                            Add the sections you want, and we&apos;ll email you when a seat opens.
+                            Closed sections? No worries. We&#39;re keeping an eye on it.
                         </p>
                         <button className="button-primary min-w-[140px]" onClick={monitor.headerProps.onOpenAuth}
                                 type="button">

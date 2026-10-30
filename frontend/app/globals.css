@@ -81,7 +81,13 @@
 
     --nav-link-active-background: #e5faf6;
     --nav-link-active-shadow: inset 0 0 0 1px #b8eee5;
-    --nav-link-hover: #f0fbf8;
+    --nav-link-hover: #eef3f1;
+    /* Translucent white bar with a soft drop shadow (modeled on the VuePress Hope navbar). */
+    --nav-background: rgba(255, 255, 255, 0.9);
+    --nav-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --nav-clover: #91d858;
+    /* Desktop navbar height; the bar is sticky there, so anchors scroll below it. */
+    --nav-height: 0px;
     --about-copy-color: #4f666e;
     --about-inline-decoration: #9eafb4;
     --about-inline-decoration-hover: #33ccbb;
@@ -110,10 +116,27 @@
     box-sizing: border-box;
 }
 
+@media (min-width: 768px) {
+    :root {
+        --nav-height: 80px;
+    }
+}
+
 html {
     scroll-behavior: auto;
-    scrollbar-gutter: stable;
+    scroll-padding-top: var(--nav-height);
     background: var(--page-background-solid);
+}
+
+
+/* The clover drawn in a CSS color, so the navbar can use a lighter green than the SVG file. */
+.nav-clover {
+    display: block;
+    width: 40px;
+    height: 40px;
+    background: var(--nav-clover);
+    mask: url('/shamrock_6ccb20.svg') center / contain no-repeat;
+    -webkit-mask: url('/shamrock_6ccb20.svg') center / contain no-repeat;
 }
 
 body {
@@ -647,6 +670,35 @@ button {
     box-shadow: 0 18px 48px rgba(23, 49, 60, 0.22);
 }
 
+/* Close control cut diagonally into a dialog's top-right corner. */
+.dialog-corner-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 48px;
+    height: 48px;
+    padding: 8px 8px 0 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    background: var(--color-shizuku);
+    color: var(--color-ink);
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.dialog-corner-close:hover {
+    background: #7fe3d0;
+}
+
+/* clip-path also clips outlines, so focus is shown by color instead. */
+.dialog-corner-close:focus-visible {
+    outline: none;
+    background: var(--color-deep-teal);
+    color: #ffffff;
+}
+
 .monitor-auth-dialog::backdrop {
     background: rgba(23, 49, 60, 0.42);
 }
@@ -688,8 +740,6 @@ button {
     color: var(--color-ink-muted);
     font-size: 0.8rem;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
 }
 
 .auth-divider::before,

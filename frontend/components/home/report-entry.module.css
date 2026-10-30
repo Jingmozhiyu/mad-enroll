@@ -5,9 +5,10 @@
     padding: 16px 28px 16px 20px;
     color: var(--color-ink);
     text-align: left;
-    border: 1px solid #c9ebe5;
     border-radius: 14px;
-    transition: border-color 180ms ease-out;
+    /* A slightly darker white than the page reads as a card without a border. */
+    background: var(--surface-background-muted);
+    transition: background-color 180ms ease-out, transform 180ms ease-out;
 }
 
 .layout {
@@ -64,7 +65,7 @@
 }
 
 .entry:hover {
-    border-color: #9edfd5;
+    background: #eef3f1;
     transform: translateY(-1px);
 }
 
@@ -101,8 +102,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .entry,
     .thumb {
         transition: none;
+    }
+
+    .entry:hover {
+        transform: none;
     }
 
     .entry:hover .thumb {
