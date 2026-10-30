@@ -59,7 +59,7 @@ export function SiteShell({children}: { children: ReactNode }) {
                 <header
                     className="relative z-30 w-full bg-[var(--nav-background)] shadow-[var(--nav-shadow)] backdrop-blur-[12px] backdrop-saturate-150 md:sticky md:top-0">
                     <div
-                        className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-4 md:h-[var(--nav-height)] md:flex-row md:items-center md:justify-between md:px-6 md:py-0">
+                        className="site-gutter flex w-full flex-col gap-4 py-4 md:h-[var(--nav-height)] md:flex-row md:items-center md:justify-between md:py-0">
                         {/* Fixed-height slot so the wordmark (home) and the clover (elsewhere) give the same bar height. */}
                         <div className="flex h-11 items-center">
                             <ProgressLink aria-label="Go to homepage" className="brand-mark-link" href="/">
@@ -96,7 +96,7 @@ export function SiteShell({children}: { children: ReactNode }) {
                     </div>
                 </header>
 
-                <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-4 pt-8 pb-4 md:px-6 md:pb-6">
+                <div className="site-gutter flex w-full flex-1 flex-col pt-8 pb-4 md:pb-6">
                     <main className="flex-1 pt-1">{children}</main>
 
                     <footer

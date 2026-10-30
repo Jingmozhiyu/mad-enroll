@@ -129,6 +129,22 @@ html {
 }
 
 
+/*
+ * Page side padding for a 1200px-wide layout, centered on the WINDOW width (100vw) rather than on the
+ * area left beside the scrollbar. Pages that scroll then keep the logo and content at the same x as
+ * pages that do not; only the right edge gives way to the scrollbar.
+ */
+.site-gutter {
+    --site-pad: 16px;
+    padding-inline: max(var(--site-pad), calc((100vw - 1200px) / 2 + var(--site-pad)));
+}
+
+@media (min-width: 768px) {
+    .site-gutter {
+        --site-pad: 24px;
+    }
+}
+
 /* The clover drawn in a CSS color, so the navbar can use a lighter green than the SVG file. */
 .nav-clover {
     display: block;
