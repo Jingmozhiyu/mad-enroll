@@ -130,13 +130,16 @@ html {
 
 
 /*
- * Page side padding for a 1200px-wide layout, centered on the WINDOW width (100vw) rather than on the
- * area left beside the scrollbar. Pages that scroll then keep the logo and content at the same x as
- * pages that do not; only the right edge gives way to the scrollbar.
+ * Page side padding for a 1200px-wide layout, measured from the WINDOW edges (100vw) instead of the
+ * area left beside the scrollbar, so both edges sit at the same x whether or not a page scrolls.
+ * 100vw - 100% is the scrollbar's width (0 when it overlays); the right padding gives it back so the
+ * right edge does not move either, keeping at least 8px clear of the scrollbar.
  */
 .site-gutter {
     --site-pad: 16px;
-    padding-inline: max(var(--site-pad), calc((100vw - 1200px) / 2 + var(--site-pad)));
+    --site-edge: max(var(--site-pad), calc((100vw - 1200px) / 2 + var(--site-pad)));
+    padding-left: var(--site-edge);
+    padding-right: max(8px, calc(var(--site-edge) - (100vw - 100%)));
 }
 
 @media (min-width: 768px) {
