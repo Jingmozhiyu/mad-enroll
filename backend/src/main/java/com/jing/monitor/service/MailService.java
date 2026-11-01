@@ -86,13 +86,13 @@ public class MailService {
                     .append(open
                             ? "Open seats can be taken quickly, so enroll as soon as you can.\n"
                             : "Waitlist spots can be taken quickly, so join as soon as you can.\n")
-                    .append("Got in? Remove the alert at https://madenroll.com/monitor.\n\n")
+                    .append("Got in? Remove the alert on your dashboard.\n\n")
                     .append("— MadEnroll\n");
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(requireRecipientEmail(recipientEmail));
-            message.setSubject((open ? "Seat open: " : "Waitlist open: ") + courseInfo + ", section " + sectionId);
+            message.setSubject((open ? "🟢 Seat open: " : "🟡 Waitlist open: ") + courseInfo + ", section " + sectionId);
             message.setText(text.toString());
 
             mailSender.send(message);
@@ -119,10 +119,7 @@ public class MailService {
             message.setText(
                     "Welcome to MadEnroll!\n\n" +
                             "Your account has been created successfully.\n\n" +
-                            "You can now:\n" +
-                            "- search courses across supported subjects\n" +
-                            "- add alerts for specific sections\n" +
-                            "- receive automatic OPEN and WAITLIST alerts by email\n\n" +
+                            "You can now add alerts for specific sections, and receive automatic OPEN and WAITLIST alerts by email.\n\n" +
                             "We are excited to help you track the classes you care about.\n\n" +
                             "---\n" +
                             "Automated message from MadEnroll"

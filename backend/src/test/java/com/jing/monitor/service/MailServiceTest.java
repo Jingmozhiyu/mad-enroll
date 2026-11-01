@@ -38,7 +38,7 @@ class MailServiceTest {
 
         SimpleMailMessage message = sent();
         assertThat(message.getTo()).containsExactly("student@example.com");
-        assertThat(message.getSubject()).isEqualTo("Seat open: COMP SCI 240, section 66400");
+        assertThat(message.getSubject()).isEqualTo("🟢 Seat open: COMP SCI 240, section 66400");
         assertThat(message.getText())
                 .startsWith("A seat just opened in a section you set an alert for.")
                 .contains("COMP SCI 240 · Section 66400\n")
@@ -47,8 +47,7 @@ class MailServiceTest {
                 .contains("M TBA – TBA\n")
                 .contains("Open seats: 3 / 120 · Waitlist: 0 / ?\n")
                 .contains("Detected 2:41 PM CT, Oct 12\n")
-                .contains("https://enroll.wisc.edu/search?term=1272&keywords=comp%20sci%20240&closed=true")
-                .contains("https://madenroll.com/monitor");
+                .contains("https://enroll.wisc.edu/search?term=1272&keywords=comp%20sci%20240&closed=true");
     }
 
     @Test
@@ -56,7 +55,7 @@ class MailServiceTest {
         mail.sendCourseAlert(alert(AlertType.WAITLIST, "student@example.com"), cs240Section());
 
         SimpleMailMessage message = sent();
-        assertThat(message.getSubject()).isEqualTo("Waitlist open: COMP SCI 240, section 66400");
+        assertThat(message.getSubject()).isEqualTo("🟡 Waitlist open: COMP SCI 240, section 66400");
         assertThat(message.getText())
                 .startsWith("A waitlist spot just opened in a section you set an alert for.")
                 .contains("Waitlist spots can be taken quickly, so join as soon as you can.")
