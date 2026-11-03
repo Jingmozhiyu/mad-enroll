@@ -157,11 +157,3 @@ export function getSeatsSummary(task: Pick<Subscription, 'openSeats' | 'capacity
 
     return seatParts.length > 0 ? seatParts.join(' | ') : 'Seat data unavailable'
 }
-
-export function getOpenSeatsSummary(task: Pick<Subscription, 'openSeats' | 'capacity'>) {
-    return `Open Seats: ${task.openSeats ?? '?'} / ${task.capacity ?? '?'}`
-}
-
-export function getWaitlistSeatsSummary(task: Pick<Subscription, 'waitlistSeats' | 'waitlistCapacity'>) {
-    return `Waitlist Seats: ${task.waitlistSeats ?? '?'} / ${task.waitlistCapacity ?? '?'}`
-}

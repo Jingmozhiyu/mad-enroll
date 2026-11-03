@@ -7,8 +7,6 @@ import {Pagination} from '@/components/pagination'
 import {StatusBadge} from '@/components/monitor/monitor-sections'
 import {
     getMeetingDetailLines,
-    getOpenSeatsSummary,
-    getWaitlistSeatsSummary,
 } from '@/lib/course/format'
 import type {SearchCourseHit, SearchTerm, Subscription} from '@/lib/course/types'
 
@@ -285,14 +283,10 @@ export function SearchOverlay({
                                         >
                                             <div className="grid gap-4">
                                                 <div className="flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <h3 className="text-base font-semibold text-[var(--color-ink)]">
-                                                            {section.courseDisplayName}
-                                                        </h3>
-                                                        <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-                                                            Section {section.sectionId}
-                                                        </p>
-                                                    </div>
+                                                    {/* The panel header already names the course, so the section number leads the card. */}
+                                                    <h3 className="text-lg font-semibold tabular-nums text-[var(--color-ink)]">
+                                                        Section {section.sectionId}
+                                                    </h3>
                                                     <StatusBadge status={section.status}/>
                                                 </div>
 
@@ -301,17 +295,23 @@ export function SearchOverlay({
                                                     {meetingDetails.length > 0 ? (
                                                         <div className="space-y-2">
                                                             {meetingDetails.map((meeting, index) => (
+                                                                // Same colors as the Schedule and Location labels on Seat Alerts cards.
                                                                 <div key={`${section.docId}-meeting-${index}`}
                                                                      className="space-y-0.5">
-                                                                    <p>{meeting.schedule}</p>
+                                                                    <p className="font-semibold text-[var(--color-schedule)]">{meeting.schedule}</p>
                                                                     {meeting.location ?
-                                                                        <p>{meeting.location}</p> : null}
+                                                                        <p className="text-[var(--color-location)]">{meeting.location}</p> : null}
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     ) : null}
-                                                    <p>{getOpenSeatsSummary(section)}</p>
-                                                    <p>{getWaitlistSeatsSummary(section)}</p>
+                                                    {/* Seat counts in the Open seats / Waitlist spots label colors from Seat Alerts cards. */}
+                                                    <p>Open Seats: <span className="tabular-nums text-[var(--color-open)]">
+                                                        {section.openSeats ?? '?'} / {section.capacity ?? '?'}
+                                                    </span></p>
+                                                    <p>Waitlist Seats: <span className="tabular-nums text-[var(--color-waitlist)]">
+                                                        {section.waitlistSeats ?? '?'} / {section.waitlistCapacity ?? '?'}
+                                                    </span></p>
                                                 </div>
                                             </div>
 

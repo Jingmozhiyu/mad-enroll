@@ -501,7 +501,6 @@ export function useMonitorClientPage({
             startTransition(() => {
                 setTasks((current) => upsertTask(current, nextTask))
             })
-            setSearchMessage(`Alert added for section ${nextTask.sectionId}. You can add more.`)
         } catch (error) {
             setSearchMessage(getErrorMessage(error, 'Add request failed.'))
         } finally {
