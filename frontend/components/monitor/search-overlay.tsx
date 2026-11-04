@@ -10,6 +10,14 @@ import {
 } from '@/lib/course/format'
 import type {SearchCourseHit, SearchTerm, Subscription} from '@/lib/course/types'
 
+// Bar widths (title, first line, second line) for the placeholder cards before a search.
+const GHOST_COURSE_CARDS = [
+    ['30%', '85%', '55%'],
+    ['24%', '70%', '40%'],
+    ['34%', '90%', '60%'],
+    ['28%', '65%', '45%'],
+]
+
 type SearchOverlayProps = {
     open: boolean
     searchStage: 'courses' | 'sections'
@@ -116,9 +124,10 @@ export function SearchOverlay({
                     </h2>
                 </div>
 
-                <div className="flex max-h-[calc(90vh-6rem)] flex-col gap-4 overflow-y-auto px-6 py-4 md:px-8 md:py-5">
+                {/* Reserve the scrollbar's space so the panel keeps one width whether or not the results scroll. */}
+                <div className="flex max-h-[calc(90vh-6rem)] flex-col gap-4 overflow-y-auto px-6 py-4 [scrollbar-gutter:stable] md:px-8 md:py-5">
                     <form
-                        className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]"
+                        className="grid gap-3 md:grid-cols-[minmax(0,1fr)_140px]"
                         onSubmit={(event) => {
                             event.preventDefault()
                             onSubmit()
@@ -156,6 +165,11 @@ export function SearchOverlay({
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm text-[var(--color-ink-soft)]">{searchMessage}</p>
                         <div className="flex flex-wrap items-center gap-3">
+                            {searchStage === 'sections' ? (
+                                <span className="text-sm font-semibold text-[var(--color-ink-soft)]">
+                                    {sectionResults.length} section{sectionResults.length === 1 ? '' : 's'}
+                                </span>
+                            ) : null}
                             <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-ink-soft)]">
                                 <span className="font-medium">Term</span>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -185,11 +199,6 @@ export function SearchOverlay({
                                     })}
                                 </div>
                             </div>
-                            <span className="text-sm font-semibold text-[var(--color-ink-soft)]">
-                {searchStage === 'courses'
-                    ? `${courseResults.length} course${courseResults.length === 1 ? '' : 's'}`
-                    : `${sectionResults.length} section${sectionResults.length === 1 ? '' : 's'}`}
-              </span>
                         </div>
                     </div>
 
@@ -220,9 +229,20 @@ export function SearchOverlay({
                     >
                         {searchStage === 'courses' ? (
                             courseResults.length === 0 ? (
-                                <div
-                                    className="surface-panel-dashed rounded-[14px] px-5 py-9 text-center text-md text-[var(--color-ink-soft)]">
-                                    Nothing here now...
+                                // Ghost course cards fading out: shows where results will land without saying "nothing".
+                                <div aria-hidden="true"
+                                     className="grid gap-4 [mask-image:linear-gradient(to_bottom,#000_30%,transparent)] md:grid-cols-2">
+                                    {GHOST_COURSE_CARDS.map((widths, index) => (
+                                        <div key={index}
+                                             className="flex overflow-hidden rounded-[14px] border border-dashed border-[var(--surface-border-strong)]">
+                                            <div className="grid flex-1 gap-2.5 px-4 py-4">
+                                                <span className="h-5 rounded-md bg-[var(--surface-background-muted)]" style={{width: widths[0]}}/>
+                                                <span className="h-3.5 rounded-md bg-[var(--surface-background-muted)]" style={{width: widths[1]}}/>
+                                                <span className="h-3.5 rounded-md bg-[var(--surface-background-muted)]" style={{width: widths[2]}}/>
+                                            </div>
+                                            <span className="w-11 shrink-0 bg-[#66ddcc] opacity-20"/>
+                                        </div>
+                                    ))}
                                 </div>
                             ) : (
                                 <>
@@ -282,9 +302,10 @@ export function SearchOverlay({
                                             className="surface-panel grid gap-4 rounded-[14px] px-4 py-4 transition-colors hover:bg-[var(--surface-hover)]"
                                         >
                                             <div className="grid gap-4">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    {/* The panel header already names the course, so the section number leads the card. */}
-                                                    <h3 className="text-lg font-semibold tabular-nums text-[var(--color-ink)]">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    {/* The panel header already names the course, so the section number leads the card.
+                                                        h-9 matches the status badge's height. */}
+                                                    <h3 className="flex h-9 items-center text-lg font-semibold tabular-nums text-[var(--color-ink)]">
                                                         Section {section.sectionId}
                                                     </h3>
                                                     <StatusBadge status={section.status}/>
@@ -298,7 +319,7 @@ export function SearchOverlay({
                                                                 // Same colors as the Schedule and Location labels on Seat Alerts cards.
                                                                 <div key={`${section.docId}-meeting-${index}`}
                                                                      className="space-y-0.5">
-                                                                    <p className="font-semibold text-[var(--color-schedule)]">{meeting.schedule}</p>
+                                                                    <p className="text-[var(--color-schedule)]">{meeting.schedule}</p>
                                                                     {meeting.location ?
                                                                         <p className="text-[var(--color-location)]">{meeting.location}</p> : null}
                                                                 </div>
