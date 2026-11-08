@@ -10,7 +10,7 @@
 
 ### Project Structure：
 
-![MadEnroll](./backend/MadEnroll.jpeg)
+![MadEnroll](./backend/MadEnroll.svg)
 
 ### Tech Stack
 
@@ -23,23 +23,17 @@ Backend：
 - Docker
 
 Frontend：
-- Next.js 16
+- Next.js
 - React 19
-- TailwindCSS 4
+- TailwindCSS
 - TypeScript
 
 ### How it works 
 
 Subscribe courses after registering by email address. Users will receive email alerts when seats become available.
 
-### Docs
-
-API contracts: [Backend — English](backend/docs/en-us/api-reference.md) / [后端 — 简体中文](backend/docs/zh-cn/api-reference.md)
-
-Course grade pages: [English](backend/docs/en-us/course-grades.md) / [简体中文](backend/docs/zh-cn/course-grades.md)
-
 ### Future
 
-- Dockerfile Deployment
-- Refine Frontend UI
-- Backend Error Alert
+- Multi Crawler
+- Reset Password
+- Email Preference
