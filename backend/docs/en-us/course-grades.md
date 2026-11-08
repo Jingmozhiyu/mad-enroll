@@ -6,27 +6,34 @@ abbreviations are uppercase, and cross-listed subjects are ordered by their UW
 subject codes. Meaningful punctuation is URL-encoded, such as
 `/courses/C%26ESOC_140` for `C&ESOC 140`.
 
-Existing Madgrades UUID URLs redirect permanently to the readable URL, preserving
-query parameters. A unique single-subject alias for a cross-listed course also
+Existing Madgrades UUID URLs redirect permanently to the readable URL; the
+static page cannot read the query, so query parameters are dropped. A unique single-subject alias for a cross-listed course also
 redirects to its full identifier. Resolution checks exact course numbers and
 subjects; ambiguous historical identities are not merged. The page's canonical
 URL excludes interactive filter parameters.
 
 ## HTML and charts
 
-The default response contains server-rendered course information, grade counts,
-letter-grade percentages, semester statistics and coverage. The HTML page omits
-the separate non-letter-grade table and methodology section; calculation details
-remain in the API reference and this documentation.
-Reading these tables does not require JavaScript. An understated **Interactive
-charts** link opens `?view=charts`, which loads the original instructor and
-semester comparison interface. The chart view has no data-view switch or added
-explanatory text. Its canonical URL remains the course URL without parameters.
+Each course has one URL. It opens the original instructor and semester comparison
+charts, unchanged; they are drawn in the browser, and the server HTML holds a
+placeholder in their place. The server HTML also carries a text alternative for
+the charts: course heading, average GPA, A rate, record counts, coverage, the
+letter-grade table and every reported term. It is visually hidden (`sr-only`),
+so the page looks like the chart view, but screen readers and clients without
+JavaScript can read it, and it stays in the page after the charts load. It must
+only restate data the charts show; adding other text would make it hidden text
+under Google's spam policies. The HTML omits the separate non-letter-grade table and methodology section;
+calculation details remain in the API reference and this documentation.
 
-Search results and autocomplete open chart URLs directly, preserving the search
-workflow. Instructor and semester filters retain `view=charts` on the readable
-course path. Results and pagination use ordinary links with their existing visual
-appearance.
+Instructor and semester filters add `instructorId` and `termCode` to the course
+URL; the canonical URL excludes them. Older `?view=charts` links load the same
+page. Search results and autocomplete open the course URL. Results and pagination
+use ordinary links with their existing visual appearance.
+
+Course pages and the directory are static: each URL is rendered on its first
+request and then served from the CDN for 30 days. The directory's public
+`/course?subject=266&page=2` URLs are rewritten in `next.config.ts` to the static
+`/course/[subject]/[page]` route without changing the browser URL.
 
 The `/course` dataset directory is linked from the footer. It describes the data
 and offers links to interactive course search and seat alerts. Subject links and
@@ -60,7 +67,9 @@ new data store, or upstream update schedule is introduced.
 ## Data and calculations
 
 Madgrades is the grade-data source. Course details, exact identifier lookups,
-subject catalogs and grade responses are cached for 24 hours; free-text search
+subject catalogs and grade responses are cached for 30 days, matching the static
+pages' revalidation period, so new semester data can take up to 30 days to
+appear; free-text search
 requests are not cached. This is a request cache, not a second dataset. Grade
 coverage is derived from the available grade terms and is distinct from the
 current course-catalog semester. Madgrades does not supply a record update date.
@@ -86,7 +95,7 @@ links a public-page sitemap and a complete sitemap for each subject using
 `/sitemap.xml?section=pages` and `/sitemap.xml?subject=266`. Every upstream catalog
 page is included. Cross-listed courses appear once, under their first UW subject;
 ambiguous historical course codes are omitted. Only canonical HTML course URLs
-are listed, without UUID aliases or chart/filter parameters. XML is escaped and
+are listed, without UUID aliases or filter parameters. XML is escaped and
 no invented modification dates are published. A failed catalog request returns
 503 rather than a partial or fallback sitemap.
 

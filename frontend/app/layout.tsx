@@ -5,7 +5,6 @@ import type {ReactNode} from 'react'
 import '@/app/globals.css'
 import {Providers} from '@/components/providers'
 import {SiteShell} from '@/components/site-shell'
-import {getServerSession} from '@/lib/auth/session.server'
 import {SITE_DESCRIPTION, SITE_TITLE, SITE_URL} from '@/lib/seo'
 
 const hanyiWenHei = localFont({
@@ -33,20 +32,19 @@ export const metadata: Metadata = {
     },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
                                              children,
                                          }: Readonly<{
     children: ReactNode
 }>) {
-    const {session} = await getServerSession()
-
+    // No cookies here: reading the session would make every page dynamic. Providers loads it client-side.
     return (
         <html lang="en">
             <head>
                 <link rel="service-desc" type="application/vnd.oai.openapi+json" href="/openapi.json"/>
             </head>
             <body className={`${hanyiWenHei.className} ${GeistSans.variable}`}>
-                <Providers initialSession={session} initialSessionResolved>
+                <Providers>
                     <SiteShell>{children}</SiteShell>
                 </Providers>
             </body>

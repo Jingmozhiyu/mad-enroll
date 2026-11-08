@@ -4,10 +4,10 @@ import Link, {type LinkProps} from 'next/link'
 import {usePathname, useRouter, useSearchParams} from 'next/navigation'
 import {
     createContext,
+    Suspense,
     useCallback,
     useContext,
     useEffect,
-    useMemo,
     useRef,
     useState,
     type ComponentPropsWithoutRef,
@@ -33,6 +33,23 @@ const COMPLETE_PROGRESS = 1
 const RESET_DELAY_MS = 220
 const SLOW_ADVANCE_DELAY_MS = 180
 
+/**
+ * Reports the current URL. It reads search params, so it sits in its own Suspense boundary:
+ * that keeps the rest of the app statically renderable.
+ */
+function LocationListener({onChange}: {onChange: (locationKey: string) => void}) {
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+    const query = searchParams.toString()
+    const locationKey = query ? `${pathname}?${query}` : pathname
+
+    useEffect(() => {
+        onChange(locationKey)
+    }, [locationKey, onChange])
+
+    return null
+}
+
 function isModifiedEvent(event: MouseEvent<HTMLAnchorElement>) {
     return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
 }
@@ -44,19 +61,12 @@ export function RouteProgressProvider({
     children: ReactNode
     shouldTrackNavigation?: (href: string) => boolean
 }) {
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-    const locationKey = useMemo(() => {
-        const query = searchParams.toString()
-        return query ? `${pathname}?${query}` : pathname
-    }, [pathname, searchParams])
-
     const [visible, setVisible] = useState(false)
     const [progress, setProgress] = useState(0)
     const [complete, setComplete] = useState(false)
-    const hasMounted = useRef(false)
     const isNavigating = useRef(false)
-    const previousLocationKey = useRef(locationKey)
+    const previousLocationKey = useRef<string | null>(null)
+    const doneFrame = useRef<number | null>(null)
     const slowAdvanceTimer = useRef<number | null>(null)
     const resetTimer = useRef<number | null>(null)
 
@@ -132,28 +142,29 @@ export function RouteProgressProvider({
         }
     }, [clearTimers])
 
-    useEffect(() => {
-        if (!hasMounted.current) {
-            hasMounted.current = true
-            previousLocationKey.current = locationKey
-            return
+    // Finishes the bar once the URL actually changes; the first report only records the initial URL.
+    const handleLocationChange = useCallback((locationKey: string) => {
+        if (doneFrame.current !== null) {
+            window.cancelAnimationFrame(doneFrame.current)
+            doneFrame.current = null
         }
-
-        if (isNavigating.current && previousLocationKey.current !== locationKey) {
-            previousLocationKey.current = locationKey
-            const frameId = window.requestAnimationFrame(() => {
+        const previous = previousLocationKey.current
+        previousLocationKey.current = locationKey
+        if (previous !== null && previous !== locationKey && isNavigating.current) {
+            doneFrame.current = window.requestAnimationFrame(() => {
+                doneFrame.current = null
                 done()
             })
-            return () => window.cancelAnimationFrame(frameId)
         }
-
-        previousLocationKey.current = locationKey
-    }, [done, locationKey])
+    }, [done])
 
     useEffect(() => clearTimers, [clearTimers])
 
     return (
         <RouteProgressContext.Provider value={{start, done}}>
+            <Suspense fallback={null}>
+                <LocationListener onChange={handleLocationChange}/>
+            </Suspense>
             {children}
             <div
                 aria-hidden="true"
@@ -182,38 +193,37 @@ export function useRouteProgress() {
     return context
 }
 
+/** The browser's current path and query; read at call time so no hook needs search params. */
+function getCurrentHref() {
+    return `${window.location.pathname}${window.location.search}`
+}
+
 export function useProgressRouter() {
     const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const {start, done} = useRouteProgress()
-    const currentHref = useMemo(() => {
-        const query = searchParams.toString()
-        return query ? `${pathname}?${query}` : pathname
-    }, [pathname, searchParams])
 
     const push = useCallback(
         (href: string, options?: RouterNavigateOptions) => {
-            if (href === currentHref) {
+            if (href === getCurrentHref()) {
                 return
             }
 
             start(href)
             router.push(href, options)
         },
-        [currentHref, router, start],
+        [router, start],
     )
 
     const replace = useCallback(
         (href: string, options?: RouterNavigateOptions) => {
-            if (href === currentHref) {
+            if (href === getCurrentHref()) {
                 return
             }
 
             start(href)
             router.replace(href, options)
         },
-        [currentHref, router, start],
+        [router, start],
     )
 
     const prefetch = useCallback(
@@ -224,7 +234,6 @@ export function useProgressRouter() {
     )
 
     return {
-        currentHref,
         done,
         prefetch,
         push,
@@ -248,7 +257,7 @@ export function ProgressLink({
                                  target,
                                  ...props
                              }: ProgressLinkProps) {
-    const {currentHref, prefetch: prefetchRoute, start} = useProgressRouter()
+    const {prefetch: prefetchRoute, start} = useProgressRouter()
 
     function maybePrefetch() {
         if (prefetchOnIntent && typeof href === 'string') {
@@ -267,7 +276,7 @@ export function ProgressLink({
                     event.defaultPrevented ||
                     isModifiedEvent(event) ||
                     target === '_blank' ||
-                    (typeof href === 'string' && href === currentHref)
+                    (typeof href === 'string' && href === getCurrentHref())
                 ) {
                     return
                 }

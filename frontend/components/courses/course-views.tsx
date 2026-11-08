@@ -19,7 +19,10 @@ type CourseChartsProps = {
     initialSelection: CourseCompareState
 }
 
-/** Loads the original chart interface only for an explicitly requested chart URL. */
+/**
+ * Loads the chart interface in the browser only; the server HTML holds a skeleton in its place.
+ * Instructor and term selections are read from the URL (instructorId, termCode).
+ */
 export function CourseCharts({course, grades, initialSelection}: CourseChartsProps) {
     return (
         <InteractiveCoursePage course={course} grades={grades} initialSelection={initialSelection}/>

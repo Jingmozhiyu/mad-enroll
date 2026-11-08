@@ -3,7 +3,7 @@ import 'server-only'
 import {cache} from 'react'
 import {
     findCourseIdentifierMatches,
-    getCourseChartPath,
+    getCoursePath,
     getSubjectIdentifier,
     normalizeSubjectIdentifier,
     parseCourseIdentifier,
@@ -27,7 +27,8 @@ import {
 const MADGRADES_API_BASE =
     process.env.MADGRADES_API ?? 'https://api.madgrades.com/'
 const MADGRADES_API_TOKEN = process.env.MADGRADES_API_TOKEN ?? ''
-const CATALOG_REVALIDATE_SECONDS = 86_400
+// Matches the grade pages' revalidate: a shorter fetch cache would make those static pages re-render sooner.
+const CATALOG_REVALIDATE_SECONDS = 2_592_000
 const CATALOG_PAGE_SIZE = 100
 const MAX_CATALOG_PAGES = 10
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -160,7 +161,7 @@ export async function searchMadgradesCourseSuggestions(query: string, limit = 8)
     return response.results.slice(0, limit).map((course) => ({
         uuid: course.uuid,
         name: course.name,
-        path: getCourseChartPath(course),
+        path: getCoursePath(course),
         displayLine: `${course.subjects
             .map((subject) => subject.abbreviation || subject.code || subject.name)
             .join(', ')} ${course.number}`.trim(),
