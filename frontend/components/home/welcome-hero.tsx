@@ -54,15 +54,13 @@ export function WelcomeHero() {
             {SHOW_CLOVERS ? <CloverBackground/> : null}
             <section className={styles.hero} aria-labelledby="welcome-title">
                 <div className={styles.copy}>
-                    {/* Two fixed lines; the trailing space keeps the text readable when copied or crawled. */}
                     <h1 id="welcome-title">
-                        <span className={styles.line}>Get <span className={styles.enhance}>email alerts</span> for </span>
-                        <span className={styles.line}><span>UW<span className={styles.dash}>-</span>Madison</span> course seats.</span>
+                        Course <span className={styles.enhance}>seat tracker</span> for <span className={styles.nowrap}>UW<span>-</span>Madison.</span>
                     </h1>
 
                     <aside className={styles.proof} aria-label="Enrollment update">
                         <div className={styles.proofMark} aria-hidden="true">↗</div>
-                        <p>We have sent <strong>1,800+ email alerts</strong> during Fall 2026 enrollment.</p>
+                        <p><strong>1,800+ email alerts</strong> sent during Fall 2026 enrollment.</p>
                     </aside>
 
 
