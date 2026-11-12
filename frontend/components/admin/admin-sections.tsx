@@ -10,12 +10,13 @@ export function SummaryMetric({
     detail?: string
 }) {
     return (
-        <div className="surface-panel-strong rounded-[14px] px-4 py-4">
-            <p className="text-sm font-semibold text-[var(--color-ink-soft)]">
-                {label}
-            </p>
-            <p className="mt-2 text-4xl font-semibold text-[var(--color-ink)]">{value}</p>
-            {detail ? <p className="mt-2 text-sm text-[var(--color-ink-soft)]">{detail}</p> : null}
+        // A cell of the metrics strip: cells are separated by hairlines, not drawn as separate cards.
+        <div className="border-b border-r border-[var(--surface-divider)] px-5 py-4 even:border-r-0 xl:border-b-0 xl:even:border-r xl:last:border-r-0">
+            <dt className="text-sm text-[var(--color-ink-soft)]">{label}</dt>
+            <dd className="mt-1 text-3xl font-semibold tabular-nums text-[var(--color-ink)]">
+                {value.toLocaleString('en-US')}
+            </dd>
+            {detail ? <dd className="mt-1 text-xs text-[var(--color-ink-muted)]">{detail}</dd> : null}
         </div>
     )
 }

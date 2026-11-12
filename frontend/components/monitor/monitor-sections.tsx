@@ -1,4 +1,4 @@
-import type {RefObject} from 'react'
+import {ViewTransition, type RefObject} from 'react'
 import {EmptyState} from '@/components/empty-state'
 import {getMeetingLocationSummary, getMeetingSummary} from '@/lib/course/format'
 import type {Subscription} from '@/lib/course/types'
@@ -34,6 +34,7 @@ type MonitorTaskListProps = {
     deleteError: {docId: string, message: string} | null
     deletingDocId: string | null
     loadError: string
+    loading?: boolean
     onRetryLoad: () => void
     termsLoading: boolean
     onDelete: (docId: string) => void
@@ -245,6 +246,7 @@ export function MonitorTaskList({
                                     deleteError,
                                     deletingDocId,
                                     loadError,
+                                    loading = false,
                                     onRetryLoad,
                                     termsLoading,
                                     onDelete,
@@ -260,6 +262,11 @@ export function MonitorTaskList({
                 <button className="button-secondary mt-5" onClick={onRetryLoad} type="button">Retry</button>
             </div>
         )
+    }
+
+    // Still fetching: show nothing rather than claim the list is empty.
+    if (loading) {
+        return <div aria-busy="true" className="min-h-40"/>
     }
 
     if (tasks.length === 0) {
@@ -283,10 +290,15 @@ export function MonitorTaskList({
                 const meetingLocationSummary = getMeetingLocationSummary(task.meetingInfo)
 
                 return (
-                    <article
+                    // Animates only on removal: the removed card fades out and the rest slide into place.
+                    // Every other update (adding, loading, page changes) leaves the cards still.
+                    <ViewTransition
                         key={task.docId}
-                        className="glass-card flex h-full flex-col px-5 py-5"
+                        default="none"
+                        exit={{'remove-alert': 'auto', default: 'none'}}
+                        update={{'remove-alert': 'auto', default: 'none'}}
                     >
+                    <article className="glass-card flex h-full flex-col px-5 py-5">
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
                                 <h3 className="text-2xl font-semibold text-[var(--color-ink)]">
@@ -340,6 +352,7 @@ export function MonitorTaskList({
                             </button>
                         </div>
                     </article>
+                    </ViewTransition>
                 )
             })}
         </div>

@@ -125,7 +125,7 @@ export function MadgradesSearchPage({
     }
 
     return (
-        <section className="page-fade-enter px-2 py-6 md:px-4 md:py-8">
+        <section className="px-2 py-6 md:px-4 md:py-8">
             <div className="grid gap-8 xl:grid-cols-[minmax(280px,0.33fr)_minmax(0,0.67fr)]">
                 <div className="h-fit">
                     <div className="grid gap-4">

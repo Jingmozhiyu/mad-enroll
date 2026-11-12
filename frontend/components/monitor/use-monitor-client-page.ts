@@ -1,6 +1,7 @@
 'use client'
 
 import {
+    addTransitionType,
     startTransition,
     useCallback,
     useEffect,
@@ -73,6 +74,8 @@ export function useMonitorClientPage({
     const previousSearchOpen = useRef(false)
     const [authForm, setAuthForm] = useState(initialAuthForm)
     const [tasks, setTasks] = useState<Subscription[]>(activeInitialTasks)
+    // False until the first fetch after login settles, so "still loading" is not shown as "no alerts".
+    const [tasksLoaded, setTasksLoaded] = useState(initialTasks.length > 0)
     // Shown only inside the login dialog: login/register results and session expiry.
     const [authMessage, setAuthMessage] = useState(initialStatusMessage ?? '')
     const [loadError, setLoadError] = useState('')
@@ -209,6 +212,7 @@ export function useMonitorClientPage({
                 setLoadError(getErrorMessage(error, "Couldn't load your alerts."))
             }
         } finally {
+            setTasksLoaded(true)
             setBusyAction(null)
         }
     }, [logout])
@@ -226,6 +230,7 @@ export function useMonitorClientPage({
 
         if (!isLoggedIn) {
             setTasks([])
+            setTasksLoaded(false)
             setLoadError('')
             setDeleteError(null)
             resetSearchFlow()
@@ -513,7 +518,11 @@ export function useMonitorClientPage({
             setDeletingDocId(docId)
             setDeleteError(null)
             await deleteSubscription(docId)
-            setTasks((current) => current.filter((task) => task.docId !== docId))
+            // The 'remove-alert' transition type is the only update the alert cards animate (see MonitorTaskList).
+            startTransition(() => {
+                addTransitionType('remove-alert')
+                setTasks((current) => current.filter((task) => task.docId !== docId))
+            })
         } catch (error) {
             setDeleteError({docId, message: getErrorMessage(error, "Couldn't remove this alert.")})
         } finally {
@@ -585,6 +594,7 @@ export function useMonitorClientPage({
             deleteError,
             deletingDocId,
             loadError,
+            loading: !tasksLoaded,
             onRetryLoad: () => void fetchTasks(),
             termsLoading,
             onDelete: (docId: string) => void handleDelete(docId),

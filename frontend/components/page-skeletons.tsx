@@ -49,7 +49,7 @@ export function SearchResultsSkeleton() {
 
 export function SearchPageSkeleton() {
     return (
-        <section className="page-fade-enter px-2 py-6 md:px-4 md:py-8">
+        <section className="px-2 py-6 md:px-4 md:py-8">
             <div className="grid gap-8 xl:grid-cols-[minmax(280px,0.33fr)_minmax(0,0.67fr)]">
                 <section className="glass-card h-fit px-5 py-5 md:px-6">
                     <div className="grid gap-5">
@@ -108,7 +108,7 @@ export function SearchPageSkeleton() {
 
 export function MonitorPageSkeleton() {
     return (
-        <div className="page-fade-enter grid gap-6">
+        <div className="grid gap-6">
             <section className="px-2 pb-1 md:px-4">
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
                     <div className="flex flex-col gap-3">

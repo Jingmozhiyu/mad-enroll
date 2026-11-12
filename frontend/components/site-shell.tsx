@@ -1,7 +1,7 @@
 'use client'
 
 import {usePathname, useRouter} from 'next/navigation'
-import {useCallback, useEffect, type ReactNode} from 'react'
+import {useCallback, useEffect, ViewTransition, type ReactNode} from 'react'
 import {BrandMark} from '@/components/brand-mark'
 import {
     ProgressLink,
@@ -97,7 +97,11 @@ export function SiteShell({children}: { children: ReactNode }) {
                 </header>
 
                 <div className="site-gutter flex w-full flex-1 flex-col pt-8 pb-4 md:pb-6">
-                    <main className="flex-1 pt-1">{children}</main>
+                    {/* Page content crossfades when the route changes (keyed by path); updates within a page
+                        (adding or removing alerts, loading data) do not animate it. The navbar stays still. */}
+                    <main className="flex-1 pt-1">
+                        <ViewTransition key={pathname} name="page-content" update="none">{children}</ViewTransition>
+                    </main>
 
                     <footer
                         className="mt-16 grid grid-cols-1 items-center gap-y-3 border-t border-[var(--surface-divider)] pt-5 pb-2 text-sm text-[var(--color-ink-soft)] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">

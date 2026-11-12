@@ -79,7 +79,6 @@
     position: relative;
     z-index: 1;
     padding-bottom: 0;
-    animation: copy-arrive 850ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
 .copy h1 {
@@ -215,12 +214,22 @@
     outline-offset: 5px;
 }
 
-@keyframes copy-arrive {
+/* Hero entrance: title, proof line and buttons fade in one after another (~700ms total). */
+.fadeIn {
+    animation: hero-fade-in 500ms ease-out both;
+}
+
+.fadeInSecond {
+    animation-delay: 100ms;
+}
+
+.fadeInThird {
+    animation-delay: 200ms;
+}
+
+@keyframes hero-fade-in {
     from {
-        transform: translateY(18px);
-    }
-    to {
-        transform: translateY(0);
+        opacity: 0;
     }
 }
 

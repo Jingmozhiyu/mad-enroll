@@ -94,15 +94,44 @@ export function AdminDashboardPage() {
                 </section>
             ) : (
                 <>
-                    <div
-                        className="surface-panel-strong flex flex-col gap-2 rounded-[14px] px-4 py-4 md:flex-row md:items-center md:justify-between">
-                        <p role="status" className="text-sm text-[var(--color-ink-soft)]">{statusMessage}</p>
-                        <div className="flex items-center gap-4">
-                            <p className="text-sm text-[var(--color-ink-soft)]">{sessionEmail}</p>
+                    {/* Key numbers in one strip; the status line and the dashboard refresh sit in its footer. */}
+                    <section className="surface-panel-strong overflow-hidden rounded-[14px]">
+                        <dl className="grid grid-cols-2 xl:grid-cols-4">
+                            <SummaryMetric
+                                label="Users"
+                                value={totalUsers}
+                                detail={latestWelcomeDeliverySummary ?? 'No recent welcome deliveries'}
+                            />
+                            <SummaryMetric
+                                label="Subscriptions"
+                                value={totalSubscriptions}
+                                detail={`${enabledSubscriptions} enabled`}
+                            />
+                            <SummaryMetric
+                                label="Deliveries"
+                                value={totalDeliveries}
+                                detail={
+                                    latestStat
+                                        ? `Sent ${latestStat.sentTotal} on ${formatDateOnly(latestStat.statsDate)}`
+                                        : 'No daily stats yet'
+                                }
+                            />
+                            <SummaryMetric
+                                label="Dead Letters"
+                                value={totalDeadLetters}
+                                detail={
+                                    latestStat
+                                        ? `Dead ${latestStat.deadTotal} on ${formatDateOnly(latestStat.statsDate)}`
+                                        : 'No dead-letter stats yet'
+                                }
+                            />
+                        </dl>
+                        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-[var(--surface-divider)] px-5 py-2.5 text-sm text-[var(--color-ink-soft)]">
+                            <p role="status">{statusMessage || sessionEmail}</p>
                             <button
-                                className="button-secondary min-w-[108px]"
+                                className="bg-transparent p-0 font-semibold text-[var(--color-deep-teal)] underline underline-offset-4 transition hover:text-[var(--color-ink)] disabled:opacity-50"
                                 disabled={loading}
-                                onClick={() => void loadDashboard('Dashboard refreshed.', {
+                                onClick={() => void loadDashboard(undefined, {
                                     usersPage,
                                     emailHistoryPage,
                                     preserveClientPagination: true,
@@ -116,9 +145,7 @@ export function AdminDashboardPage() {
                                     : 'Refresh'}
                             </button>
                         </div>
-                    </div>
-
-
+                    </section>
 
                     <section className="surface-panel-strong rounded-[14px] px-4 py-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -542,36 +569,6 @@ export function AdminDashboardPage() {
 
                     <AdminBroadcastsPanel />
 
-                    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <SummaryMetric
-                            label="Users"
-                            value={totalUsers}
-                            detail={latestWelcomeDeliverySummary ?? 'No recent welcome deliveries'}
-                        />
-                        <SummaryMetric
-                            label="Subscriptions"
-                            value={totalSubscriptions}
-                            detail={`${enabledSubscriptions} enabled`}
-                        />
-                        <SummaryMetric
-                            label="Deliveries"
-                            value={totalDeliveries}
-                            detail={
-                                latestStat
-                                    ? `Sent ${latestStat.sentTotal} on ${formatDateOnly(latestStat.statsDate)}`
-                                    : 'No daily stats yet'
-                            }
-                        />
-                        <SummaryMetric
-                            label="Dead Letters"
-                            value={totalDeadLetters}
-                            detail={
-                                latestStat
-                                    ? `Dead ${latestStat.deadTotal} on ${formatDateOnly(latestStat.statsDate)}`
-                                    : 'No dead-letter stats yet'
-                            }
-                        />
-                    </section>
                 </>
             )}
         </div>

@@ -142,7 +142,6 @@ export function useAdminDashboard() {
                 const requestedUsersPage = options?.usersPage ?? 1
                 const requestedEmailHistoryPage = options?.emailHistoryPage ?? 1
                 const adminRequestCount = 6
-                let loadedSummary = emptyAdminSummary
 
                 setLoading(true)
                 setPendingAdminSections(adminRequestCount)
@@ -150,7 +149,6 @@ export function useAdminDashboard() {
                 const results = await Promise.all(
                     [
                         loadAdminSection('summary', fetchAdminSummary, (value) => {
-                            loadedSummary = value
                             setAdminSummary(value)
                         }),
                         loadAdminSection('users', () => fetchAdminSubscriptions(requestedUsersPage), (value) => {
@@ -190,8 +188,8 @@ export function useAdminDashboard() {
                     setStatusMessage(`Loaded partial admin data. Failed to refresh ${failedSections.join(', ')}.`)
                 } else {
                     setStatusMessage(
-                        message ??
-                        `Loaded ${loadedSummary.totalUsers} users / ${loadedSummary.enabledSubscriptions} active subs / ${loadedSummary.totalDeliveries} deliveries / ${loadedSummary.totalDeadLetters} dead letters.`,
+                        // The numbers are on the metrics strip; no need to repeat them as text.
+                        message ?? '',
                     )
                 }
             } catch (error) {

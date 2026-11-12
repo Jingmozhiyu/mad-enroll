@@ -11,11 +11,11 @@ export function AboutHero() {
         <section className="mt-3 -mb-1">
             <div
                 className="mx-auto flex min-h-[540px] w-full max-w-4xl flex-col items-center justify-center gap-4 md:gap-6">
-                <div className="rise-in">
+                <div>
                     <BrandMark className="about-brand-word" variant="colorful"/>
                 </div>
 
-                <div className="rise-in w-full max-w-3xl text-left [animation-delay:100ms]">
+                <div className="w-full max-w-3xl text-left">
                     <div className="about-story-shell">
                         <div className="grid gap-6 md:gap-6 mt-1">
                             <p className="about-copy">

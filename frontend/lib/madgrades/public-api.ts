@@ -59,9 +59,11 @@ export function publicCourseGrades(course: MadgradesCourse, grades: MadgradesCou
 export async function gradeApiResponse(load: () => Promise<unknown>) {
     try {
         if (!hasMadgradesToken()) throw new MadgradesApiError(503)
+        // The CDN keeps successful responses as long as the HTML course pages (30 days, matching the
+        // Madgrades fetch cache), so crawlers following the JSON-LD links do not re-run the function.
         return NextResponse.json(await load(), {
             headers: {
-                'Cache-Control': 'public, max-age=300, s-maxage=3600',
+                'Cache-Control': 'public, max-age=300, s-maxage=2592000',
                 Link: '</openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"',
             },
         })

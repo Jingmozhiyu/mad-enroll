@@ -54,17 +54,17 @@ export function WelcomeHero() {
             {SHOW_CLOVERS ? <CloverBackground/> : null}
             <section className={styles.hero} aria-labelledby="welcome-title">
                 <div className={styles.copy}>
-                    <h1 id="welcome-title">
+                    <h1 id="welcome-title" className={styles.fadeIn}>
                         Course <span className={styles.enhance}>seat tracker</span> for <span className={styles.nowrap}>UW<span>-</span>Madison.</span>
                     </h1>
 
-                    <aside className={styles.proof} aria-label="Enrollment update">
+                    <aside className={`${styles.proof} ${styles.fadeIn} ${styles.fadeInSecond}`} aria-label="Enrollment update">
                         <div className={styles.proofMark} aria-hidden="true">↗</div>
                         <p><strong>1,800+ email alerts</strong> sent during Fall 2026 enrollment.</p>
                     </aside>
 
 
-                    <div className={styles.actions}>
+                    <div className={`${styles.actions} ${styles.fadeIn} ${styles.fadeInThird}`}>
                         <ProgressLink className={styles.primary} href="/monitor">Set Seat Alerts <Arrow/></ProgressLink>
                         <ProgressLink className={styles.secondary} href="/search">Browse Courses <Arrow/></ProgressLink>
                     </div>

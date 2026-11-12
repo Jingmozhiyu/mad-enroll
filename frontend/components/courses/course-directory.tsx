@@ -11,7 +11,7 @@ import {getCourseDisplayLine, numberWithCommas} from '@/lib/madgrades/utils'
 
 const LINK_CLASS = 'course-data-link underline underline-offset-4'
 
-/** Public directory URL; next.config rewrites it to the static /course/[subject]/[page] route. */
+/** Public directory URL; next.config rewrites it to /course/[subject]/[page] on the static directory route. */
 function directoryPath(subjectCode: string, page = 1) {
     const params = new URLSearchParams({subject: subjectCode})
     if (page > 1) {

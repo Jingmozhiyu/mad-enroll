@@ -37,7 +37,7 @@ export function MonitorClientPage(props: MonitorClientPageProps) {
                     </div>
                 ) : null}
                 <div className="surface-divider mt-6 h-px w-full"/>
-                {showsRealAlerts ? (
+                {showsRealAlerts && !monitor.taskListProps.loading ? (
                     <div className="pt-6 text-center">
                         <span className="text-base font-bold text-[var(--color-ink-soft)] md:text-2xl">
                             {alertCount} Active Alert{alertCount === 1 ? '' : 's'}

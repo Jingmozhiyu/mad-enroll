@@ -200,17 +200,6 @@ strong,
     }
 }
 
-@keyframes page-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
 a {
     color: inherit;
@@ -262,17 +251,12 @@ button {
     background: var(--accent-divider);
 }
 
-.page-fade-enter {
-    animation: page-fade-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
     }
 
-    .skeleton-block::after,
-    .page-fade-enter {
+    .skeleton-block::after {
         animation: none;
     }
 }
@@ -994,5 +978,27 @@ button {
 @media (prefers-reduced-motion: reduce) {
     .rise-in {
         animation: none;
+    }
+}
+
+/*
+ * View transitions: route changes crossfade the page content (the navbar stays put), and alert cards
+ * fade out and slide into place when one is removed. Kept short so the tool never feels slow.
+ */
+::view-transition-old(*),
+::view-transition-new(*) {
+    animation-duration: 180ms;
+}
+
+::view-transition-group(*) {
+    animation-duration: 240ms;
+    animation-timing-function: cubic-bezier(.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
     }
 }
