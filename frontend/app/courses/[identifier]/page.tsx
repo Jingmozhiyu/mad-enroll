@@ -3,7 +3,7 @@ import {permanentRedirect} from 'next/navigation'
 import {CourseSummary} from '@/components/courses/course-summary'
 import {CourseCharts} from '@/components/courses/course-views'
 import {fetchMadgradesCourseGrades} from '@/lib/madgrades/api'
-import {getCoursePageCourse, getCoursePageMetadata} from '@/lib/madgrades/course-page'
+import {decodeCourseIdentifier, getCoursePageCourse, getCoursePageMetadata} from '@/lib/madgrades/course-page'
 import {getCoursePath, getCourseSlug} from '@/lib/madgrades/identifiers'
 import {getCourseDisplayLine} from '@/lib/madgrades/utils'
 import {SITE_URL} from '@/lib/seo'
@@ -23,12 +23,12 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({params}: CoursePageProps): Promise<Metadata> {
-    const {identifier} = await params
+    const identifier = decodeCourseIdentifier((await params).identifier)
     return getCoursePageMetadata(await getCoursePageCourse(identifier))
 }
 
 export default async function CoursePage({params}: CoursePageProps) {
-    const {identifier} = await params
+    const identifier = decodeCourseIdentifier((await params).identifier)
     const course = await getCoursePageCourse(identifier)
 
     // A static page cannot see the query string, so a non-canonical link loses any query here.

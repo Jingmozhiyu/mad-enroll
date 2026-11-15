@@ -8,6 +8,19 @@ import {getCoursePath} from '@/lib/madgrades/identifiers'
 import type {MadgradesCourse} from '@/lib/madgrades/types'
 import {getCourseDisplayLine} from '@/lib/madgrades/utils'
 
+/**
+ * Decodes the /courses/[identifier] path segment. On this static (ISR) route Next passes it still
+ * percent-encoded (RP%26SE_560 for RP&SE_560), unlike dynamic routes; an already decoded value
+ * is returned unchanged.
+ */
+export function decodeCourseIdentifier(identifier: string) {
+    try {
+        return decodeURIComponent(identifier)
+    } catch {
+        return identifier
+    }
+}
+
 /** Resolves a /courses/[identifier] parameter for the summary and chart pages, or renders 404. */
 export const getCoursePageCourse = cache(async (identifier: string) => {
     if (!hasMadgradesToken()) {

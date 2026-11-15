@@ -1,7 +1,7 @@
 import type {NextRequest} from 'next/server'
 import {fetchMadgradesCourseDirectory, fetchMadgradesSubjectCatalog, hasMadgradesToken, MadgradesApiError} from '@/lib/madgrades/api'
 import {getCoursePath} from '@/lib/madgrades/identifiers'
-import {sitemapErrorResponse, sitemapResponse} from '@/lib/sitemap'
+import {COURSE_PAGES_LASTMOD, sitemapErrorResponse, sitemapResponse} from '@/lib/sitemap'
 
 /** Publishes the sitemap index or one subject's complete catalog, all at the site root. */
 export async function GET(request: NextRequest) {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         for (const [path, uuids] of identities) {
             if (uuids.size === 1) paths.push(path)
         }
-        return sitemapResponse(paths)
+        return sitemapResponse(paths, false, COURSE_PAGES_LASTMOD)
     } catch (error) {
         return sitemapErrorResponse(error)
     }
