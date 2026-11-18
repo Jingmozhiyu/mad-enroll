@@ -55,9 +55,10 @@ export async function backendUpdateAdminTerm(token: string, code: string, status
     }, token)
 }
 
-export async function backendFetchAdminSubscriptions(token: string, page: number) {
+export async function backendFetchAdminSubscriptions(token: string, page: number, sort: string, direction: string) {
+    const query = new URLSearchParams({page: String(page), sort, direction})
     return backendRequest<PageResponse<AdminUserSubscriptions>>(
-        `/api/admin/subscriptions?page=${page}`,
+        `/api/admin/subscriptions?${query.toString()}`,
         {method: 'GET'},
         token,
     )

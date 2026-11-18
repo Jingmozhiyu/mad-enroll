@@ -12,6 +12,7 @@ import {
 } from '@/components/admin/admin-sections'
 import {
     formatCount,
+    formatShortDate,
     formatSnapshotTime,
     getDeadLetterSummary,
     getStatusTextClass,
@@ -21,6 +22,36 @@ import {
 } from '@/components/admin/admin-helpers'
 import {useAdminDashboard} from '@/components/admin/use-admin-dashboard'
 import {formatDateOnly, formatDateTime} from '@/lib/course/format'
+import type {AdminUserSort} from '@/lib/admin/types'
+
+/** A users-table header that sorts the whole list on the server; the active column shows its direction. */
+function SortableHeader({field, label, sort, disabled, onSort}: {
+    field: AdminUserSort['field']
+    label: string
+    sort: AdminUserSort
+    disabled: boolean
+    onSort: (field: AdminUserSort['field']) => void
+}) {
+    const active = sort.field === field
+    return (
+        <th
+            aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+            className="px-3 py-3 text-center font-semibold"
+        >
+            <button
+                className={`inline-flex items-center gap-1 bg-transparent p-0 uppercase tracking-[0.08em] transition hover:text-[var(--color-ink)] disabled:opacity-50 ${active ? 'text-[var(--color-ink)]' : ''}`}
+                disabled={disabled}
+                onClick={() => onSort(field)}
+                type="button"
+            >
+                {label}
+                <span aria-hidden="true" className={active ? '' : 'opacity-0'}>
+                    {active && sort.direction === 'desc' ? '↓' : '↑'}
+                </span>
+            </button>
+        </th>
+    )
+}
 
 export function AdminDashboardPage() {
     const {
@@ -36,6 +67,7 @@ export function AdminDashboardPage() {
         handleSendTestEmail,
         handleToggle,
         handleUsersPageChange,
+        handleUsersSortChange,
         isLoggedIn,
         latestStat,
         latestWelcomeDeliverySummary,
@@ -55,7 +87,6 @@ export function AdminDashboardPage() {
         showQueuedCourseIds,
         snapshotLoading,
         sortedMailStats,
-        sortedUsers,
         statusMessage,
         testEmailForm,
         testingEmail,
@@ -67,6 +98,7 @@ export function AdminDashboardPage() {
         totalUsers,
         usersPage,
         usersLoading,
+        usersSort,
         usersTotalPages,
         visibleDeadLetters,
         visibleMailDeliveries,
@@ -268,7 +300,7 @@ export function AdminDashboardPage() {
                             <h2 className="text-base font-semibold text-[var(--color-ink)]">Users</h2>
                         </div>
 
-                        {sortedUsers.length === 0 ? (
+                        {visibleUsers.length === 0 ? (
                             <div className="pt-4">
                                 <EmptyState
                                     description="No admin subscription data is available yet, or your account does not have the required permissions."
@@ -281,18 +313,20 @@ export function AdminDashboardPage() {
                                     <table className="min-w-full border-collapse text-sm">
                                         <thead>
                                             <tr className="subtle-panel-divider border-b text-left text-xs uppercase tracking-[0.08em] text-[var(--color-ink-soft)]">
-                                                <th className="px-3 py-3 text-center font-semibold">Email</th>
-                                                <th className="px-3 py-3 text-center font-semibold">Subscribed</th>
-                                                <th className="px-3 py-3 text-center font-semibold text-[var(--color-mmj)]">
+                                                <SortableHeader disabled={usersLoading} field="email" label="Email" onSort={handleUsersSortChange} sort={usersSort}/>
+                                                <SortableHeader disabled={usersLoading} field="registered" label="Registered" onSort={handleUsersSortChange} sort={usersSort}/>
+                                                <SortableHeader disabled={usersLoading} field="subscribed" label="Subscribed" onSort={handleUsersSortChange} sort={usersSort}/>
+                                                {/* w-px keeps the four state columns at content width, so they sit close together. */}
+                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-mmj)]">
                                                     Open
                                                 </th>
-                                                <th className="px-3 py-3 text-center font-semibold text-[var(--color-monori)]">
+                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-monori)]">
                                                     Waitlist
                                                 </th>
-                                                <th className="px-3 py-3 text-center font-semibold text-[var(--color-airi)]">
+                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-airi)]">
                                                     Closed
                                                 </th>
-                                                <th className="px-3 py-3 text-center font-semibold text-[var(--color-haruka)]">
+                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-haruka)]">
                                                     Disabled
                                                 </th>
                                             </tr>
@@ -310,6 +344,9 @@ export function AdminDashboardPage() {
                                                             <td className="px-3 py-3 font-medium text-center text-[var(--color-ink)]">
                                                                 {row.email}
                                                             </td>
+                                                            <td className="whitespace-nowrap px-3 py-3 text-center tabular-nums" title={formatDateTime(row.registeredAt)}>
+                                                                {formatShortDate(row.registeredAt)}
+                                                            </td>
                                                             <td className="px-3 py-3 text-center">
                                                                 <button
                                                                     className="bg-transparent p-0 underline underline-offset-4 transition hover:text-[var(--color-ink)]"
@@ -319,22 +356,22 @@ export function AdminDashboardPage() {
                                                                     {activeCount}/{row.subscriptions.length} Enabled
                                                                 </button>
                                                             </td>
-                                                            <td className="px-3 py-3 text-center text-[var(--color-mmj)]">
+                                                            <td className="px-2 py-3 text-center text-[var(--color-mmj)]">
                                                                 {counts.open}
                                                             </td>
-                                                            <td className="px-3 py-3 text-center text-[var(--color-monori)]">
+                                                            <td className="px-2 py-3 text-center text-[var(--color-monori)]">
                                                                 {counts.waitlist}
                                                             </td>
-                                                            <td className="px-3 py-3 text-center text-[var(--color-airi)]">
+                                                            <td className="px-2 py-3 text-center text-[var(--color-airi)]">
                                                                 {counts.closed}
                                                             </td>
-                                                            <td className="px-3 py-3 text-center text-[var(--color-haruka)]">
+                                                            <td className="px-2 py-3 text-center text-[var(--color-haruka)]">
                                                                 {counts.disabled}
                                                             </td>
                                                         </tr>
                                                         {isExpanded ? (
                                                             <tr className="subtle-panel-divider border-b">
-                                                                <td className="px-3 py-4" colSpan={6}>
+                                                                <td className="px-3 py-4" colSpan={7}>
                                                                     <div
                                                                         className="surface-inner overflow-x-auto rounded-[18px] px-3 py-3">
                                                                         <table

@@ -1,6 +1,6 @@
 'use client'
 
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {useAuth} from '@/components/providers'
 import {
     fetchAdminDeadLetters,
@@ -15,6 +15,7 @@ import {
 import {getErrorMessage, isUnauthorizedError} from '@/lib/api/client/http'
 import {formatDateOnly} from '@/lib/course/format'
 import type {
+    AdminUserSort,
     AdminUserSubscriptions,
     AdminSummary,
     AlertDeadLetter,
@@ -30,6 +31,15 @@ const emptyAdminSummary: AdminSummary = {
     enabledSubscriptions: 0,
     totalDeliveries: 0,
     totalDeadLetters: 0,
+}
+
+const defaultUsersSort: AdminUserSort = {field: 'email', direction: 'asc'}
+
+/** First click on a column: emails A→Z, newest registrations first, most subscriptions first. */
+const initialSortDirection: Record<AdminUserSort['field'], AdminUserSort['direction']> = {
+    email: 'asc',
+    registered: 'desc',
+    subscribed: 'desc',
 }
 
 const initialTestEmailForm: Required<TestEmailPayload> = {
@@ -65,6 +75,9 @@ export function useAdminDashboard() {
     const [usersPage, setUsersPage] = useState(1)
     const [usersTotalPages, setUsersTotalPages] = useState(1)
     const [usersLoading, setUsersLoading] = useState(false)
+    const [usersSort, setUsersSort] = useState<AdminUserSort>(defaultUsersSort)
+    // Read by loadDashboard, so refreshes keep the current order without re-creating the callback.
+    const usersSortRef = useRef<AdminUserSort>(defaultUsersSort)
     const [expandedUserIds, setExpandedUserIds] = useState<string[]>([])
     const [testEmailForm, setTestEmailForm] =
         useState<Required<TestEmailPayload>>(initialTestEmailForm)
@@ -151,7 +164,7 @@ export function useAdminDashboard() {
                         loadAdminSection('summary', fetchAdminSummary, (value) => {
                             setAdminSummary(value)
                         }),
-                        loadAdminSection('users', () => fetchAdminSubscriptions(requestedUsersPage), (value) => {
+                        loadAdminSection('users', () => fetchAdminSubscriptions(requestedUsersPage, usersSortRef.current), (value) => {
                             setSubscriptions(value.items)
                             setUsersPage(value.page)
                             setUsersTotalPages(Math.max(1, value.totalPages))
@@ -233,14 +246,12 @@ export function useAdminDashboard() {
         }
     }
 
-    async function handleUsersPageChange(nextPage: number) {
-        if (nextPage === usersPage || usersLoading) {
-            return
-        }
-
+    async function loadUsersPage(nextPage: number, sort: AdminUserSort) {
         try {
             setUsersLoading(true)
-            const nextUsersPage = await fetchAdminSubscriptions(nextPage)
+            const nextUsersPage = await fetchAdminSubscriptions(nextPage, sort)
+            usersSortRef.current = sort
+            setUsersSort(sort)
             setSubscriptions(nextUsersPage.items)
             setUsersPage(nextUsersPage.page)
             setUsersTotalPages(Math.max(1, nextUsersPage.totalPages))
@@ -253,6 +264,24 @@ export function useAdminDashboard() {
         } finally {
             setUsersLoading(false)
         }
+    }
+
+    async function handleUsersPageChange(nextPage: number) {
+        if (nextPage === usersPage || usersLoading) {
+            return
+        }
+        await loadUsersPage(nextPage, usersSort)
+    }
+
+    /** Sorts the whole user list on the server: the same column flips direction, a new one starts on page 1. */
+    async function handleUsersSortChange(field: AdminUserSort['field']) {
+        if (usersLoading) {
+            return
+        }
+        const direction = field === usersSort.field
+            ? (usersSort.direction === 'asc' ? 'desc' : 'asc')
+            : initialSortDirection[field]
+        await loadUsersPage(1, {field, direction})
     }
 
     async function handleEmailHistoryPageChange(nextPage: number) {
@@ -338,10 +367,6 @@ export function useAdminDashboard() {
             null,
         [mailStats],
     )
-    const sortedUsers = useMemo(
-        () => [...subscriptions].sort((left, right) => left.email.localeCompare(right.email)),
-        [subscriptions],
-    )
     const latestWelcomeDeliverySummary = useMemo(() => {
         const latestWelcomeStat = [...mailStats]
             .filter((stat) => stat.sentWelcome > 0)
@@ -373,7 +398,8 @@ export function useAdminDashboard() {
         (deadLettersPage - 1) * deadLettersPageSize,
         deadLettersPage * deadLettersPageSize,
     )
-    const visibleUsers = sortedUsers
+    // Already in the server's order; sorting a single page here would contradict the column sort.
+    const visibleUsers = subscriptions
 
     return {
         deadLetters,
@@ -388,6 +414,7 @@ export function useAdminDashboard() {
         handleSendTestEmail,
         handleToggle,
         handleUsersPageChange,
+        handleUsersSortChange,
         isLoggedIn,
         latestStat,
         latestWelcomeDeliverySummary,
@@ -407,7 +434,6 @@ export function useAdminDashboard() {
         showQueuedCourseIds,
         snapshotLoading,
         sortedMailStats,
-        sortedUsers,
         statusMessage,
         testEmailForm,
         testingEmail,
@@ -419,6 +445,7 @@ export function useAdminDashboard() {
         totalUsers,
         usersPage,
         usersLoading,
+        usersSort,
         usersTotalPages,
         visibleDeadLetters,
         visibleMailDeliveries,

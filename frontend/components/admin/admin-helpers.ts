@@ -5,6 +5,22 @@ export type AdminSubscriptionState = 'open' | 'waitlist' | 'closed' | 'disabled'
 
 const DISPLAY_TIME_ZONE = 'America/Chicago'
 
+/** Formats a backend UTC timestamp as YY.MM.DD in Chicago time; sorting still uses the full timestamp. */
+export function formatShortDate(value: string) {
+    const date = new Date(/(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`)
+    if (Number.isNaN(date.getTime())) {
+        return value
+    }
+    const parts = new Intl.DateTimeFormat('en-US', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: DISPLAY_TIME_ZONE,
+    }).formatToParts(date)
+    const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? ''
+    return `${part('year')}.${part('month')}.${part('day')}`
+}
+
 export function getDeadLetterSummary(entry: AlertDeadLetter) {
     return {
         title:

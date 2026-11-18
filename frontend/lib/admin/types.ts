@@ -51,7 +51,15 @@ export type AdminUserSubscriptions = {
     userId: string
     email: string
     role: string
+    /** UTC timestamp without zone, as stored by the backend. */
+    registeredAt: string
     subscriptions: AdminSubscription[]
+}
+
+/** Server-side order of the admin user list: email, registration time or enabled subscription count. */
+export type AdminUserSort = {
+    field: 'email' | 'registered' | 'subscribed'
+    direction: 'asc' | 'desc'
 }
 
 export type PageResponse<T> = {
