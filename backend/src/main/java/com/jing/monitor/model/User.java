@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -36,6 +37,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "varchar(16) default 'USER'")
     private UserRole role = UserRole.USER;
+
+    /** Registration time (UTC). Rows created before this column existed were backfilled from welcome emails. */
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     /**
      * Creates a user with a normalized email and encoded password hash.

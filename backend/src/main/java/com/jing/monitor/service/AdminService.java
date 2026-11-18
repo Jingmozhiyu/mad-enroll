@@ -100,16 +100,28 @@ public class AdminService {
     /**
      * Returns one page of users together with their current section subscriptions.
      *
+     * @param page 1-based page number
+     * @param sort {@code email}, {@code registered} or {@code subscribed} (enabled subscription count)
+     * @param direction {@code asc} or {@code desc}
      * @return grouped admin-facing subscription data
      */
     @Transactional(readOnly = true)
-    public PageRespDto<AdminUserSubsRespDto> getUserSubscriptionsPage(int page) {
-
-        Page<User> usersPage = userRepository.findAll(PageRequest.of(
-                Math.max(0, page - 1),
-                USER_PAGE_SIZE,
-                Sort.by(Sort.Direction.ASC, "email").and(Sort.by(Sort.Direction.ASC, "id"))
-        ));
+    public PageRespDto<AdminUserSubsRespDto> getUserSubscriptionsPage(int page, String sort, String direction) {
+        Sort.Direction order = switch (direction) {
+            case "asc" -> Sort.Direction.ASC;
+            case "desc" -> Sort.Direction.DESC;
+            default -> throw new IllegalArgumentException("Unsupported sort direction.");
+        };
+        PageRequest pageRequest = PageRequest.of(Math.max(0, page - 1), USER_PAGE_SIZE);
+        Page<User> usersPage = switch (sort) {
+            case "email" -> userRepository.findAll(pageRequest.withSort(Sort.by(order, "email")));
+            case "registered" -> userRepository.findAll(pageRequest.withSort(
+                    Sort.by(order, "createdAt").and(Sort.by(Sort.Direction.ASC, "email"))));
+            case "subscribed" -> order == Sort.Direction.ASC
+                    ? userRepository.findPageByEnabledSubscriptionsAsc(pageRequest)
+                    : userRepository.findPageByEnabledSubscriptionsDesc(pageRequest);
+            default -> throw new IllegalArgumentException("Unsupported sort field.");
+        };
         List<UUID> userIds = usersPage.getContent().stream().map(User::getId).toList();
         List<UserSectionSubscription> pageSubscriptions = userIds.isEmpty()
                 ? List.of()
@@ -125,6 +137,7 @@ public class AdminService {
             dto.setUserId(user.getId());
             dto.setEmail(user.getEmail());
             dto.setRole(user.getRole());
+            dto.setRegisteredAt(user.getCreatedAt());
             dto.setSubscriptions(subsByUUID.getOrDefault(user.getId(), List.of()).stream()
                     .map(this::toAdminSubResp)
                     .collect(Collectors.toList()));

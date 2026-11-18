@@ -78,7 +78,7 @@ class AdminServicePaginationTest {
         when(subscriptionRepository.findAllByUser_IdIn(any()))
                 .thenReturn(List.of(subscription(user)));
 
-        PageRespDto<AdminUserSubsRespDto> response = adminService.getUserSubscriptionsPage(2);
+        PageRespDto<AdminUserSubsRespDto> response = adminService.getUserSubscriptionsPage(2, "email", "asc");
 
         assertThat(response.getPage()).isEqualTo(2);
         assertThat(response.getPageSize()).isEqualTo(20);

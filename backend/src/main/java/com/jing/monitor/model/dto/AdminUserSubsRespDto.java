@@ -3,6 +3,7 @@ package com.jing.monitor.model.dto;
 import com.jing.monitor.model.UserRole;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,5 +16,6 @@ public class AdminUserSubsRespDto {
     private UUID userId;
     private String email;
     private UserRole role;
+    private LocalDateTime registeredAt;
     private List<AdminSectionSubRespDto> subscriptions;
 }

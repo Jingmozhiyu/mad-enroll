@@ -71,7 +71,7 @@ public class SchedulerService {
     private volatile LocalDateTime lastFetchStartedAt;
     private volatile LocalDateTime lastFetchFinishedAt;
     private volatile String lastFetchedCourseId;
-    private volatile long lastFetchFinishedAtMillis;
+    private volatile long lastFetchStartedAtMillis;
     private volatile long currentFetchIntervalMs;
 
     @Value("${monitor.scheduler-heartbeat-ms:1000}")
@@ -132,13 +132,15 @@ public class SchedulerService {
     }
 
     /**
-     * Crawler worker that consumes queued courses at the current global interval.
+     * Crawler worker that consumes queued courses at the current global interval, measured from the
+     * start of the previous fetch so the request time does not stretch the cadence. It stays
+     * single-threaded: a course is never fetched twice at once, which transition detection relies on.
      */
     @Scheduled(fixedDelayString = "${monitor.scheduler-fetch-tick-ms:1000}")
     public void consumeDueCourseQueue() {
         long nowMillis = System.currentTimeMillis();
         long intervalMs = currentFetchIntervalMs > 0 ? currentFetchIntervalMs : refreshCurrentFetchIntervalMs();
-        if (lastFetchFinishedAtMillis > 0 && nowMillis - lastFetchFinishedAtMillis < intervalMs) {
+        if (lastFetchStartedAtMillis > 0 && nowMillis - lastFetchStartedAtMillis < intervalMs) {
             return;
         }
 
@@ -153,6 +155,7 @@ public class SchedulerService {
         lastFetchStartedAt = startedAt;
         lastFetchedCourseId = termCode + ":" + courseId;
         long startedAtMillis = System.currentTimeMillis();
+        lastFetchStartedAtMillis = startedAtMillis;
 
         try {
             List<UserSectionSubscription> subs = subscriptionRepository.findAllEnabledForActiveCourse(q.courseUuid());
@@ -168,7 +171,6 @@ public class SchedulerService {
             recordFetchFailure(termCode + ":" + courseId);
         } finally {
             lastFetchFinishedAt = LocalDateTime.now();
-            lastFetchFinishedAtMillis = System.currentTimeMillis();
             logSlowTask("fetch", startedAtMillis, termCode + ":" + courseId);
         }
     }

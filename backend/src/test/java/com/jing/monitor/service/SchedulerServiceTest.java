@@ -20,10 +20,14 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -273,6 +277,45 @@ class SchedulerServiceTest {
         scheduler.checkForStall();
 
         verify(opsAlertService, never()).alert(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void fetchIntervalIsMeasuredFromTheStartOfTheLastFetch() {
+        ReflectionTestUtils.setField(scheduler, "fetchIntervalHighMs", 500L);
+        ReflectionTestUtils.setField(scheduler, "fetchIntervalMidMs", 500L);
+        ReflectionTestUtils.setField(scheduler, "fetchIntervalLowMs", 500L);
+        subscribe(row("doc-1", "11111", StatusMapping.CLOSED));
+        crawlReturns(info("doc-1", "11111", StatusMapping.CLOSED, 0, 0));
+
+        // The previous fetch started 600 ms ago (it may have only just finished): the interval has passed.
+        ReflectionTestUtils.setField(scheduler, "lastFetchStartedAtMillis", System.currentTimeMillis() - 600);
+        poll();
+        verify(crawler, times(1)).fetchCourseStatus(TERM, SUBJECT, COURSE_ID);
+
+        // That fetch started moments ago, so the next tick waits for the rest of the 500 ms.
+        poll();
+        verify(crawler, times(1)).fetchCourseStatus(TERM, SUBJECT, COURSE_ID);
+    }
+
+    @Test
+    void fetchTickIsFinerThanEveryDefaultFetchInterval() throws Exception {
+        // The worker can only fetch on a tick, so an interval below the tick would be silently rounded up.
+        // Read the main file directly: the test classpath has its own application.properties.
+        Properties properties = new Properties();
+        try (InputStream input = Files.newInputStream(Path.of("src/main/resources/application.properties"))) {
+            properties.load(input);
+        }
+        long tickMs = defaultOf(properties.getProperty("monitor.scheduler-fetch-tick-ms"));
+        for (String key : List.of("high", "mid", "low")) {
+            long defaultIntervalMs = defaultOf(properties.getProperty("monitor.scheduler-fetch-interval-" + key + "-ms"));
+            assertThat(tickMs).as("tick vs %s interval", key).isLessThan(defaultIntervalMs);
+        }
+        assertThat(tickMs).isLessThanOrEqualTo(100L);
+    }
+
+    /** Default of a {@code ${ENV:default}} placeholder. */
+    private static long defaultOf(String placeholder) {
+        return Long.parseLong(placeholder.substring(placeholder.lastIndexOf(':') + 1, placeholder.length() - 1));
     }
 
     @Test
