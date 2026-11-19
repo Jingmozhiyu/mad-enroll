@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private static final int USER_PAGE_SIZE = 20;
     private static final int DELIVERY_PAGE_SIZE = 3;
 
     private final UserRepository userRepository;
@@ -98,59 +97,30 @@ public class AdminService {
     }
 
     /**
-     * Returns one page of users together with their current section subscriptions.
+     * Returns every user, ordered by email, together with all of their section subscriptions.
+     * The whole list is small (hundreds of users), so the dashboard sorts and filters it itself.
      *
-     * @param page 1-based page number
-     * @param sort {@code email}, {@code registered} or {@code subscribed} (enabled subscription count)
-     * @param direction {@code asc} or {@code desc}
      * @return grouped admin-facing subscription data
      */
     @Transactional(readOnly = true)
-    public PageRespDto<AdminUserSubsRespDto> getUserSubscriptionsPage(int page, String sort, String direction) {
-        Sort.Direction order = switch (direction) {
-            case "asc" -> Sort.Direction.ASC;
-            case "desc" -> Sort.Direction.DESC;
-            default -> throw new IllegalArgumentException("Unsupported sort direction.");
-        };
-        PageRequest pageRequest = PageRequest.of(Math.max(0, page - 1), USER_PAGE_SIZE);
-        Page<User> usersPage = switch (sort) {
-            case "email" -> userRepository.findAll(pageRequest.withSort(Sort.by(order, "email")));
-            case "registered" -> userRepository.findAll(pageRequest.withSort(
-                    Sort.by(order, "createdAt").and(Sort.by(Sort.Direction.ASC, "email"))));
-            case "subscribed" -> order == Sort.Direction.ASC
-                    ? userRepository.findPageByEnabledSubscriptionsAsc(pageRequest)
-                    : userRepository.findPageByEnabledSubscriptionsDesc(pageRequest);
-            default -> throw new IllegalArgumentException("Unsupported sort field.");
-        };
-        List<UUID> userIds = usersPage.getContent().stream().map(User::getId).toList();
-        List<UserSectionSubscription> pageSubscriptions = userIds.isEmpty()
-                ? List.of()
-                : subscriptionRepository.findAllByUser_IdIn(userIds);
-        Map<UUID, List<UserSectionSubscription>> subsByUUID = pageSubscriptions.stream()
+    public List<AdminUserSubsRespDto> getUserSubscriptions() {
+        Map<UUID, List<UserSectionSubscription>> subsByUserId = subscriptionRepository.findAll().stream()
                 .collect(Collectors.groupingBy(
                         sub -> sub.getUser().getId(), HashMap::new, Collectors.toList()));
 
         List<AdminUserSubsRespDto> userResp = new ArrayList<>();
-
-        for (User user : usersPage.getContent()) {
+        for (User user : userRepository.findAll(Sort.by(Sort.Direction.ASC, "email"))) {
             AdminUserSubsRespDto dto = new AdminUserSubsRespDto();
             dto.setUserId(user.getId());
             dto.setEmail(user.getEmail());
             dto.setRole(user.getRole());
             dto.setRegisteredAt(user.getCreatedAt());
-            dto.setSubscriptions(subsByUUID.getOrDefault(user.getId(), List.of()).stream()
+            dto.setSubscriptions(subsByUserId.getOrDefault(user.getId(), List.of()).stream()
                     .map(this::toAdminSubResp)
                     .collect(Collectors.toList()));
             userResp.add(dto);
         }
-
-        return new PageRespDto<>(
-                userResp,
-                usersPage.getNumber() + 1,
-                usersPage.getSize(),
-                usersPage.getTotalElements(),
-                usersPage.getTotalPages()
-        );
+        return userResp;
     }
 
     /**

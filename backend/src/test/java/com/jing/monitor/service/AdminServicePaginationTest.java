@@ -1,13 +1,9 @@
 package com.jing.monitor.service;
 
 import com.jing.monitor.model.AlertDeliveryLog;
-import com.jing.monitor.model.Course;
-import com.jing.monitor.model.CourseSection;
 import com.jing.monitor.model.User;
 import com.jing.monitor.model.UserRole;
-import com.jing.monitor.model.UserSectionSubscription;
 import com.jing.monitor.model.dto.AdminSummaryRespDto;
-import com.jing.monitor.model.dto.AdminUserSubsRespDto;
 import com.jing.monitor.model.dto.AlertDeliveryLogRespDto;
 import com.jing.monitor.model.dto.PageRespDto;
 import com.jing.monitor.repository.AlertDeadLetterRepository;
@@ -24,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,40 +59,6 @@ class AdminServicePaginationTest {
                 mock(TermService.class),
                 mock(TermRepository.class)
         );
-    }
-
-    @Test
-    void returnsOnlySubscriptionsForTheRequestedUserPage() {
-        User admin = user("admin@example.com", UserRole.ADMIN);
-        User user = user("student@example.com", UserRole.USER);
-        authorize(admin);
-
-        PageRequest pageable = PageRequest.of(1, 20, Sort.by(Sort.Direction.ASC, "email"));
-        when(userRepository.findAll(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(admin, user), pageable, 42));
-        when(subscriptionRepository.findAllByUser_IdIn(any()))
-                .thenReturn(List.of(subscription(user)));
-
-        PageRespDto<AdminUserSubsRespDto> response = adminService.getUserSubscriptionsPage(2, "email", "asc");
-
-        assertThat(response.getPage()).isEqualTo(2);
-        assertThat(response.getPageSize()).isEqualTo(20);
-        assertThat(response.getTotalItems()).isEqualTo(42);
-        assertThat(response.getTotalPages()).isEqualTo(3);
-        assertThat(response.getItems()).hasSize(2);
-        assertThat(response.getItems().get(0).getSubscriptions()).isEmpty();
-        assertThat(response.getItems().get(1).getSubscriptions()).hasSize(1);
-
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findAll(pageableCaptor.capture());
-        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(1);
-        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Collection<UUID>> userIdsCaptor = ArgumentCaptor.forClass(Collection.class);
-        verify(subscriptionRepository).findAllByUser_IdIn(userIdsCaptor.capture());
-        assertThat(userIdsCaptor.getValue()).containsExactlyInAnyOrder(admin.getId(), user.getId());
-        verify(subscriptionRepository, never()).findAll();
     }
 
     @Test
@@ -163,29 +124,6 @@ class AdminServicePaginationTest {
         user.setPasswordHash("hash");
         user.setRole(role);
         return user;
-    }
-
-    private UserSectionSubscription subscription(User user) {
-        Course course = new Course();
-        course.setId(UUID.randomUUID());
-        course.setCourseId("123456");
-        course.setSubjectId("266");
-        course.setSubjectShortName("COMP SCI");
-        course.setCatalogNumber("300");
-
-        CourseSection section = new CourseSection();
-        section.setId(UUID.randomUUID());
-        section.setCourse(course);
-        section.setDocId("doc-1");
-        section.setSectionId("001");
-        section.setMeetingInfo("Online");
-
-        UserSectionSubscription subscription = new UserSectionSubscription();
-        subscription.setId(UUID.randomUUID());
-        subscription.setUser(user);
-        subscription.setSection(section);
-        subscription.setEnabled(true);
-        return subscription;
     }
 
     private AlertDeliveryLog deliveryLog() {

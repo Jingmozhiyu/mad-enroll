@@ -51,20 +51,13 @@ public class AdminController {
     }
 
     /**
-     * Lists one page of users together with their subscribed course and section info.
+     * Lists every user with all of their subscriptions; the dashboard sorts and filters the list.
      *
-     * @param page 1-based page number
-     * @param sort {@code email}, {@code registered} or {@code subscribed}
-     * @param direction {@code asc} or {@code desc}
-     * @return grouped admin-facing user subscription data
+     * @return grouped admin-facing user subscription data, ordered by email
      */
     @GetMapping("/subscriptions")
-    public Result<PageRespDto<AdminUserSubsRespDto>> listSubscriptions(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "email") String sort,
-            @RequestParam(defaultValue = "asc") String direction
-    ) {
-        return Result.success(adminService.getUserSubscriptionsPage(page, sort, direction));
+    public Result<List<AdminUserSubsRespDto>> listSubscriptions() {
+        return Result.success(adminService.getUserSubscriptions());
     }
 
     /**

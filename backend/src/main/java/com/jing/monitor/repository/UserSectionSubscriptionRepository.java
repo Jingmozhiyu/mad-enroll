@@ -35,9 +35,6 @@ public interface UserSectionSubscriptionRepository extends JpaRepository<UserSec
     List<UserSectionSubscription> findAllByUser_Id(UUID userId);
 
     @EntityGraph(attributePaths = {"user", "section", "section.course"})
-    List<UserSectionSubscription> findAllByUser_IdIn(Collection<UUID> userIds);
-
-    @EntityGraph(attributePaths = {"user", "section", "section.course"})
     Optional<UserSectionSubscription> findByIdAndUser_Id(UUID id, UUID userId);
 
     @EntityGraph(attributePaths = {"user", "section", "section.course"})
