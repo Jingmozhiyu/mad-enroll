@@ -1,5 +1,5 @@
 import {formatDateOnly} from '@/lib/course/format'
-import type {AdminSubscription, AlertDeadLetter} from '@/lib/admin/types'
+import type {AdminSubscription, AdminUserSort, AdminUserSubscriptions, AlertDeadLetter} from '@/lib/admin/types'
 
 export type AdminSubscriptionState = 'open' | 'waitlist' | 'closed' | 'disabled'
 
@@ -129,4 +129,66 @@ export function getUserSubscriptionCounts(subscriptions: AdminSubscription[]) {
         },
         {open: 0, waitlist: 0, closed: 0, disabled: 0} as Record<AdminSubscriptionState, number>,
     )
+}
+
+/** Filters the users table can combine; each one narrows the list further. */
+export type AdminUserFilter = 'enabled' | 'open' | 'admin'
+
+/** One users-table row: the user with the per-state counts the table shows and sorts by. */
+export type AdminUserRow = {
+    user: AdminUserSubscriptions
+    counts: Record<AdminSubscriptionState, number>
+    /** Enabled subscriptions, whatever their section state. */
+    enabledCount: number
+}
+
+function sortValue(row: AdminUserRow, field: AdminUserSort['field']) {
+    if (field === 'email') {
+        return row.user.email
+    }
+    if (field === 'registered') {
+        // Backend timestamps share one fixed-width format, so they compare as strings.
+        return row.user.registeredAt
+    }
+    if (field === 'subscribed') {
+        return row.enabledCount
+    }
+    return row.counts[field]
+}
+
+/**
+ * Builds the users-table rows from the whole user list: keeps users whose email contains the
+ * query and who match every filter, then sorts by the chosen field. Ties are ordered by email.
+ */
+export function buildAdminUserRows(
+    users: AdminUserSubscriptions[],
+    query: string,
+    filters: AdminUserFilter[],
+    sort: AdminUserSort,
+): AdminUserRow[] {
+    const normalizedQuery = query.trim().toLowerCase()
+    const sign = sort.direction === 'asc' ? 1 : -1
+    return users
+        .map((user) => {
+            const counts = getUserSubscriptionCounts(user.subscriptions)
+            return {user, counts, enabledCount: counts.open + counts.waitlist + counts.closed}
+        })
+        .filter((row) => !normalizedQuery || row.user.email.toLowerCase().includes(normalizedQuery))
+        .filter((row) => filters.every((filter) => {
+            if (filter === 'enabled') {
+                return row.enabledCount > 0
+            }
+            if (filter === 'open') {
+                return row.counts.open > 0
+            }
+            return row.user.role === 'ADMIN'
+        }))
+        .sort((left, right) => {
+            const leftValue = sortValue(left, sort.field)
+            const rightValue = sortValue(right, sort.field)
+            const order = typeof leftValue === 'number' && typeof rightValue === 'number'
+                ? leftValue - rightValue
+                : String(leftValue).localeCompare(String(rightValue))
+            return order !== 0 ? sign * order : left.user.email.localeCompare(right.user.email)
+        })
 }

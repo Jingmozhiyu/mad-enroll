@@ -17,30 +17,32 @@ import {
     getDeadLetterSummary,
     getStatusTextClass,
     getSubscriptionState,
-    getUserSubscriptionCounts,
     sortSubscriptionsByState,
+    type AdminUserFilter,
 } from '@/components/admin/admin-helpers'
 import {useAdminDashboard} from '@/components/admin/use-admin-dashboard'
 import {formatDateOnly, formatDateTime} from '@/lib/course/format'
 import type {AdminUserSort} from '@/lib/admin/types'
 
-/** A users-table header that sorts the whole list on the server; the active column shows its direction. */
-function SortableHeader({field, label, sort, disabled, onSort}: {
+/** A users-table header that sorts the whole list; the active column shows its direction. */
+function SortableHeader({field, label, sort, onSort, className = 'px-3', activeClassName = 'text-[var(--color-ink)]'}: {
     field: AdminUserSort['field']
     label: string
     sort: AdminUserSort
-    disabled: boolean
     onSort: (field: AdminUserSort['field']) => void
+    /** Padding and width of the cell, plus a color for colored state columns. */
+    className?: string
+    /** Text color of the button while this column is the active sort. */
+    activeClassName?: string
 }) {
     const active = sort.field === field
     return (
         <th
             aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
-            className="px-3 py-3 text-center font-semibold"
+            className={`py-3 text-center font-semibold ${className}`}
         >
             <button
-                className={`inline-flex items-center gap-1 bg-transparent p-0 uppercase tracking-[0.08em] transition hover:text-[var(--color-ink)] disabled:opacity-50 ${active ? 'text-[var(--color-ink)]' : ''}`}
-                disabled={disabled}
+                className={`inline-flex items-center gap-1 bg-transparent p-0 uppercase tracking-[0.08em] transition hover:text-[var(--color-ink)] ${active ? activeClassName : ''}`}
                 onClick={() => onSort(field)}
                 type="button"
             >
@@ -52,6 +54,19 @@ function SortableHeader({field, label, sort, disabled, onSort}: {
         </th>
     )
 }
+
+const USER_FILTERS: {filter: AdminUserFilter; label: string}[] = [
+    {filter: 'enabled', label: 'Has enabled'},
+    {filter: 'open', label: 'Has open seat'},
+    {filter: 'admin', label: 'Admins'},
+]
+
+const STATE_COLUMNS: {field: 'open' | 'waitlist' | 'closed' | 'disabled'; label: string; colorClass: string}[] = [
+    {field: 'open', label: 'Open', colorClass: 'text-[var(--color-mmj)]'},
+    {field: 'waitlist', label: 'Waitlist', colorClass: 'text-[var(--color-monori)]'},
+    {field: 'closed', label: 'Closed', colorClass: 'text-[var(--color-airi)]'},
+    {field: 'disabled', label: 'Disabled', colorClass: 'text-[var(--color-haruka)]'},
+]
 
 export function AdminDashboardPage() {
     const {
@@ -66,13 +81,13 @@ export function AdminDashboardPage() {
         handleEmailHistoryPageChange,
         handleSendTestEmail,
         handleToggle,
-        handleUsersPageChange,
         handleUsersSortChange,
         isLoggedIn,
         latestStat,
         latestWelcomeDeliverySummary,
         loadDashboard,
         loadSnapshot,
+        loadedUserCount,
         loading,
         mailDeliveries,
         mailStatsPage,
@@ -84,6 +99,7 @@ export function AdminDashboardPage() {
         setDeadLettersPage,
         setMailStatsPage,
         setTestEmailForm,
+        setUsersQuery,
         showQueuedCourseIds,
         snapshotLoading,
         sortedMailStats,
@@ -92,14 +108,14 @@ export function AdminDashboardPage() {
         testingEmail,
         togglingId,
         toggleExpandedUser,
+        toggleUsersFilter,
         totalDeadLetters,
         totalDeliveries,
         totalSubscriptions,
         totalUsers,
-        usersPage,
-        usersLoading,
+        usersFilters,
+        usersQuery,
         usersSort,
-        usersTotalPages,
         visibleDeadLetters,
         visibleMailDeliveries,
         visibleMailStats,
@@ -164,7 +180,6 @@ export function AdminDashboardPage() {
                                 className="bg-transparent p-0 font-semibold text-[var(--color-deep-teal)] underline underline-offset-4 transition hover:text-[var(--color-ink)] disabled:opacity-50"
                                 disabled={loading}
                                 onClick={() => void loadDashboard(undefined, {
-                                    usersPage,
                                     emailHistoryPage,
                                     preserveClientPagination: true,
                                 })}
@@ -296,46 +311,84 @@ export function AdminDashboardPage() {
                     </section>
 
                     <section className="surface-panel-strong rounded-[14px] px-4 py-4">
-                        <div className="subtle-panel-divider border-b pb-3">
+                        <div className="subtle-panel-divider flex flex-wrap items-center gap-x-5 gap-y-3 border-b pb-3">
                             <h2 className="text-base font-semibold text-[var(--color-ink)]">Users</h2>
+                            {loadedUserCount > 0 ? (
+                                <>
+                                    <input
+                                        aria-label="Search users by email"
+                                        className="input-shell h-9 w-full max-w-[16rem] text-sm"
+                                        name="users-search"
+                                        onChange={(event) => setUsersQuery(event.target.value)}
+                                        placeholder="Search email"
+                                        type="search"
+                                        value={usersQuery}
+                                    />
+                                    <div className="flex flex-wrap items-center gap-4 text-sm">
+                                        {USER_FILTERS.map(({filter, label}) => {
+                                            const active = usersFilters.includes(filter)
+                                            return (
+                                                <button
+                                                    key={filter}
+                                                    aria-pressed={active}
+                                                    className={[
+                                                        'bg-transparent p-0 transition',
+                                                        active
+                                                            ? 'font-semibold text-[var(--color-deep-teal)] underline underline-offset-4'
+                                                            : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]',
+                                                    ].join(' ')}
+                                                    onClick={() => toggleUsersFilter(filter)}
+                                                    type="button"
+                                                >
+                                                    {label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    <p className="ml-auto text-sm tabular-nums text-[var(--color-ink-soft)]">
+                                        {visibleUsers.length === loadedUserCount
+                                            ? `${loadedUserCount} users`
+                                            : `${visibleUsers.length} of ${loadedUserCount} users`}
+                                    </p>
+                                </>
+                            ) : null}
                         </div>
 
-                        {visibleUsers.length === 0 ? (
+                        {loadedUserCount === 0 ? (
                             <div className="pt-4">
                                 <EmptyState
                                     description="No admin subscription data is available yet, or your account does not have the required permissions."
                                     title="Nothing to show"
                                 />
                             </div>
+                        ) : visibleUsers.length === 0 ? (
+                            <p className="pt-4 text-sm text-[var(--color-ink-soft)]">No users match the search and filters.</p>
                         ) : (
                             <>
                                 <div className="mt-4 overflow-x-auto">
                                     <table className="min-w-full border-collapse text-sm">
                                         <thead>
                                             <tr className="subtle-panel-divider border-b text-left text-xs uppercase tracking-[0.08em] text-[var(--color-ink-soft)]">
-                                                <SortableHeader disabled={usersLoading} field="email" label="Email" onSort={handleUsersSortChange} sort={usersSort}/>
-                                                <SortableHeader disabled={usersLoading} field="registered" label="Registered" onSort={handleUsersSortChange} sort={usersSort}/>
-                                                <SortableHeader disabled={usersLoading} field="subscribed" label="Subscribed" onSort={handleUsersSortChange} sort={usersSort}/>
+                                                <SortableHeader field="email" label="Email" onSort={handleUsersSortChange} sort={usersSort}/>
+                                                <SortableHeader field="registered" label="Registered" onSort={handleUsersSortChange} sort={usersSort}/>
+                                                <SortableHeader field="subscribed" label="Subscribed" onSort={handleUsersSortChange} sort={usersSort}/>
                                                 {/* w-px keeps the four state columns at content width, so they sit close together. */}
-                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-mmj)]">
-                                                    Open
-                                                </th>
-                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-monori)]">
-                                                    Waitlist
-                                                </th>
-                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-airi)]">
-                                                    Closed
-                                                </th>
-                                                <th className="w-px whitespace-nowrap px-2 py-3 text-center font-semibold text-[var(--color-haruka)]">
-                                                    Disabled
-                                                </th>
+                                                {STATE_COLUMNS.map(({field, label, colorClass}) => (
+                                                    <SortableHeader
+                                                        key={field}
+                                                        activeClassName=""
+                                                        className={`w-px whitespace-nowrap px-2 ${colorClass}`}
+                                                        field={field}
+                                                        label={label}
+                                                        onSort={handleUsersSortChange}
+                                                        sort={usersSort}
+                                                    />
+                                                ))}
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {visibleUsers.map((row) => {
-                                                const counts = getUserSubscriptionCounts(row.subscriptions)
+                                            {visibleUsers.map(({user: row, counts, enabledCount}) => {
                                                 const sortedSubscriptions = sortSubscriptionsByState(row.subscriptions)
-                                                const activeCount = counts.open + counts.waitlist + counts.closed
                                                 const isExpanded = expandedUserIds.includes(row.userId)
 
                                                 return (
@@ -353,7 +406,7 @@ export function AdminDashboardPage() {
                                                                     onClick={() => toggleExpandedUser(row.userId)}
                                                                     type="button"
                                                                 >
-                                                                    {activeCount}/{row.subscriptions.length} Enabled
+                                                                    {enabledCount}/{row.subscriptions.length} Enabled
                                                                 </button>
                                                             </td>
                                                             <td className="px-2 py-3 text-center text-[var(--color-mmj)]">
@@ -467,12 +520,6 @@ export function AdminDashboardPage() {
                                         </tbody>
                                     </table>
                                 </div>
-                                <MiniPagination
-                                    currentPage={usersPage}
-                                    disabled={usersLoading}
-                                    onPageChange={handleUsersPageChange}
-                                    totalPages={usersTotalPages}
-                                />
                             </>
                         )}
                     </section>
@@ -601,7 +648,7 @@ export function AdminDashboardPage() {
                     </section>
 
                     <AdminTermsPanel onChanged={() => loadDashboard(undefined, {
-                        usersPage, emailHistoryPage, preserveClientPagination: true,
+                        emailHistoryPage, preserveClientPagination: true,
                     })} />
 
                     <AdminBroadcastsPanel />

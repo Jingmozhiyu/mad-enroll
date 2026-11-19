@@ -30,7 +30,6 @@ import type {
     AlertDeliveryLog,
     AdminSummary,
     AdminSubscription,
-    AdminUserSort,
     AdminUserSubscriptions,
     MailDailyStat,
     PageResponse,
@@ -59,9 +58,9 @@ export async function updateAdminTerm(code: string, status: TermStatus) {
     return response.data
 }
 
-export async function fetchAdminSubscriptions(page: number, sort: AdminUserSort) {
-    const response = await clientApi.get<PageResponse<AdminUserSubscriptions>>('/api/admin/subscriptions', {
-        params: {page, sort: sort.field, direction: sort.direction},
+/** Loads every user with all of their subscriptions, ordered by email. */
+export async function fetchAdminSubscriptions() {
+    const response = await clientApi.get<AdminUserSubscriptions[]>('/api/admin/subscriptions', {
         timeout: ADMIN_REQUEST_TIMEOUT,
     })
     return response.data

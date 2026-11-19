@@ -56,9 +56,12 @@ export type AdminUserSubscriptions = {
     subscriptions: AdminSubscription[]
 }
 
-/** Server-side order of the admin user list: email, registration time or enabled subscription count. */
+/**
+ * Order of the admin user list, applied in the browser to the whole list: email, registration time,
+ * enabled subscription count, or the count of subscriptions in one state.
+ */
 export type AdminUserSort = {
-    field: 'email' | 'registered' | 'subscribed'
+    field: 'email' | 'registered' | 'subscribed' | 'open' | 'waitlist' | 'closed' | 'disabled'
     direction: 'asc' | 'desc'
 }
 
