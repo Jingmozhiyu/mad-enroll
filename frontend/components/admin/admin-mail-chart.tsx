@@ -40,14 +40,15 @@ export function AdminMailChart({stats, endDate}: {stats: MailDailyStat[]; endDat
     const deadTotal = days.reduce((sum, day) => sum + day.dead, 0)
 
     return (
-        <figure className="grid gap-2">
+        // Grows with its panel, so it matches the height of the scheduler panel beside it.
+        <figure className="flex flex-1 flex-col gap-2">
             <figcaption className="flex flex-wrap items-baseline justify-between gap-2 text-sm text-[var(--color-ink-soft)]">
                 <span>Emails sent per day, last {CHART_DAYS} days (UTC)</span>
                 <span className="tabular-nums">
                     {sentTotal.toLocaleString('en-US')} sent{deadTotal > 0 ? ` · ${deadTotal} failed` : ''}
                 </span>
             </figcaption>
-            <div className="h-[220px]">
+            <div className="min-h-[220px] flex-1">
                 <ResponsiveContainer height="100%" width="100%">
                     <BarChart data={days} margin={{top: 4, right: 4, bottom: 0, left: -24}}>
                         <CartesianGrid stroke="var(--surface-divider)" vertical={false}/>

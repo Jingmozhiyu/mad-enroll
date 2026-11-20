@@ -76,9 +76,13 @@ export async function backendFetchAdminDeadLetters(token: string) {
     return backendRequest<AlertDeadLetter[]>('/api/admin/dead-letters', {method: 'GET'}, token)
 }
 
-export async function backendFetchAdminMailDeliveries(token: string, page: number) {
+export async function backendFetchAdminMailDeliveries(token: string, page: number, recipient: string) {
+    const params = new URLSearchParams({page: String(page)})
+    if (recipient) {
+        params.set('recipient', recipient)
+    }
     return backendRequest<PageResponse<AlertDeliveryLog>>(
-        `/api/admin/mail-deliveries?page=${page}`,
+        `/api/admin/mail-deliveries?${params.toString()}`,
         {method: 'GET'},
         token,
     )

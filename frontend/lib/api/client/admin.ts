@@ -92,9 +92,9 @@ export async function fetchAdminDeadLetters() {
     return response.data
 }
 
-export async function fetchAdminMailDeliveries(page = 1) {
+export async function fetchAdminMailDeliveries(page = 1, recipient = '') {
     const response = await clientApi.get<PageResponse<AlertDeliveryLog>>('/api/admin/mail-deliveries', {
-        params: {page},
+        params: recipient ? {page, recipient} : {page},
         timeout: ADMIN_REQUEST_TIMEOUT,
     })
     return response.data

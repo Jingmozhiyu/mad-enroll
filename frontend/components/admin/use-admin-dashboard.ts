@@ -1,6 +1,6 @@
 'use client'
 
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {useAuth} from '@/components/providers'
 import {
     fetchAdminDeadLetters,
@@ -81,6 +81,11 @@ export function useAdminDashboard() {
     const [emailHistoryPage, setEmailHistoryPage] = useState(1)
     const [emailHistoryTotalPages, setEmailHistoryTotalPages] = useState(1)
     const [emailHistoryLoading, setEmailHistoryLoading] = useState(false)
+    const [emailHistoryRecipient, setEmailHistoryRecipient] = useState('')
+    // Mirrors the recipient filter so a full reload keeps it without every caller passing it along.
+    const emailHistoryRecipientRef = useRef('')
+    // Only the newest email history request may update the list, so a slow search cannot overwrite a newer one.
+    const emailHistoryRequestRef = useRef(0)
     const [mailStatsPage, setMailStatsPage] = useState(1)
     const [deadLettersPage, setDeadLettersPage] = useState(1)
     // The whole user list is loaded at once; search, filters and order apply in the browser.
@@ -159,6 +164,7 @@ export function useAdminDashboard() {
                 }
 
                 const requestedEmailHistoryPage = options?.emailHistoryPage ?? 1
+                let deliveriesRequestId = 0
                 const adminRequestCount = 6
 
                 setLoading(true)
@@ -176,7 +182,13 @@ export function useAdminDashboard() {
                             setRecentDeadLetters(value.filter((entry) =>
                                 now - parseUtcTimestamp(entry.createdAt).getTime() < RECENT_DEAD_LETTER_MS))
                         }),
-                        loadAdminSection('deliveries', () => fetchAdminMailDeliveries(requestedEmailHistoryPage), (value) => {
+                        loadAdminSection('deliveries', () => {
+                            deliveriesRequestId = ++emailHistoryRequestRef.current
+                            return fetchAdminMailDeliveries(requestedEmailHistoryPage, emailHistoryRecipientRef.current)
+                        }, (value) => {
+                            if (deliveriesRequestId !== emailHistoryRequestRef.current) {
+                                return
+                            }
                             setMailDeliveries(value.items)
                             setEmailHistoryPage(value.page)
                             setEmailHistoryTotalPages(Math.max(1, value.totalPages))
@@ -268,26 +280,49 @@ export function useAdminDashboard() {
         )
     }
 
-    async function handleEmailHistoryPageChange(nextPage: number) {
-        if (nextPage === emailHistoryPage || emailHistoryLoading) {
-            return
-        }
-
+    const loadEmailHistory = useCallback(async (page: number, recipient: string) => {
+        const requestId = ++emailHistoryRequestRef.current
         try {
             setEmailHistoryLoading(true)
-            const nextDeliveriesPage = await fetchAdminMailDeliveries(nextPage)
+            const nextDeliveriesPage = await fetchAdminMailDeliveries(page, recipient)
+            if (requestId !== emailHistoryRequestRef.current) {
+                return
+            }
             setMailDeliveries(nextDeliveriesPage.items)
             setEmailHistoryPage(nextDeliveriesPage.page)
             setEmailHistoryTotalPages(Math.max(1, nextDeliveriesPage.totalPages))
         } catch (error) {
+            if (requestId !== emailHistoryRequestRef.current) {
+                return
+            }
             if (isUnauthorizedError(error)) {
                 void logout()
             }
-            setStatusMessage(getErrorMessage(error, 'Failed to load email history page.'))
+            setStatusMessage(getErrorMessage(error, 'Failed to load email history.'))
         } finally {
-            setEmailHistoryLoading(false)
+            if (requestId === emailHistoryRequestRef.current) {
+                setEmailHistoryLoading(false)
+            }
         }
+    }, [logout])
+
+    function handleEmailHistoryPageChange(nextPage: number) {
+        if (nextPage === emailHistoryPage || emailHistoryLoading) {
+            return
+        }
+        void loadEmailHistory(nextPage, emailHistoryRecipientRef.current)
     }
+
+    /** Shows deliveries whose recipient contains `recipient` (blank shows all), from the first page. */
+    const searchEmailHistory = useCallback((recipient: string) => {
+        const normalized = recipient.trim()
+        if (normalized === emailHistoryRecipientRef.current) {
+            return
+        }
+        emailHistoryRecipientRef.current = normalized
+        setEmailHistoryRecipient(normalized)
+        void loadEmailHistory(1, normalized)
+    }, [loadEmailHistory])
 
     async function handleSendTestEmail() {
         try {
@@ -367,7 +402,7 @@ export function useAdminDashboard() {
         [mailStats],
     )
     const mailStatsPageSize = 14
-    const deadLettersPageSize = 10
+    const deadLettersPageSize = 5
     const mailStatsTotalPages = Math.max(1, Math.ceil(sortedMailStats.length / mailStatsPageSize))
     const deadLettersTotalPages = Math.max(
         1,
@@ -392,6 +427,7 @@ export function useAdminDashboard() {
         deadLettersTotalPages,
         emailHistoryPage,
         emailHistoryLoading,
+        emailHistoryRecipient,
         emailHistoryTotalPages,
         enabledSubscriptions,
         expandedUserIds,
@@ -414,6 +450,7 @@ export function useAdminDashboard() {
         ready,
         recentDeadLetters,
         schedulerStatus,
+        searchEmailHistory,
         sessionEmail: session?.email,
         setDeadLettersPage,
         setMailStatsPage,

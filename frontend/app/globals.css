@@ -558,6 +558,13 @@ button {
     box-shadow 0.2s ease;
 }
 
+/* Same height as a padded text input; layered so a height utility such as h-11 still wins. */
+@layer components {
+    select.input-shell {
+        height: 3rem;
+    }
+}
+
 .input-shell-compact {
     width: 4.5rem;
     flex: 0 0 3.5rem;
@@ -569,10 +576,41 @@ button {
  */
 select.input-shell {
     appearance: none;
+    /*
+     * No vertical padding: a select centers its single line itself, and padding inside a fixed
+     * height (h-11) squeezes the line until the bottom of the letters is cut off.
+     */
+    padding-top: 0;
+    padding-bottom: 0;
     padding-right: 38px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%235d747c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 15px center;
+    background-size: 12px 12px;
+}
+
+/* A borderless field for forms laid out as ruled rows; the row's own line marks it. */
+.field-plain {
+    width: 100%;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink);
+    padding: 4px 0;
+    line-height: 1.5rem;
+    outline: none;
+}
+
+.field-plain::placeholder {
+    color: var(--color-ink-muted);
+}
+
+select.field-plain {
+    appearance: none;
+    padding-right: 22px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%235d747c' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 2px center;
     background-size: 12px 12px;
 }
 

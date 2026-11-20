@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
     try {
         const requestedPage = Number(request.nextUrl.searchParams.get('page') ?? '1')
         const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
-        const data = await backendFetchAdminMailDeliveries(token, page)
+        const recipient = request.nextUrl.searchParams.get('recipient')?.trim() ?? ''
+        const data = await backendFetchAdminMailDeliveries(token, page, recipient)
         return NextResponse.json(data)
     } catch (error) {
         return jsonError(error, 'Failed to load mail deliveries.')

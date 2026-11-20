@@ -26,10 +26,13 @@ export function SummaryMetric({
 
 export function CompactPanel({
                                  title,
+                                 action,
                                  className = '',
                                  children,
                              }: {
     title: string
+    /** Optional control shown at the right of the title, on the same line. */
+    action?: ReactNode
     className?: string
     children: ReactNode
 }) {
@@ -37,7 +40,10 @@ export function CompactPanel({
         <section
             className={['surface-panel-strong flex h-full flex-col rounded-[14px] px-4 py-4', className].join(' ')}
         >
-            <h2 className="text-base font-semibold text-[var(--color-ink)]">{title}</h2>
+            <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <h2 className="text-base font-semibold text-[var(--color-ink)]">{title}</h2>
+                {action}
+            </div>
             <div className="mt-4 flex flex-1 flex-col">{children}</div>
         </section>
     )

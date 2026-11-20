@@ -143,4 +143,11 @@ export type SchedulerStatus = {
     lastFetchStartedAt?: string
     lastFetchFinishedAt?: string
     lastFetchedCourseId?: string
+    metricsWindowMinutes: number
+    recentFetchCount: number
+    fetchesPerMinute: number
+    avgQueueWaitMs?: number | null
+    maxQueueWaitMs?: number | null
+    avgRevisitMs?: number | null
+    oldestQueuedWaitMs?: number | null
 }

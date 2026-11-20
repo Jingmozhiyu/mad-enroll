@@ -3,7 +3,7 @@
 import {useState, type ReactNode} from 'react'
 import {AdminMailChart} from '@/components/admin/admin-mail-chart'
 import {CompactPanel, SummaryMetric} from '@/components/admin/admin-sections'
-import {formatSnapshotTime} from '@/components/admin/admin-helpers'
+import {formatDurationMs, formatSnapshotTime} from '@/components/admin/admin-helpers'
 import type {AdminDashboard} from '@/components/admin/use-admin-dashboard'
 import {formatDateOnly} from '@/lib/course/format'
 
@@ -17,7 +17,7 @@ function SnapshotItem({label, children}: {label: string; children: ReactNode}) {
     )
 }
 
-/** Key numbers, recent failures, scheduler health and the daily email trend. */
+/** Key numbers, scheduler throughput and health, and the daily email trend. */
 export function AdminOverviewTab({dashboard}: {dashboard: AdminDashboard}) {
     const {
         enabledSubscriptions,
@@ -74,39 +74,51 @@ export function AdminOverviewTab({dashboard}: {dashboard: AdminDashboard}) {
                     {!schedulerStatus ? (
                         <p className="text-sm text-[var(--color-ink-soft)]">No scheduler snapshot yet.</p>
                     ) : (
-                        <dl className="grid grid-cols-2 gap-x-5 gap-y-3">
-                            <SnapshotItem label="Observed">{formatSnapshotTime(schedulerStatus.observedAt)}</SnapshotItem>
-                            <SnapshotItem label="Fetch interval">{schedulerStatus.fetchIntervalMs.toLocaleString('en-US')} ms</SnapshotItem>
-                            <SnapshotItem label="Active courses">{schedulerStatus.activeCourseCount}</SnapshotItem>
-                            <SnapshotItem label="Due now">{schedulerStatus.dueCourseCount}</SnapshotItem>
-                            <SnapshotItem label="Queue">
-                                {schedulerStatus.queuedCourseIds.length > 0 ? (
-                                    <button
-                                        aria-expanded={showQueuedCourseIds}
-                                        className="bg-transparent p-0 underline underline-offset-4 transition hover:text-[var(--color-deep-teal)]"
-                                        onClick={() => setShowQueuedCourseIds((current) => !current)}
-                                        type="button"
-                                    >
-                                        {schedulerStatus.queueSize} courses
-                                    </button>
-                                ) : (
-                                    `${schedulerStatus.queueSize} courses`
-                                )}
-                            </SnapshotItem>
-                            <SnapshotItem label="Heartbeat">{schedulerStatus.heartbeatIntervalMs.toLocaleString('en-US')} ms</SnapshotItem>
-                            <div className="col-span-2">
-                                <SnapshotItem label="Last fetch">
-                                    {schedulerStatus.lastFetchedCourseId
-                                        ? `Course ${schedulerStatus.lastFetchedCourseId}, finished ${formatSnapshotTime(schedulerStatus.lastFetchFinishedAt)}`
-                                        : 'None yet'}
-                                </SnapshotItem>
+                        <div className="grid gap-4">
+                            <div className="grid gap-2">
+                                <dl className="grid grid-cols-2 gap-x-5 gap-y-3">
+                                    <SnapshotItem label="Fetch rate">{schedulerStatus.fetchesPerMinute.toFixed(1)} / min</SnapshotItem>
+                                    <SnapshotItem label="Avg revisit">{formatDurationMs(schedulerStatus.avgRevisitMs)}</SnapshotItem>
+                                    <SnapshotItem label="Avg queue wait">{formatDurationMs(schedulerStatus.avgQueueWaitMs)}</SnapshotItem>
+                                    <SnapshotItem label="Max queue wait">{formatDurationMs(schedulerStatus.maxQueueWaitMs)}</SnapshotItem>
+                                </dl>
                             </div>
-                            {showQueuedCourseIds ? (
-                                <p className="surface-inner col-span-2 rounded-[12px] px-3 py-2 text-xs leading-6 text-[var(--color-ink)]">
-                                    {schedulerStatus.queuedCourseIds.join(', ')}
-                                </p>
-                            ) : null}
-                        </dl>
+                            <div className="subtle-panel-divider grid gap-2 border-t pt-4">
+                                <dl className="grid grid-cols-2 gap-x-5 gap-y-3">
+                                    <SnapshotItem label="Queue">
+                                        {schedulerStatus.queuedCourseIds.length > 0 ? (
+                                            <button
+                                                aria-expanded={showQueuedCourseIds}
+                                                className="bg-transparent p-0 underline underline-offset-4 transition hover:text-[var(--color-deep-teal)]"
+                                                onClick={() => setShowQueuedCourseIds((current) => !current)}
+                                                type="button"
+                                            >
+                                                {schedulerStatus.queueSize} courses
+                                            </button>
+                                        ) : (
+                                            `${schedulerStatus.queueSize} courses`
+                                        )}
+                                    </SnapshotItem>
+                                    <SnapshotItem label="Queue head waiting">{formatDurationMs(schedulerStatus.oldestQueuedWaitMs)}</SnapshotItem>
+                                    <SnapshotItem label="Active courses">{schedulerStatus.activeCourseCount}</SnapshotItem>
+                                    <SnapshotItem label="Due now">{schedulerStatus.dueCourseCount}</SnapshotItem>
+                                    <SnapshotItem label="Fetch interval">{schedulerStatus.fetchIntervalMs.toLocaleString('en-US')} ms</SnapshotItem>
+                                    <SnapshotItem label="Heartbeat">{schedulerStatus.heartbeatIntervalMs.toLocaleString('en-US')} ms</SnapshotItem>
+                                    <div className="col-span-2">
+                                        <SnapshotItem label="Last fetch">
+                                            {schedulerStatus.lastFetchedCourseId
+                                                ? `Course ${schedulerStatus.lastFetchedCourseId} at ${formatSnapshotTime(schedulerStatus.lastFetchFinishedAt)}`
+                                                : 'None yet'}
+                                        </SnapshotItem>
+                                    </div>
+                                    {showQueuedCourseIds ? (
+                                        <p className="surface-inner col-span-2 rounded-[12px] px-3 py-2 text-xs leading-6 text-[var(--color-ink)]">
+                                            {schedulerStatus.queuedCourseIds.join(', ')}
+                                        </p>
+                                    ) : null}
+                                </dl>
+                            </div>
+                        </div>
                     )}
                     <div className="mt-auto flex justify-end pt-4">
                         <button

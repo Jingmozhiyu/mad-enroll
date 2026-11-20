@@ -87,6 +87,21 @@ export function formatSnapshotTime(value?: string) {
     }).format(date)
 }
 
+/** A scheduler duration: "850 ms", "12.3 s" or "4m 05s"; "N/A" when there is no sample. */
+export function formatDurationMs(value?: number | null) {
+    if (value === null || value === undefined) {
+        return 'N/A'
+    }
+    if (value < 1000) {
+        return `${Math.round(value)} ms`
+    }
+    if (value < 60_000) {
+        return `${(value / 1000).toFixed(1)} s`
+    }
+    const totalSeconds = Math.round(value / 1000)
+    return `${Math.floor(totalSeconds / 60)}m ${String(totalSeconds % 60).padStart(2, '0')}s`
+}
+
 export function formatCount(value?: number) {
     return typeof value === 'number' ? value : '-'
 }
