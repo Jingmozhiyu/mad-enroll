@@ -4,10 +4,13 @@ export function SummaryMetric({
                                   label,
                                   value,
                                   detail,
+                                  detailClassName = 'text-[var(--color-ink-muted)]',
                               }: {
     label: string
     value: number
     detail?: string
+    /** Color (and weight) of the detail line; muted by default. */
+    detailClassName?: string
 }) {
     return (
         // A cell of the metrics strip: cells are separated by hairlines, not drawn as separate cards.
@@ -16,7 +19,7 @@ export function SummaryMetric({
             <dd className="mt-1 text-3xl font-semibold tabular-nums text-[var(--color-ink)]">
                 {value.toLocaleString('en-US')}
             </dd>
-            {detail ? <dd className="mt-1 text-xs text-[var(--color-ink-muted)]">{detail}</dd> : null}
+            {detail ? <dd className={`mt-1 text-xs ${detailClassName}`}>{detail}</dd> : null}
         </div>
     )
 }

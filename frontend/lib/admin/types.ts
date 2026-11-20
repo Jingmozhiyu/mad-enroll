@@ -82,16 +82,18 @@ export type AdminSummary = {
 }
 
 export type AlertDeadLetter = {
-    id?: string
+    id: string
     eventId?: string
     alertType?: string
     recipientEmail?: string
     sectionId?: string
     courseDisplayName?: string
+    termCode?: string
+    reason?: string
     sourceQueue?: string
-    failedAt?: string
-    deadLetterReason?: string
-    [key: string]: unknown
+    /** UTC timestamp without zone, as stored by the backend. */
+    createdAt: string
+    payloadJson?: string
 }
 
 export type AlertDeliveryLog = {

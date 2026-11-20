@@ -1,660 +1,127 @@
 'use client'
 
-import {Fragment} from 'react'
+import {usePathname, useRouter, useSearchParams} from 'next/navigation'
 import {AdminTermsPanel} from '@/components/admin/admin-terms-panel'
 import {AdminBroadcastsPanel} from '@/components/admin/admin-broadcasts-panel'
+import {AdminMailTab} from '@/components/admin/admin-mail-tab'
+import {AdminOverviewTab} from '@/components/admin/admin-overview-tab'
+import {AdminUsersTab} from '@/components/admin/admin-users-tab'
 import {EmptyState} from '@/components/empty-state'
 import {ProgressLink} from '@/components/navigation-progress'
-import {
-    CompactPanel,
-    MiniPagination,
-    SummaryMetric,
-} from '@/components/admin/admin-sections'
-import {
-    formatCount,
-    formatShortDate,
-    formatSnapshotTime,
-    getDeadLetterSummary,
-    getStatusTextClass,
-    getSubscriptionState,
-    sortSubscriptionsByState,
-    type AdminUserFilter,
-} from '@/components/admin/admin-helpers'
 import {useAdminDashboard} from '@/components/admin/use-admin-dashboard'
-import {formatDateOnly, formatDateTime} from '@/lib/course/format'
-import type {AdminUserSort} from '@/lib/admin/types'
 
-/** A users-table header that sorts the whole list; the active column shows its direction. */
-function SortableHeader({field, label, sort, onSort, className = 'px-3', activeClassName = 'text-[var(--color-ink)]'}: {
-    field: AdminUserSort['field']
-    label: string
-    sort: AdminUserSort
-    onSort: (field: AdminUserSort['field']) => void
-    /** Padding and width of the cell, plus a color for colored state columns. */
-    className?: string
-    /** Text color of the button while this column is the active sort. */
-    activeClassName?: string
-}) {
-    const active = sort.field === field
-    return (
-        <th
-            aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
-            className={`py-3 text-center font-semibold ${className}`}
-        >
-            <button
-                className={`inline-flex items-center gap-1 bg-transparent p-0 uppercase tracking-[0.08em] transition hover:text-[var(--color-ink)] ${active ? activeClassName : ''}`}
-                onClick={() => onSort(field)}
-                type="button"
-            >
-                {label}
-                <span aria-hidden="true" className={active ? '' : 'opacity-0'}>
-                    {active && sort.direction === 'desc' ? '↓' : '↑'}
-                </span>
-            </button>
-        </th>
-    )
+const TABS = [
+    {id: 'overview', label: 'Overview'},
+    {id: 'users', label: 'Users'},
+    {id: 'mail', label: 'Mail'},
+    {id: 'operations', label: 'Operations'},
+] as const
+
+type AdminTab = (typeof TABS)[number]['id']
+
+function parseTab(value: string | null): AdminTab {
+    return TABS.find((tab) => tab.id === value)?.id ?? 'overview'
 }
 
-const USER_FILTERS: {filter: AdminUserFilter; label: string}[] = [
-    {filter: 'enabled', label: 'Has enabled'},
-    {filter: 'open', label: 'Has open seat'},
-    {filter: 'admin', label: 'Admins'},
-]
-
-const STATE_COLUMNS: {field: 'open' | 'waitlist' | 'closed' | 'disabled'; label: string; colorClass: string}[] = [
-    {field: 'open', label: 'Open', colorClass: 'text-[var(--color-mmj)]'},
-    {field: 'waitlist', label: 'Waitlist', colorClass: 'text-[var(--color-monori)]'},
-    {field: 'closed', label: 'Closed', colorClass: 'text-[var(--color-airi)]'},
-    {field: 'disabled', label: 'Disabled', colorClass: 'text-[var(--color-haruka)]'},
-]
-
 export function AdminDashboardPage() {
-    const {
-        deadLetters,
-        deadLettersPage,
-        deadLettersTotalPages,
-        emailHistoryPage,
-        emailHistoryLoading,
-        emailHistoryTotalPages,
-        enabledSubscriptions,
-        expandedUserIds,
-        handleEmailHistoryPageChange,
-        handleSendTestEmail,
-        handleToggle,
-        handleUsersSortChange,
-        isLoggedIn,
-        latestStat,
-        latestWelcomeDeliverySummary,
-        loadDashboard,
-        loadSnapshot,
-        loadedUserCount,
-        loading,
-        mailDeliveries,
-        mailStatsPage,
-        mailStatsTotalPages,
-        pendingAdminSections,
-        ready,
-        schedulerStatus,
-        sessionEmail,
-        setDeadLettersPage,
-        setMailStatsPage,
-        setTestEmailForm,
-        setUsersQuery,
-        showQueuedCourseIds,
-        snapshotLoading,
-        sortedMailStats,
-        statusMessage,
-        testEmailForm,
-        testingEmail,
-        togglingId,
-        toggleExpandedUser,
-        toggleUsersFilter,
-        totalDeadLetters,
-        totalDeliveries,
-        totalSubscriptions,
-        totalUsers,
-        usersFilters,
-        usersQuery,
-        usersSort,
-        visibleDeadLetters,
-        visibleMailDeliveries,
-        visibleMailStats,
-        visibleUsers,
-    } = useAdminDashboard()
+    const dashboard = useAdminDashboard()
+    const {emailHistoryPage, isLoggedIn, loadDashboard, ready, statusMessage} = dashboard
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+    // The open tab lives in the URL (?tab=), so a reload or a shared link lands on the same tab.
+    const activeTab = parseTab(searchParams.get('tab'))
+
+    function selectTab(tab: AdminTab) {
+        const params = new URLSearchParams(searchParams.toString())
+        if (tab === 'overview') {
+            params.delete('tab')
+        } else {
+            params.set('tab', tab)
+        }
+        router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname, {scroll: false})
+    }
+
+    function refreshDashboard() {
+        return loadDashboard(undefined, {emailHistoryPage, preserveClientPagination: true})
+    }
+
+    if (!ready) {
+        return (
+            <section className="surface-panel-strong rounded-[14px] px-5 py-8">
+                <p className="text-sm text-[var(--color-ink-soft)]">Loading session...</p>
+            </section>
+        )
+    }
+
+    if (!isLoggedIn) {
+        return (
+            <section className="surface-panel-strong rounded-[14px] px-5 py-8">
+                <EmptyState
+                    description="This route does not redirect on its own. Use the monitor page to login, then return here if your account has admin permissions."
+                    title="Login required"
+                />
+                <div className="mt-5 flex justify-center">
+                    <ProgressLink className="button-primary min-w-[160px]" href="/monitor">
+                        Go to Monitor
+                    </ProgressLink>
+                </div>
+            </section>
+        )
+    }
 
     return (
         <div className="grid gap-5">
-            {!ready ? (
-                <section className="surface-panel-strong rounded-[14px] px-5 py-8">
-                    <p className="text-sm text-[var(--color-ink-soft)]">Loading session...</p>
-                </section>
-            ) : !isLoggedIn ? (
-                <section className="surface-panel-strong rounded-[14px] px-5 py-8">
-                    <EmptyState
-                        description="This route does not redirect on its own. Use the monitor page to login, then return here if your account has admin permissions."
-                        title="Login required"
-                    />
-                    <div className="mt-5 flex justify-center">
-                        <ProgressLink className="button-primary min-w-[160px]" href="/monitor">
-                            Go to Monitor
-                        </ProgressLink>
+            {/* Plain centered tabs; the selected one is bold and underlined. */}
+            <div className="grid justify-items-center gap-1">
+                <div aria-label="Admin sections" className="flex max-w-full gap-x-6 overflow-x-auto sm:gap-x-8" role="tablist">
+                    {TABS.map((tab) => {
+                        const active = tab.id === activeTab
+                        return (
+                            <button
+                                key={tab.id}
+                                aria-controls={`admin-tab-${tab.id}`}
+                                aria-selected={active}
+                                className={[
+                                    'shrink-0 bg-transparent px-0 py-2 transition',
+                                    active
+                                        ? 'font-semibold text-[var(--color-ink)] underline decoration-2 underline-offset-8'
+                                        : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]',
+                                ].join(' ')}
+                                id={`admin-tab-button-${tab.id}`}
+                                onClick={() => selectTab(tab.id)}
+                                role="tab"
+                                type="button"
+                            >
+                                {tab.label}
+                            </button>
+                        )
+                    })}
+                </div>
+                {/* Results of actions (a toggle, a test email, a failed load); the line keeps its height when empty. */}
+                <p className="min-h-5 text-center text-sm text-[var(--color-ink-soft)]" role="status">{statusMessage}</p>
+            </div>
+
+            {/* min-w-0 lets wide tables scroll inside their panel instead of widening the page. */}
+            <div
+                aria-labelledby={`admin-tab-button-${activeTab}`}
+                className="min-w-0"
+                id={`admin-tab-${activeTab}`}
+                role="tabpanel"
+            >
+                {activeTab === 'overview' ? (
+                    <AdminOverviewTab dashboard={dashboard}/>
+                ) : activeTab === 'users' ? (
+                    <AdminUsersTab dashboard={dashboard}/>
+                ) : activeTab === 'mail' ? (
+                    <AdminMailTab dashboard={dashboard}/>
+                ) : (
+                    <div className="grid gap-5">
+                        <AdminTermsPanel onChanged={refreshDashboard}/>
+                        <AdminBroadcastsPanel/>
                     </div>
-                </section>
-            ) : (
-                <>
-                    {/* Key numbers in one strip; the status line and the dashboard refresh sit in its footer. */}
-                    <section className="surface-panel-strong overflow-hidden rounded-[14px]">
-                        <dl className="grid grid-cols-2 xl:grid-cols-4">
-                            <SummaryMetric
-                                label="Users"
-                                value={totalUsers}
-                                detail={latestWelcomeDeliverySummary ?? 'No recent welcome deliveries'}
-                            />
-                            <SummaryMetric
-                                label="Subscriptions"
-                                value={totalSubscriptions}
-                                detail={`${enabledSubscriptions} enabled`}
-                            />
-                            <SummaryMetric
-                                label="Deliveries"
-                                value={totalDeliveries}
-                                detail={
-                                    latestStat
-                                        ? `Sent ${latestStat.sentTotal} on ${formatDateOnly(latestStat.statsDate)}`
-                                        : 'No daily stats yet'
-                                }
-                            />
-                            <SummaryMetric
-                                label="Dead Letters"
-                                value={totalDeadLetters}
-                                detail={
-                                    latestStat
-                                        ? `Dead ${latestStat.deadTotal} on ${formatDateOnly(latestStat.statsDate)}`
-                                        : 'No dead-letter stats yet'
-                                }
-                            />
-                        </dl>
-                        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-[var(--surface-divider)] px-5 py-2.5 text-sm text-[var(--color-ink-soft)]">
-                            <p role="status">{statusMessage || sessionEmail}</p>
-                            <button
-                                className="bg-transparent p-0 font-semibold text-[var(--color-deep-teal)] underline underline-offset-4 transition hover:text-[var(--color-ink)] disabled:opacity-50"
-                                disabled={loading}
-                                onClick={() => void loadDashboard(undefined, {
-                                    emailHistoryPage,
-                                    preserveClientPagination: true,
-                                })}
-                                type="button"
-                            >
-                                {loading
-                                    ? pendingAdminSections > 0
-                                        ? `Refreshing ${pendingAdminSections}...`
-                                        : 'Refreshing...'
-                                    : 'Refresh'}
-                            </button>
-                        </div>
-                    </section>
-
-                    <section className="surface-panel-strong rounded-[14px] px-4 py-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div>
-                                <h2 className="text-base font-semibold text-[var(--color-ink)]">Snapshot</h2>
-                                {!schedulerStatus ? (
-                                    <p className="mt-2 text-sm text-[var(--color-ink-soft)]">No scheduler snapshot
-                                        yet.</p>
-                                ) : (
-                                    <div
-                                        className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--color-ink-soft)]">
-                                        <span>Observed ({formatSnapshotTime(schedulerStatus.observedAt)})</span>
-                                        <span>H {schedulerStatus.heartbeatIntervalMs} ms</span>
-                                        <span>F {schedulerStatus.fetchIntervalMs} ms</span>
-                                        <span>Active {schedulerStatus.activeCourseCount}</span>
-                                        <span className="relative">
-                        Queue {schedulerStatus.queueSize}
-                                            {showQueuedCourseIds && schedulerStatus.queuedCourseIds.length > 0 ? (
-                                                <div
-                                                    className="surface-popover absolute left-0 top-[calc(100%+0.4rem)] z-10 min-w-[280px] max-w-[min(75vw,36rem)] rounded-xl px-3 py-2 text-xs leading-6 text-[var(--color-ink)]">
-                                                    {schedulerStatus.queuedCourseIds.join(', ')}
-                                                </div>
-                                            ) : null}
-                    </span>
-                                        <span>Due {schedulerStatus.dueCourseCount}</span>
-                                        <span>
-                      LF {schedulerStatus.lastFetchedCourseId ?? 'N/A'} (
-                                            {formatSnapshotTime(schedulerStatus.lastFetchFinishedAt)})
-                    </span>
-                                    </div>
-                                )}
-                            </div>
-                            <button
-                                className="button-secondary min-w-[132px]"
-                                disabled={snapshotLoading}
-                                onClick={() => void loadSnapshot('Snapshot refreshed.')}
-                                type="button"
-                            >
-                                {snapshotLoading ? 'Refreshing...' : 'Refresh Snapshot'}
-                            </button>
-                        </div>
-                    </section>
-
-                    <section className="grid gap-4 md:grid-cols-2">
-                        <CompactPanel title="Daily Stat">
-                            <div className="text-sm text-[var(--color-ink-soft)]">
-                                {sortedMailStats.length === 0 ? (
-                                    <p>No daily stats yet.</p>
-                                ) : (
-                                    <div className="surface-inner overflow-hidden rounded-[18px]">
-                                        <table className="w-full table-fixed text-left text-[11px] leading-4">
-                                            <thead>
-                                                <tr className="subtle-panel-divider border-b uppercase tracking-[0.04em] text-[var(--color-ink-soft)]">
-                                                    <th className="w-[20%] px-2 py-2 font-semibold text-center">Date</th>
-                                                    <th className="w-[20%] px-2 py-2 font-semibold text-center">Total</th>
-                                                    <th className="w-[15%] px-2 py-2 font-semibold text-center">Open</th>
-                                                    <th className="w-[15%] px-2 py-2 font-semibold text-center">Waitlist</th>
-                                                    <th className="w-[15%] px-2 py-2 font-semibold text-center">Welcome</th>
-                                                    <th className="w-[15%] px-2 py-2 font-semibold text-center">Dead</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {visibleMailStats.map((stat) => (
-                                                    <tr
-                                                        key={stat.id}
-                                                        className="subtle-panel-divider border-b last:border-b-0"
-                                                    >
-                                                        <td className="px-2 py-2 font-medium text-center text-[var(--color-ink)]">
-                                                            {stat.statsDate}
-                                                        </td>
-                                                        <td className="px-2 py-2 text-center">{stat.sentTotal}</td>
-                                                        <td className="px-2 py-2 text-center">{stat.sentOpen}</td>
-                                                        <td className="px-2 py-2 text-center">{stat.sentWaitlist}</td>
-                                                        <td className="px-2 py-2 text-center">{stat.sentWelcome}</td>
-                                                        <td className="px-2 py-2 text-center">{stat.deadTotal}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </div>
-                            <MiniPagination
-                                currentPage={mailStatsPage}
-                                onPageChange={setMailStatsPage}
-                                totalPages={mailStatsTotalPages}
-                            />
-                        </CompactPanel>
-
-                        <CompactPanel title="Email History">
-                            <div className="grid gap-3 text-sm text-[var(--color-ink-soft)]">
-                                {mailDeliveries.length === 0 ? (
-                                    <p>No deliveries yet.</p>
-                                ) : (
-                                    visibleMailDeliveries.map((delivery) => (
-                                        <div
-                                            key={delivery.id}
-                                            className="subtle-panel-divider grid gap-1 border-b pb-3 last:border-b-0 last:pb-0"
-                                        >
-                                            <p className="font-medium text-[var(--color-ink)]">
-                                                {delivery.courseDisplayName} · {delivery.alertType}
-                                            </p>
-                                            <p>{delivery.recipientEmail}</p>
-                                            <p>{formatDateTime(delivery.sentAt)}</p>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                            <MiniPagination
-                                currentPage={emailHistoryPage}
-                                disabled={emailHistoryLoading}
-                                onPageChange={handleEmailHistoryPageChange}
-                                totalPages={emailHistoryTotalPages}
-                            />
-                        </CompactPanel>
-                    </section>
-
-                    <section className="surface-panel-strong rounded-[14px] px-4 py-4">
-                        <div className="subtle-panel-divider flex flex-wrap items-center gap-x-5 gap-y-3 border-b pb-3">
-                            <h2 className="text-base font-semibold text-[var(--color-ink)]">Users</h2>
-                            {loadedUserCount > 0 ? (
-                                <>
-                                    <input
-                                        aria-label="Search users by email"
-                                        className="input-shell h-9 w-full max-w-[16rem] text-sm"
-                                        name="users-search"
-                                        onChange={(event) => setUsersQuery(event.target.value)}
-                                        placeholder="Search email"
-                                        type="search"
-                                        value={usersQuery}
-                                    />
-                                    <div className="flex flex-wrap items-center gap-4 text-sm">
-                                        {USER_FILTERS.map(({filter, label}) => {
-                                            const active = usersFilters.includes(filter)
-                                            return (
-                                                <button
-                                                    key={filter}
-                                                    aria-pressed={active}
-                                                    className={[
-                                                        'bg-transparent p-0 transition',
-                                                        active
-                                                            ? 'font-semibold text-[var(--color-deep-teal)] underline underline-offset-4'
-                                                            : 'text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]',
-                                                    ].join(' ')}
-                                                    onClick={() => toggleUsersFilter(filter)}
-                                                    type="button"
-                                                >
-                                                    {label}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                    <p className="ml-auto text-sm tabular-nums text-[var(--color-ink-soft)]">
-                                        {visibleUsers.length === loadedUserCount
-                                            ? `${loadedUserCount} users`
-                                            : `${visibleUsers.length} of ${loadedUserCount} users`}
-                                    </p>
-                                </>
-                            ) : null}
-                        </div>
-
-                        {loadedUserCount === 0 ? (
-                            <div className="pt-4">
-                                <EmptyState
-                                    description="No admin subscription data is available yet, or your account does not have the required permissions."
-                                    title="Nothing to show"
-                                />
-                            </div>
-                        ) : visibleUsers.length === 0 ? (
-                            <p className="pt-4 text-sm text-[var(--color-ink-soft)]">No users match the search and filters.</p>
-                        ) : (
-                            <>
-                                <div className="mt-4 overflow-x-auto">
-                                    <table className="min-w-full border-collapse text-sm">
-                                        <thead>
-                                            <tr className="subtle-panel-divider border-b text-left text-xs uppercase tracking-[0.08em] text-[var(--color-ink-soft)]">
-                                                <SortableHeader field="email" label="Email" onSort={handleUsersSortChange} sort={usersSort}/>
-                                                <SortableHeader field="registered" label="Registered" onSort={handleUsersSortChange} sort={usersSort}/>
-                                                <SortableHeader field="subscribed" label="Subscribed" onSort={handleUsersSortChange} sort={usersSort}/>
-                                                {/* w-px keeps the four state columns at content width, so they sit close together. */}
-                                                {STATE_COLUMNS.map(({field, label, colorClass}) => (
-                                                    <SortableHeader
-                                                        key={field}
-                                                        activeClassName=""
-                                                        className={`w-px whitespace-nowrap px-2 ${colorClass}`}
-                                                        field={field}
-                                                        label={label}
-                                                        onSort={handleUsersSortChange}
-                                                        sort={usersSort}
-                                                    />
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {visibleUsers.map(({user: row, counts, enabledCount}) => {
-                                                const sortedSubscriptions = sortSubscriptionsByState(row.subscriptions)
-                                                const isExpanded = expandedUserIds.includes(row.userId)
-
-                                                return (
-                                                    <Fragment key={row.userId}>
-                                                        <tr className="subtle-panel-divider border-b text-sm text-[var(--color-ink-soft)]">
-                                                            <td className="px-3 py-3 font-medium text-center text-[var(--color-ink)]">
-                                                                {row.email}
-                                                            </td>
-                                                            <td className="whitespace-nowrap px-3 py-3 text-center tabular-nums" title={formatDateTime(row.registeredAt)}>
-                                                                {formatShortDate(row.registeredAt)}
-                                                            </td>
-                                                            <td className="px-3 py-3 text-center">
-                                                                <button
-                                                                    className="bg-transparent p-0 underline underline-offset-4 transition hover:text-[var(--color-ink)]"
-                                                                    onClick={() => toggleExpandedUser(row.userId)}
-                                                                    type="button"
-                                                                >
-                                                                    {enabledCount}/{row.subscriptions.length} Enabled
-                                                                </button>
-                                                            </td>
-                                                            <td className="px-2 py-3 text-center text-[var(--color-mmj)]">
-                                                                {counts.open}
-                                                            </td>
-                                                            <td className="px-2 py-3 text-center text-[var(--color-monori)]">
-                                                                {counts.waitlist}
-                                                            </td>
-                                                            <td className="px-2 py-3 text-center text-[var(--color-airi)]">
-                                                                {counts.closed}
-                                                            </td>
-                                                            <td className="px-2 py-3 text-center text-[var(--color-haruka)]">
-                                                                {counts.disabled}
-                                                            </td>
-                                                        </tr>
-                                                        {isExpanded ? (
-                                                            <tr className="subtle-panel-divider border-b">
-                                                                <td className="px-3 py-4" colSpan={7}>
-                                                                    <div
-                                                                        className="surface-inner overflow-x-auto rounded-[18px] px-3 py-3">
-                                                                        <table
-                                                                            className="min-w-full border-collapse text-sm">
-                                                                            <thead>
-                                                                                <tr className="subtle-panel-divider border-b text-left text-xs uppercase tracking-[0.08em] text-[var(--color-ink-soft)]">
-                                                                                    <th className="px-3 py-2 font-semibold">Course</th>
-                                                                                    <th className="px-3 py-2 text-center font-semibold">Section</th>
-                                                                                    <th className="px-3 py-2 text-center font-semibold">Status</th>
-                                                                                    <th className="px-3 py-2 text-center font-semibold text-[var(--color-mmj)]">
-                                                                                        Open Seats
-                                                                                    </th>
-                                                                                    <th className="px-3 py-2 text-center font-semibold text-[var(--color-mmj)]">
-                                                                                        Capacity
-                                                                                    </th>
-                                                                                    <th className="px-3 py-2 text-center font-semibold text-[var(--color-monori)]">
-                                                                                        Waitlist Seats
-                                                                                    </th>
-                                                                                    <th className="px-3 py-2 text-center font-semibold text-[var(--color-monori)]">
-                                                                                        Waitlist Capacity
-                                                                                    </th>
-                                                                                    <th className="px-3 py-2 text-center font-semibold">Action</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {sortedSubscriptions.map((subscription) => {
-                                                                                    const state = getSubscriptionState(subscription)
-                                                                                    const isSaving = togglingId === subscription.subscriptionId
-
-                                                                                    return (
-                                                                                        <tr
-                                                                                            key={subscription.subscriptionId}
-                                                                                            className="subtle-panel-divider border-b text-[var(--color-ink-soft)] last:border-b-0"
-                                                                                        >
-                                                                                            <td className="px-3 py-2 text-[var(--color-ink)]">
-                                                                                                {subscription.courseDisplayName}
-                                                                                                <span className="block text-xs font-normal text-[var(--color-ink-soft)]">Term {subscription.termCode}</span>
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-center">
-                                                                                                {subscription.sectionId}
-                                                                                            </td>
-                                                                                            <td
-                                                                                                className={[
-                                                                                                    'px-3 py-2 text-center font-medium',
-                                                                                                    getStatusTextClass(state),
-                                                                                                ].join(' ')}
-                                                                                            >
-                                                                                                {state}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-center text-[var(--color-mmj)]">
-                                                                                                {formatCount(subscription.openSeats)}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-center text-[var(--color-mmj)]">
-                                                                                                {formatCount(subscription.capacity)}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-center text-[var(--color-monori)]">
-                                                                                                {formatCount(subscription.waitlistSeats)}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-center text-[var(--color-monori)]">
-                                                                                                {formatCount(subscription.waitlistCapacity)}
-                                                                                            </td>
-                                                                                            <td className="px-3 py-2 text-center">
-                                                                                                <button
-                                                                                                    className="bg-transparent p-0 text-sm font-medium text-[var(--color-ink)] underline underline-offset-4 transition hover:text-[var(--color-deep-teal)] disabled:cursor-not-allowed disabled:opacity-50"
-                                                                                                    disabled={isSaving}
-                                                                                                    onClick={() =>
-                                                                                                        void handleToggle(
-                                                                                                            subscription.subscriptionId,
-                                                                                                            !subscription.enabled,
-                                                                                                        )
-                                                                                                    }
-                                                                                                    type="button"
-                                                                                                >
-                                                                                                    {isSaving
-                                                                                                        ? 'Saving...'
-                                                                                                        : subscription.enabled
-                                                                                                            ? 'Disable'
-                                                                                                            : 'Enable'}
-                                                                                                </button>
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    )
-                                                                                })}
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        ) : null}
-                                                    </Fragment>
-                                                )
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
-                        )}
-                    </section>
-
-                    <section className="grid gap-4 md:grid-cols-2">
-                        <CompactPanel title="Test Email">
-                            <div className="grid gap-3 md:grid-cols-2">
-                                <label className="grid gap-1.5">
-                                    <span className="text-sm text-[var(--color-ink-soft)]">Recipient email</span>
-                                    <input
-                                        className="input-shell h-11"
-                                        name="recipient-email"
-                                        onChange={(event) =>
-                                            setTestEmailForm((current) => ({
-                                                ...current,
-                                                recipientEmail: event.target.value,
-                                            }))
-                                        }
-                                        placeholder="admin@example.com"
-                                        value={testEmailForm.recipientEmail}
-                                    />
-                                </label>
-
-                                <label className="grid gap-1.5">
-                                    <span className="text-sm text-[var(--color-ink-soft)]">Alert type</span>
-                                    <input
-                                        className="input-shell h-11"
-                                        name="alert-type"
-                                        onChange={(event) =>
-                                            setTestEmailForm((current) => ({
-                                                ...current,
-                                                alertType: event.target.value,
-                                            }))
-                                        }
-                                        placeholder="OPEN / WAITLIST / WELCOME"
-                                        value={testEmailForm.alertType}
-                                    />
-                                </label>
-
-                                <label className="grid gap-1.5">
-                                    <span className="text-sm text-[var(--color-ink-soft)]">Section ID</span>
-                                    <input
-                                        className="input-shell h-11"
-                                        name="section-id"
-                                        onChange={(event) =>
-                                            setTestEmailForm((current) => ({
-                                                ...current,
-                                                sectionId: event.target.value,
-                                            }))
-                                        }
-                                        value={testEmailForm.sectionId}
-                                    />
-                                </label>
-
-                                <label className="grid gap-1.5">
-                                    <span className="text-sm text-[var(--color-ink-soft)]">Course name</span>
-                                    <input
-                                        className="input-shell h-11"
-                                        name="course-display-name"
-                                        onChange={(event) =>
-                                            setTestEmailForm((current) => ({
-                                                ...current,
-                                                courseDisplayName: event.target.value,
-                                            }))
-                                        }
-                                        value={testEmailForm.courseDisplayName}
-                                    />
-                                </label>
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-                                <label className="grid min-w-[132px] gap-1.5">
-                                    <span className="text-sm text-[var(--color-ink-soft)]">termCode</span>
-                                    <input
-                                        className="input-shell h-11"
-                                        inputMode="numeric"
-                                        name="term-id"
-                                        onChange={(event) =>
-                                            setTestEmailForm((current) => ({
-                                                ...current,
-                                                termCode: event.target.value,
-                                            }))
-                                        }
-                                        placeholder="1272"
-                                        value={testEmailForm.termCode}
-                                    />
-                                </label>
-                                <button
-                                    className="button-primary min-w-[144px]"
-                                    disabled={testingEmail}
-                                    onClick={() => void handleSendTestEmail()}
-                                    type="button"
-                                >
-                                    {testingEmail ? 'Sending...' : 'Test Email'}
-                                </button>
-                            </div>
-                        </CompactPanel>
-
-                        <CompactPanel title="Failed Alert Events">
-                            <div className="grid gap-2 text-sm text-[var(--color-ink-soft)]">
-                                {deadLetters.length === 0 ? (
-                                    <p>No failed alert events yet.</p>
-                                ) : (
-                                    visibleDeadLetters.map((entry, index) => {
-                                        const summary = getDeadLetterSummary(entry)
-
-                                        return (
-                                            <div
-                                                key={entry.id ?? `${summary.title}-${index}`}
-                                                className="subtle-panel-divider grid gap-1 border-b pb-2 last:border-b-0 last:pb-0"
-                                            >
-                                                <p className="font-medium text-[var(--color-ink)]">{summary.title}</p>
-                                                <p>{summary.subtitle}</p>
-                                                <p>{summary.detail}</p>
-                                            </div>
-                                        )
-                                    })
-                                )}
-                            </div>
-                            <MiniPagination
-                                currentPage={deadLettersPage}
-                                onPageChange={setDeadLettersPage}
-                                totalPages={deadLettersTotalPages}
-                            />
-                        </CompactPanel>
-                    </section>
-
-                    <AdminTermsPanel onChanged={() => loadDashboard(undefined, {
-                        emailHistoryPage, preserveClientPagination: true,
-                    })} />
-
-                    <AdminBroadcastsPanel />
-
-                </>
-            )}
+                )}
+            </div>
         </div>
     )
 }

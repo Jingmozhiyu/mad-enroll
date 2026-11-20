@@ -13,7 +13,7 @@ import {
     sendAdminTestEmail,
 } from '@/lib/api/client/admin'
 import {getErrorMessage, isUnauthorizedError} from '@/lib/api/client/http'
-import {buildAdminUserRows, type AdminUserFilter} from '@/components/admin/admin-helpers'
+import {buildAdminUserRows, parseUtcTimestamp, type AdminUserFilter} from '@/components/admin/admin-helpers'
 import {formatDateOnly} from '@/lib/course/format'
 import type {
     AdminUserSort,
@@ -34,6 +34,9 @@ const emptyAdminSummary: AdminSummary = {
     totalDeadLetters: 0,
 }
 
+/** Failed alert events this recent are flagged on the overview; older ones stay in the mail tab only. */
+const RECENT_DEAD_LETTER_MS = 7 * 24 * 60 * 60 * 1000
+
 const defaultUsersSort: AdminUserSort = {field: 'email', direction: 'asc'}
 
 /** First click on a column: emails A→Z, newest registrations first, largest counts first. */
@@ -47,8 +50,9 @@ const initialSortDirection: Record<AdminUserSort['field'], AdminUserSort['direct
     disabled: 'desc',
 }
 
+// A blank recipient sends to the signed-in admin (the backend fills it in).
 const initialTestEmailForm: Required<TestEmailPayload> = {
-    recipientEmail: 'ygong68@wisc.edu',
+    recipientEmail: '',
     alertType: 'OPEN',
     sectionId: '31380',
     courseDisplayName: 'COMP SCI 640',
@@ -62,6 +66,9 @@ export function useAdminDashboard() {
     const [deadLetters, setDeadLetters] = useState<AlertDeadLetter[]>([])
     const [mailDeliveries, setMailDeliveries] = useState<AlertDeliveryLog[]>([])
     const [mailStats, setMailStats] = useState<MailDailyStat[]>([])
+    // Taken when the data loads, so rendering stays free of clock reads.
+    const [recentDeadLetters, setRecentDeadLetters] = useState<AlertDeadLetter[]>([])
+    const [mailStatsLoadedOn, setMailStatsLoadedOn] = useState('')
     const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus | null>(null)
     const [statusMessage, setStatusMessage] = useState(
         'Login on the monitor page to access admin data.',
@@ -69,7 +76,6 @@ export function useAdminDashboard() {
     const [loading, setLoading] = useState(false)
     const [pendingAdminSections, setPendingAdminSections] = useState(0)
     const [snapshotLoading, setSnapshotLoading] = useState(false)
-    const [showQueuedCourseIds, setShowQueuedCourseIds] = useState(false)
     const [togglingId, setTogglingId] = useState<string | null>(null)
     const [testingEmail, setTestingEmail] = useState(false)
     const [emailHistoryPage, setEmailHistoryPage] = useState(1)
@@ -96,7 +102,6 @@ export function useAdminDashboard() {
                 setSnapshotLoading(true)
                 const nextSchedulerStatus = await fetchAdminSchedulerStatus()
                 setSchedulerStatus(nextSchedulerStatus)
-                setShowQueuedCourseIds(false)
                 if (message) {
                     setStatusMessage(message)
                 }
@@ -125,6 +130,7 @@ export function useAdminDashboard() {
                 setUsers([])
                 setAdminSummary(emptyAdminSummary)
                 setDeadLetters([])
+                setRecentDeadLetters([])
                 setMailDeliveries([])
                 setMailStats([])
                 setSchedulerStatus(null)
@@ -165,14 +171,21 @@ export function useAdminDashboard() {
                         }),
                         loadAdminSection('users', fetchAdminSubscriptions, setUsers),
                         loadAdminSection('dead letters', fetchAdminDeadLetters, (value) => {
+                            const now = Date.now()
                             setDeadLetters(value)
+                            setRecentDeadLetters(value.filter((entry) =>
+                                now - parseUtcTimestamp(entry.createdAt).getTime() < RECENT_DEAD_LETTER_MS))
                         }),
                         loadAdminSection('deliveries', () => fetchAdminMailDeliveries(requestedEmailHistoryPage), (value) => {
                             setMailDeliveries(value.items)
                             setEmailHistoryPage(value.page)
                             setEmailHistoryTotalPages(Math.max(1, value.totalPages))
                         }),
-                        loadAdminSection('daily stats', fetchAdminMailStats, setMailStats),
+                        loadAdminSection('daily stats', fetchAdminMailStats, (value) => {
+                            setMailStats(value)
+                            // Stat days follow the server clock, which is UTC.
+                            setMailStatsLoadedOn(new Date().toISOString().slice(0, 10))
+                        }),
                         loadAdminSection('snapshot', fetchAdminSchedulerStatus, setSchedulerStatus),
                     ],
                 )
@@ -183,7 +196,6 @@ export function useAdminDashboard() {
                 const unauthorized = results.some(
                     (result) => result.status === 'rejected' && isUnauthorizedError(result.reason),
                 )
-                setShowQueuedCourseIds(false)
                 if (!options?.preserveClientPagination) {
                     setMailStatsPage(1)
                     setDeadLettersPage(1)
@@ -354,14 +366,13 @@ export function useAdminDashboard() {
         () => [...mailStats].sort((left, right) => right.statsDate.localeCompare(left.statsDate)),
         [mailStats],
     )
-    const mailStatsPageSize = 7
-    const deadLettersPageSize = 3
+    const mailStatsPageSize = 14
+    const deadLettersPageSize = 10
     const mailStatsTotalPages = Math.max(1, Math.ceil(sortedMailStats.length / mailStatsPageSize))
     const deadLettersTotalPages = Math.max(
         1,
         Math.ceil(deadLetters.length / deadLettersPageSize),
     )
-    const visibleMailDeliveries = mailDeliveries
     const visibleMailStats = sortedMailStats.slice(
         (mailStatsPage - 1) * mailStatsPageSize,
         mailStatsPage * mailStatsPageSize,
@@ -396,17 +407,18 @@ export function useAdminDashboard() {
         loadedUserCount: users.length,
         loading,
         mailDeliveries,
+        mailStatsLoadedOn,
         mailStatsPage,
         mailStatsTotalPages,
         pendingAdminSections,
         ready,
+        recentDeadLetters,
         schedulerStatus,
         sessionEmail: session?.email,
         setDeadLettersPage,
         setMailStatsPage,
         setTestEmailForm,
         setUsersQuery,
-        showQueuedCourseIds,
         snapshotLoading,
         sortedMailStats,
         statusMessage,
@@ -423,8 +435,9 @@ export function useAdminDashboard() {
         usersQuery,
         usersSort,
         visibleDeadLetters,
-        visibleMailDeliveries,
         visibleMailStats,
         visibleUsers,
     }
 }
+
+export type AdminDashboard = ReturnType<typeof useAdminDashboard>

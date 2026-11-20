@@ -1,4 +1,3 @@
-import {formatDateOnly} from '@/lib/course/format'
 import type {AdminSubscription, AdminUserSort, AdminUserSubscriptions, AlertDeadLetter} from '@/lib/admin/types'
 
 export type AdminSubscriptionState = 'open' | 'waitlist' | 'closed' | 'disabled'
@@ -23,19 +22,15 @@ export function formatShortDate(value: string) {
 
 export function getDeadLetterSummary(entry: AlertDeadLetter) {
     return {
-        title:
-            (typeof entry.courseDisplayName === 'string' && entry.courseDisplayName) ||
-            (typeof entry.alertType === 'string' && entry.alertType) ||
-            'Dead letter event',
-        subtitle:
-            (typeof entry.recipientEmail === 'string' && entry.recipientEmail) ||
-            (typeof entry.sectionId === 'string' && `Section ${entry.sectionId}`) ||
-            'No recipient info',
-        detail:
-            (typeof entry.deadLetterReason === 'string' && entry.deadLetterReason) ||
-            (typeof entry.failedAt === 'string' && formatDateOnly(entry.failedAt)) ||
-            'Details unavailable',
+        title: [entry.courseDisplayName, entry.alertType].filter(Boolean).join(' · ') || 'Failed alert event',
+        subtitle: entry.recipientEmail || (entry.sectionId ? `Section ${entry.sectionId}` : 'No recipient info'),
+        detail: entry.reason || 'No reason recorded',
     }
+}
+
+/** Parses a backend UTC timestamp, which may come without a zone suffix. */
+export function parseUtcTimestamp(value: string) {
+    return new Date(/(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? value : `${value}Z`)
 }
 
 export function getSubscriptionState(subscription: AdminSubscription): AdminSubscriptionState {
