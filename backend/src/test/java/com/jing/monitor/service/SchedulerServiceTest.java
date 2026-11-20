@@ -8,6 +8,7 @@ import com.jing.monitor.model.SectionInfo;
 import com.jing.monitor.model.StatusMapping;
 import com.jing.monitor.model.User;
 import com.jing.monitor.model.UserSectionSubscription;
+import com.jing.monitor.model.dto.SchedulerStatusRespDto;
 import com.jing.monitor.repository.CourseRepository;
 import com.jing.monitor.repository.CourseSectionRepository;
 import com.jing.monitor.repository.UserSectionSubscriptionRepository;
@@ -330,6 +331,62 @@ class SchedulerServiceTest {
         assertThat(scheduler.determineFetchIntervalMs(0)).isEqualTo(2000L);
         assertThat(scheduler.determineFetchIntervalMs(1)).isEqualTo(5000L);
         assertThat(scheduler.determineFetchIntervalMs(7)).isEqualTo(5000L);
+    }
+
+    @Test
+    void statusReportsFetchRateQueueWaitAndRevisitOverTheLastTenMinutes() {
+        long now = System.currentTimeMillis();
+        // Pretend the service has been up for longer than the window.
+        ReflectionTestUtils.setField(scheduler, "serviceStartedAtMillis", now - Duration.ofHours(1).toMillis());
+        // Outside the window: not counted, but still the previous fetch for the revisit of A.
+        scheduler.recordFetch("1272:A", now - 660_000, now - 650_000);
+        scheduler.recordFetch("1272:A", now - 302_000, now - 300_000);
+        scheduler.recordFetch("1272:B", now - 206_000, now - 200_000);
+        scheduler.recordFetch("1272:A", now - 100_000, now - 100_000);
+
+        SchedulerStatusRespDto status = new SchedulerStatusRespDto();
+        scheduler.fillFetchMetrics(status, now);
+
+        assertThat(status.getMetricsWindowMinutes()).isEqualTo(10);
+        assertThat(status.getRecentFetchCount()).isEqualTo(3);
+        assertThat(status.getFetchesPerMinute()).isEqualTo(0.3);
+        // Waits 2 s, 6 s and 0 s.
+        assertThat(status.getAvgQueueWaitMs()).isEqualTo(2_666L);
+        assertThat(status.getMaxQueueWaitMs()).isEqualTo(6_000L);
+        // A: 350 s, then 200 s; B has no earlier fetch.
+        assertThat(status.getAvgRevisitMs()).isEqualTo(275_000L);
+        assertThat(status.getOldestQueuedWaitMs()).isNull();
+    }
+
+    @Test
+    void revisitIgnoresGapsLongerThanAnHourAndRateUsesUptimeAfterARestart() {
+        long now = System.currentTimeMillis();
+        ReflectionTestUtils.setField(scheduler, "serviceStartedAtMillis", now - 120_000);
+        scheduler.recordFetch("1272:A", now - 2 * 3_600_000L, now - 2 * 3_600_000L);
+        scheduler.recordFetch("1272:A", now - 60_000, now - 60_000);
+
+        SchedulerStatusRespDto status = new SchedulerStatusRespDto();
+        scheduler.fillFetchMetrics(status, now);
+
+        // One fetch in two minutes of uptime.
+        assertThat(status.getFetchesPerMinute()).isEqualTo(0.5);
+        assertThat(status.getAvgRevisitMs()).isNull();
+    }
+
+    @Test
+    void pollRecordsTheFetchAndTheQueueHeadAge() {
+        subscribe(row("doc-1", "11111", StatusMapping.CLOSED));
+        crawlReturns(info("doc-1", "11111", StatusMapping.CLOSED, 0, 0));
+
+        poll();
+        scheduler.monitorTask();
+
+        SchedulerStatusRespDto status = scheduler.getSchedulerStatus();
+        assertThat(status.getRecentFetchCount()).isEqualTo(1);
+        assertThat(status.getAvgQueueWaitMs()).isNotNull();
+        assertThat(status.getAvgRevisitMs()).isNull();
+        assertThat(status.getQueueSize()).isEqualTo(1);
+        assertThat(status.getOldestQueuedWaitMs()).isNotNull();
     }
 
     private void poll() {

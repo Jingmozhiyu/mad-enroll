@@ -86,15 +86,19 @@ public class AdminController {
     }
 
     /**
-     * Lists one page of successful email deliveries for review.
+     * Lists one page of successful email deliveries for review, optionally only those whose
+     * recipient address contains {@code recipient}.
      *
+     * @param page 1-based page number
+     * @param recipient optional part of the recipient address
      * @return successful delivery records
      */
     @GetMapping("/mail-deliveries")
     public Result<PageRespDto<AlertDeliveryLogRespDto>> listMailDeliveries(
-            @RequestParam(defaultValue = "1") int page
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(required = false) String recipient
     ) {
-        return Result.success(adminService.getMailDeliveriesPage(page));
+        return Result.success(adminService.getMailDeliveriesPage(page, recipient));
     }
 
     /**

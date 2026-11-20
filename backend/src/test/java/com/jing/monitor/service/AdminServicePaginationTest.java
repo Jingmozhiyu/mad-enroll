@@ -26,6 +26,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -62,19 +64,19 @@ class AdminServicePaginationTest {
     }
 
     @Test
-    void returnsThreeNewestDeliveriesPerPage() {
+    void returnsTenNewestDeliveriesPerPage() {
         User admin = user("admin@example.com", UserRole.ADMIN);
         authorize(admin);
         AlertDeliveryLog delivery = deliveryLog();
-        PageRequest pageable = PageRequest.of(1, 3, Sort.by(Sort.Direction.DESC, "sentAt"));
+        PageRequest pageable = PageRequest.of(1, 10, Sort.by(Sort.Direction.DESC, "sentAt"));
         when(alertDeliveryLogRepository.findAll(any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(delivery), pageable, 8));
+                .thenReturn(new PageImpl<>(List.of(delivery), pageable, 25));
 
-        PageRespDto<AlertDeliveryLogRespDto> response = adminService.getMailDeliveriesPage(2);
+        PageRespDto<AlertDeliveryLogRespDto> response = adminService.getMailDeliveriesPage(2, "  ");
 
         assertThat(response.getPage()).isEqualTo(2);
-        assertThat(response.getPageSize()).isEqualTo(3);
-        assertThat(response.getTotalItems()).isEqualTo(8);
+        assertThat(response.getPageSize()).isEqualTo(10);
+        assertThat(response.getTotalItems()).isEqualTo(25);
         assertThat(response.getTotalPages()).isEqualTo(3);
         assertThat(response.getItems()).singleElement()
                 .extracting(AlertDeliveryLogRespDto::getId)
@@ -83,10 +85,28 @@ class AdminServicePaginationTest {
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(alertDeliveryLogRepository).findAll(pageableCaptor.capture());
         assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(1);
-        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(3);
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(10);
         assertThat(pageableCaptor.getValue().getSort().getOrderFor("sentAt").getDirection())
                 .isEqualTo(Sort.Direction.DESC);
         verify(alertDeliveryLogRepository, never()).findAll();
+        verify(alertDeliveryLogRepository, never()).findByRecipientEmailContainingIgnoreCase(anyString(), any());
+    }
+
+    @Test
+    void filtersDeliveriesByTrimmedRecipient() {
+        User admin = user("admin@example.com", UserRole.ADMIN);
+        authorize(admin);
+        AlertDeliveryLog delivery = deliveryLog();
+        when(alertDeliveryLogRepository.findByRecipientEmailContainingIgnoreCase(eq("student"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(delivery), PageRequest.of(0, 10), 1));
+
+        PageRespDto<AlertDeliveryLogRespDto> response = adminService.getMailDeliveriesPage(1, " student ");
+
+        assertThat(response.getTotalItems()).isEqualTo(1);
+        assertThat(response.getItems()).singleElement()
+                .extracting(AlertDeliveryLogRespDto::getId)
+                .isEqualTo(delivery.getId());
+        verify(alertDeliveryLogRepository, never()).findAll(any(Pageable.class));
     }
 
     @Test

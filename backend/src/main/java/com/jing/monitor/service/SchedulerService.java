@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,10 @@ public class SchedulerService {
     private static final ZoneId MADISON_ZONE = ZoneId.of("America/Chicago");
     private static final String ALERT_CRAWLER_FAILURES = "crawler-failures";
     private static final String ALERT_SCHEDULER_STALLED = "scheduler-stalled";
+    static final long FETCH_METRICS_WINDOW_MS = 10 * 60 * 1000L;
+    // A longer gap means the course was not being monitored in between (disabled, then re-enabled),
+    // not that it waited; the longest planned cooldown is a few minutes.
+    static final long MAX_REVISIT_SAMPLE_MS = 60 * 60 * 1000L;
 
     private final CourseCrawler crawler;
     private final AlertPublisherService alertPublisherService;
@@ -67,6 +72,9 @@ public class SchedulerService {
     private final AtomicInteger consecutiveFetchFailures = new AtomicInteger();
     private final LocalDateTime serviceStartedAt = LocalDateTime.now();
     private final Set<String> queuedCourseIds = new HashSet<>();
+    private final Deque<FetchSample> recentFetches = new ArrayDeque<>();
+    private final Map<String, Long> lastFetchStartedAtByCourse = new HashMap<>();
+    private final long serviceStartedAtMillis = System.currentTimeMillis();
     private volatile LocalDateTime lastHeartbeatAt;
     private volatile LocalDateTime lastFetchStartedAt;
     private volatile LocalDateTime lastFetchFinishedAt;
@@ -164,6 +172,7 @@ public class SchedulerService {
                 return;
             }
 
+            recordFetch(termCode + ":" + courseId, q.enqueuedAtMillis(), startedAtMillis);
             processSingleCourse(termCode, subjectId, courseId, subs, startedAt);
         } catch (Exception e) {
             scheduleAfterFailureSafely(resolveCourseById(q.courseUuid()), startedAt, termCode + ":" + courseId);
@@ -435,7 +444,7 @@ public class SchedulerService {
      */
     private synchronized boolean enqueueCourseIfAbsent(UUID courseUuid, String courseId, String termCode, String subjectId) {
         String queueKey = termCode + ":" + courseId;
-        QueuedCourse q = new QueuedCourse(courseUuid, courseId, termCode, subjectId);
+        QueuedCourse q = new QueuedCourse(courseUuid, courseId, termCode, subjectId, System.currentTimeMillis());
         if (!queuedCourseIds.add(queueKey)) {
             return false;
         }
@@ -690,6 +699,63 @@ public class SchedulerService {
     }
 
     /**
+     * Records one fetch for the admin throughput and latency figures: how long the course waited in
+     * the queue after it became due, and how long since its previous fetch (its revisit time).
+     *
+     * @param courseKey termCode:courseId
+     * @param enqueuedAtMillis when the heartbeat queued the course
+     * @param startedAtMillis when this fetch started
+     */
+    synchronized void recordFetch(String courseKey, long enqueuedAtMillis, long startedAtMillis) {
+        Long previousStartedAt = lastFetchStartedAtByCourse.put(courseKey, startedAtMillis);
+        Long revisitMs = previousStartedAt == null || startedAtMillis - previousStartedAt > MAX_REVISIT_SAMPLE_MS
+                ? null
+                : startedAtMillis - previousStartedAt;
+        recentFetches.addLast(new FetchSample(startedAtMillis, Math.max(0, startedAtMillis - enqueuedAtMillis), revisitMs));
+        pruneFetchMetrics(startedAtMillis);
+    }
+
+    private void pruneFetchMetrics(long nowMillis) {
+        while (!recentFetches.isEmpty() && nowMillis - recentFetches.peekFirst().startedAtMillis() > FETCH_METRICS_WINDOW_MS) {
+            recentFetches.removeFirst();
+        }
+        lastFetchStartedAtByCourse.values().removeIf(startedAt -> nowMillis - startedAt > MAX_REVISIT_SAMPLE_MS);
+    }
+
+    /**
+     * Fills the throughput and latency figures over the last {@link #FETCH_METRICS_WINDOW_MS}.
+     * Right after a restart the rate is taken over the uptime so far, not the whole window.
+     *
+     * @param dto snapshot to fill
+     * @param nowMillis current time
+     */
+    synchronized void fillFetchMetrics(SchedulerStatusRespDto dto, long nowMillis) {
+        pruneFetchMetrics(nowMillis);
+        long windowMs = Math.max(1, Math.min(FETCH_METRICS_WINDOW_MS, nowMillis - serviceStartedAtMillis));
+        long queueWaitTotalMs = 0;
+        long maxQueueWaitMs = 0;
+        long revisitTotalMs = 0;
+        int revisitCount = 0;
+        for (FetchSample sample : recentFetches) {
+            queueWaitTotalMs += sample.queueWaitMs();
+            maxQueueWaitMs = Math.max(maxQueueWaitMs, sample.queueWaitMs());
+            if (sample.revisitMs() != null) {
+                revisitTotalMs += sample.revisitMs();
+                revisitCount++;
+            }
+        }
+        int fetchCount = recentFetches.size();
+        QueuedCourse head = dueCourseQueue.peek();
+        dto.setMetricsWindowMinutes(FETCH_METRICS_WINDOW_MS / 60_000);
+        dto.setRecentFetchCount(fetchCount);
+        dto.setFetchesPerMinute(fetchCount * 60_000.0 / windowMs);
+        dto.setAvgQueueWaitMs(fetchCount == 0 ? null : queueWaitTotalMs / fetchCount);
+        dto.setMaxQueueWaitMs(fetchCount == 0 ? null : maxQueueWaitMs);
+        dto.setAvgRevisitMs(revisitCount == 0 ? null : revisitTotalMs / revisitCount);
+        dto.setOldestQueuedWaitMs(head == null ? null : Math.max(0, nowMillis - head.enqueuedAtMillis()));
+    }
+
+    /**
      * Returns an internal scheduler snapshot for admin diagnostics.
      *
      * @return scheduler status snapshot
@@ -710,10 +776,14 @@ public class SchedulerService {
         dto.setLastFetchStartedAt(lastFetchStartedAt);
         dto.setLastFetchFinishedAt(lastFetchFinishedAt);
         dto.setLastFetchedCourseId(lastFetchedCourseId);
+        fillFetchMetrics(dto, System.currentTimeMillis());
         return dto;
     }
 
-    public record QueuedCourse(UUID courseUuid, String courseId, String termCode, String subjectId) {
+    public record QueuedCourse(UUID courseUuid, String courseId, String termCode, String subjectId, long enqueuedAtMillis) {
+    }
+
+    private record FetchSample(long startedAtMillis, long queueWaitMs, Long revisitMs) {
     }
 
 }

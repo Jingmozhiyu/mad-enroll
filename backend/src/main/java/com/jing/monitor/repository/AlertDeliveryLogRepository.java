@@ -1,6 +1,8 @@
 package com.jing.monitor.repository;
 
 import com.jing.monitor.model.AlertDeliveryLog;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -13,6 +15,15 @@ import java.util.UUID;
  */
 @Repository
 public interface AlertDeliveryLogRepository extends JpaRepository<AlertDeliveryLog, UUID> {
+
+    /**
+     * Pages deliveries whose recipient address contains the given text, ignoring case.
+     *
+     * @param recipientEmail part of the recipient address
+     * @param pageable page and sort
+     * @return matching deliveries
+     */
+    Page<AlertDeliveryLog> findByRecipientEmailContainingIgnoreCase(String recipientEmail, Pageable pageable);
 
     /**
      * Counts successful deliveries per calendar day of {@code sent_at}.

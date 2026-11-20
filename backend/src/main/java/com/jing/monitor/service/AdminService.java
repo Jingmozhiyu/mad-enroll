@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private static final int DELIVERY_PAGE_SIZE = 3;
+    private static final int DELIVERY_PAGE_SIZE = 10;
 
     private final UserRepository userRepository;
     private final UserSectionSubscriptionRepository subscriptionRepository;
@@ -168,15 +168,21 @@ public class AdminService {
     /**
      * Returns successful email delivery records so admin can count sent alerts without mixing in failures.
      *
+     * @param page 1-based page number
+     * @param recipient optional part of the recipient address to filter by; blank means all
      * @return successful email deliveries ordered from newest to oldest
      */
     @Transactional(readOnly = true)
-    public PageRespDto<AlertDeliveryLogRespDto> getMailDeliveriesPage(int page) {
-        Page<AlertDeliveryLog> deliveriesPage = alertDeliveryLogRepository.findAll(PageRequest.of(
+    public PageRespDto<AlertDeliveryLogRespDto> getMailDeliveriesPage(int page, String recipient) {
+        PageRequest pageable = PageRequest.of(
                 Math.max(0, page - 1),
                 DELIVERY_PAGE_SIZE,
                 Sort.by(Sort.Direction.DESC, "sentAt").and(Sort.by(Sort.Direction.DESC, "id"))
-        ));
+        );
+        String recipientQuery = recipient == null ? "" : recipient.trim();
+        Page<AlertDeliveryLog> deliveriesPage = recipientQuery.isEmpty()
+                ? alertDeliveryLogRepository.findAll(pageable)
+                : alertDeliveryLogRepository.findByRecipientEmailContainingIgnoreCase(recipientQuery, pageable);
         List<AlertDeliveryLogRespDto> deliveries = deliveriesPage.getContent().stream()
                 .map(this::toDeliveryLogResp)
                 .toList();
